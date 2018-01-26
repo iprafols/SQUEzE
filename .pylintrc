@@ -20,3 +20,6 @@ ignore-imports=no
 
 # Maximum number of arguments for function / method
 max-args=10
+
+# Maximum number of local variables
+max-locals=20

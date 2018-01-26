@@ -70,8 +70,9 @@ class Spectrum(object):
         """ Access one of the elements in self._metadata by name. Return
             np.nan if not found.
             """
+        # member must be declared in child class ... pylint: disable=no-member
         return self._metadata.get(key, np.nan)
-    
+
     def metadata_names(self):
         """ Returns the names of the properties that are returned
             by metadata.

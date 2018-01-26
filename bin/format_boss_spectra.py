@@ -89,13 +89,13 @@ def main():
     userprint("loading quasar catalogue")
     quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols, args.qso_specid, args.qso_hdu)
     quasar_catalogue = quasar_catalogue.quasar_catalogue()
-    
+
     # loop over plates, will save a pkl file for each plate
     userprint("loading spectra in each of the plates")
     for plate in tqdm.tqdm(plate_list):
         if plate != 6715:
             continue
-        
+
         # reset spectra object
         spectra = Spectra()
 

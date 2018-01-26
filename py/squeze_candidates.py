@@ -18,8 +18,6 @@ import pandas as pd
 from scipy import fftpack
 from scipy import signal
 
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
@@ -186,24 +184,23 @@ class Candidates(object):
             A DataFrame with the candidates for the given spectrum.
             """
         if not isinstance(spectrum, Spectrum):
-            raise Error("""The given spectrum is not of the correct type. It should
-                be an instance of class Spectrum (see squeze_spectrum.py
-                for details).""")
+            raise Error("The given spectrum is not of the correct type. It should " +
+                        "be an instance of class Spectrum (see squeze_spectrum.py " +
+                        "for details).")
 
         if not (spectrum.flux().size == spectrum.wave().size and
                 spectrum.flux().size == spectrum.ivar().size):
-            raise Error("""The flux, ivar and wave matrixes do not have the same size, but
-                have sizes {flux_size}, {ivar_size}, and {wave_size}.
-                """.format(flux_size=spectrum.flux().size,
-                           wave_size=spectrum.wave().size,
-                           ivar_size=spectrum.ivar().size))
+            raise Error("The flux, ivar and wave matrixes do not have the same size, but " +
+                        "have sizes {flux_size}, ".format(flux_size=spectrum.flux().size,) +
+                        "{ivar_size}, and {wave_size}.".format(wave_size=spectrum.wave().size,
+                                                               ivar_size=spectrum.ivar().size))
 
         if self.__mode == "training" and "z_true" not in spectrum.metadata_names():
-            raise Error("""Mode is set to "training", but spectrum have does not
-                have the property "z_true".""")
-        
+            raise Error("Mode is set to 'training', but spectrum have does not " +
+                        "have the property 'z_true'.")
+
         if self.__mode == "merge":
-            raise Error("""Mode "merge" is not valid for function __find_candidates.""")
+            raise Error("Mode 'merge' is not valid for function __find_candidates.")
 
         # filter small scales fluctuations in the flux
         fft = fftpack.rfft(spectrum.flux()) # compute FFT
@@ -275,8 +272,8 @@ class Candidates(object):
             The spectra in which candidates will be looked for.
             """
         if self.__mode == "merge":
-            raise Error("""The function find_candidates is not available in
-                merge mode.""")
+            raise Error("The function find_candidates is not available in " +
+                        "merge mode.")
 
         for spectrum in tqdm.tqdm(spectra):
             # locate candidates in this spectrum
@@ -295,7 +292,8 @@ class Candidates(object):
                                  quiet=False, get_results=False):
         """
             Given a DataFrame with candidates and another one with the catalogued
-            quasars, compute the completeness and the purity. Upon error, return -1
+            quasars, compute the completeness and the purity. Upon error, return
+            np.nan
 
             Parameters
             ----------
@@ -318,19 +316,19 @@ class Candidates(object):
             """
         # consistency checks
         if self.__mode != "training":
-            raise  Error(""" The function find_ratio_percentiles is available in the
-                training mode only. Detected mode is {}""".format(self.__mode))
+            raise  Error("The function find_ratio_percentiles is available in the " +
+                         "training mode only. Detected mode is {}".format(self.__mode))
 
         if data_frame is None:
             data_frame = self.__candidates
 
         if "is_correct" not in data_frame.columns:
-            raise Error("""find_ratio_percentiles: invalid DataFrame, the column
-                "is_correct" is missing""")
+            raise Error("find_ratio_percentiles: invalid DataFrame, the column " +
+                        "'is_correct' is missing")
 
         if "specid" not in data_frame.columns:
-            raise Error("""find_ratio_percentiles: invalid DataFrame, the column
-                "specid" is missing""")
+            raise Error("find_ratio_percentiles: invalid DataFrame, the column " +
+                        "'specid' is missing")
 
         found_quasars = 0
         num_quasars = quasars_data_frame.shape[0]
@@ -343,15 +341,15 @@ class Candidates(object):
         if float(data_frame.shape[0]) > 0.:
             purity = float(data_frame["is_correct"].sum())/float(data_frame.shape[0])
         else:
-            purity = -1
+            purity = np.nan
         if float(num_quasars) > 0.0:
             completeness = float(found_quasars)/float(num_quasars)
         else:
-            completeness = -1
+            completeness = np.nan
 
         if not quiet:
-            print """There are {} candidates for {}
-                catalogued quasars""".format(data_frame.shape[0], num_quasars)
+            print "There are {} candidates ".format(data_frame.shape[0]),
+            print "for {} catalogued quasars".format(num_quasars)
             print "number of quasars = {}".format(num_quasars)
             print "found quasars = {}".format(found_quasars)
             print "completeness = {:.2%}".format(completeness)
@@ -408,16 +406,16 @@ class Candidates(object):
             """
         # consistency checks
         if self.__mode != "training":
-            raise  Error(""" The function find_ratio_percentiles is available in the
-                training mode only. Detected mode is {}""".format(self.__mode))
+            raise  Error("The function find_ratio_percentiles is available in the " +
+                         "training mode only. Detected mode is {}".format(self.__mode))
 
         if "is_correct" not in self.__candidates.columns:
-            raise Error("""find_ratio_percentiles: invalid DataFrame, the column
-                "is_correct" is missing""")
+            raise Error("find_ratio_percentiles: invalid DataFrame, the column " +
+                        "'is_correct' is missing")
 
         if "specid" not in self.__candidates.columns:
-            raise Error("""find_ratio_percentiles: invalid DataFrame, the column
-                "specid" is missing""")
+            raise Error("find_ratio_percentiles: invalid DataFrame, the column " +
+                        "'specid' is missing")
 
         # nested function to filter absolute cuts in DataFrame
         def filter_absolut_cuts(data_frame):
@@ -555,19 +553,19 @@ class Candidates(object):
             """
         # consistency checks
         if self.__mode != "training":
-            raise  Error(""" The function find_ratio_percentiles is available in the
-                training mode only. Detected mode is {}""".format(self.__mode))
+            raise  Error("The function find_ratio_percentiles is available in the " +
+                         "training mode only. Detected mode is {}".format(self.__mode))
 
         if percentile <= 0.0 or percentile > 100.0:
             raise Error("find_ratio_percentiles: cannot compute {}th percentile".format(percentile))
 
         if column_name not in data_frame.columns:
-            raise Error("""find_ratio_percentiles: the column name "{}"
-                is not a valid column name""".format(column_name))
+            raise Error("find_ratio_percentiles: the column name " +
+                        "'{}' is not a valid column name".format(column_name))
 
         if "is_correct" not in data_frame.columns:
-            raise Error("""find_ratio_percentiles: invalid DataFrame, the column
-                "is_correct" is missing""")
+            raise Error("find_ratio_percentiles: invalid DataFrame, the column " +
+                        "'is_correct' is missing")
 
         if data_frame is None:
             data_frame = self.__candidates
@@ -607,8 +605,8 @@ class Candidates(object):
             The other candidates object to merge
             """
         if self.__mode != "merge":
-            raise  Error(""" The function merge is available in the
-                merge mode only. Detected mode is {}""".format(self.__mode))
+            raise  Error("The function merge is available in the " +
+                         "merge mode only. Detected mode is {}".format(self.__mode))
 
         for candidates_filename in tqdm.tqdm(others_list):
             # load candidates
@@ -616,7 +614,7 @@ class Candidates(object):
 
             # append to candidates list
             self.__candidates = self.__candidates.append(other, ignore_index=True)
-            
+
         self.__save_candidates()
 
     def plot_histograms(self, plot_col, normed=True):
@@ -743,35 +741,40 @@ class Candidates(object):
             """
         # consistency checks
         if self.__mode != "training":
-            raise  Error(""" The function find_ratio_percentiles is available in the
-                training mode only. Detected mode is {}""".format(self.__mode))
+            raise  Error("The function find_ratio_percentiles is available in the " +
+                         "training mode only. Detected mode is {}".format(self.__mode))
+
+        # adapt cuts for operation mode
+        cuts_operation = []
+        for cut in cuts:
+            if cut[2] == "percentile":
+                cuts_operation.append((cut[0],
+                                       self.find_percentiles(cut[0], cut[1], quiet=True,
+                                                             data_frame=self.__candidates),
+                                       "min_ratio"))
+            else:
+                cuts_operation.append(cut)
+    
+        # save cuts for operation mode
+        save_pkl("{}.pkl".format(cuts_filename), cuts_operation)
 
         # write the results in the log
         save_file = open("{}.log".format(cuts_filename), 'w')
-        save_file.write("""There are {} candidates for {} catalogued
-            quasars\n""".format(stats.get("number of candidates", np.nan),
-                                stats.get("number of quasars", np.nan)))
+        save_file.write("There are {} ".format(stats.get("number of candidates", np.nan)) +
+                        "candidates for {} ".format(stats.get("number of quasars", np.nan)) +
+                        "catalogued quasars\n")
         save_file.write("number of quasars = {}\n".format(stats.get("number of quasars", np.nan)))
         save_file.write("found quasars = {}\n".format(stats.get("number of found quasars", np.nan)))
         save_file.write("completeness = {:.2%}\n".format(stats.get("completeness", np.nan)))
         save_file.write("overall completeness = {:.2%}\n".format(stats.get("overall completeness",
                                                                            np.nan)))
         save_file.write("purity = {:.2%}\n".format(stats.get("purity", np.nan)))
+        save_file.write("\n")
+        save_file.write("Applied cuts\n")
+        save_file.write("------------\n")
+        for cut in cuts_operation:
+            save_file.write("{}\n".format(cut))
         save_file.close()
-
-        # adapt cuts for operation mode
-        cuts_operation = []
-        for cut in cuts:
-            if cut[2] == "percentile":
-                cuts_operation.append((cut[1],
-                                       self.find_percentiles(cut[0], cut[1], quiet=True,
-                                                             data_frame=self.__candidates),
-                                       "min_ratio"))
-            else:
-                cuts_operation.append(cut)
-
-        # save cuts for operation mode
-        save_pkl("{}.pkl".format(cuts_filename), cuts_operation)
 
 if __name__ == '__main__':
     pass

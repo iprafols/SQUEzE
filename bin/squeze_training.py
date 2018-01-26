@@ -36,15 +36,17 @@ def main():
     userprint("Loading quasar catalogue")
     if args.qso_dataframe is not None:
         if ((args.qso_cat is not None) or (args.qso_cols is not None) or
-            (args.qso_specid is not None)):
-            parser.error("options --qso-cat, --qso-cols, and --qso-specid are incompatible with --qso-dataframe")
+                (args.qso_specid is not None)):
+            parser.error("options --qso-cat, --qso-cols, and --qso-specid " \
+                         "are incompatible with --qso-dataframe")
         quasar_catalogue = load_pkl(args.qso_dataframe)
         quasar_catalogue["loaded"] = True
     else:
         if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None):
-            parser.error("--qso-cat, --qso-cols and --qso-specid are required if --qso-dataframe is not passed")
+            parser.error("--qso-cat, --qso-cols and --qso-specid are " \
+                         "required if --qso-dataframe is not passed")
         quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
-                                       args.qso_specid, args.qso_hdu).quasar_catalogue()
+                                           args.qso_specid, args.qso_hdu).quasar_catalogue()
         quasar_catalogue["loaded"] = False
 
     # load lines
@@ -124,7 +126,7 @@ def main():
 
     # apply cuts
     userprint("Applying cuts")
-    loaded_quasars = quasar_catalogue[quasar_catalogue["loaded"] == True]
+    loaded_quasars = quasar_catalogue[quasar_catalogue["loaded"]]
     stats = candidates.find_completeness_purity_cuts(loaded_quasars, cuts,
                                                      quiet=args.quiet, get_results=True)
 

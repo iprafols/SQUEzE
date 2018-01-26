@@ -11,9 +11,6 @@ __version__ = "0.1"
 
 import argparse
 
-import tqdm
-
-from squeze_common_functions import load_pkl
 from squeze_common_functions import verboseprint, quietprint
 from squeze_candidates import Candidates
 from squeze_parsers import MERGING_PARSER
