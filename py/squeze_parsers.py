@@ -82,21 +82,30 @@ This QUASAR_CATALOGUE_PARSER contains the common options used to load the quasar
 """ # description of QUASAR_CATALOGUE_PARSER ... pylint: disable=pointless-string-statement
 QUASAR_CATALOGUE_PARSER = argparse.ArgumentParser(add_help=False)
 
-QUASAR_CATALOGUE_PARSER.add_argument("--qso-cat", type=str, default=None, required=True,
+QUASAR_CATALOGUE_PARSER.add_argument("--qso-dataframe", type=str, default=None, required=False,
+                                     help="""Name of the pkl file containing the quasar catalogue
+                                         formatted into pandas dataframe. Must only contain information
+                                         of quasars that will be loaded. Must be present if --qso-cat
+                                         is not passed.""")
+QUASAR_CATALOGUE_PARSER.add_argument("--qso-cat", type=str, default=None, required=False,
                                      help="""Name of the fits file containig the quasar
-                                         catalogue.""")
+                                         catalogue. Must be present if --qso-dataframe is not
+                                         passed""")
 
-QUASAR_CATALOGUE_PARSER.add_argument("--qso-cols", nargs='+', default=None, required=True,
+QUASAR_CATALOGUE_PARSER.add_argument("--qso-cols", nargs='+', default=None, required=False,
                                      help="""White-spaced list of the data arrays
-                                         (of the quasar catalogue) to be loaded.""")
+                                         (of the quasar catalogue) to be loaded. Must be present
+                                         only if --qso-cat is passed""")
 
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-hdu", type=int, default=1, required=False,
                                      help="""Number of the Header Data Unit in --qso-cat
                                          where the catalogue is stored.""")
 
-QUASAR_CATALOGUE_PARSER.add_argument("--qso-specid", type=str, default=None, required=True,
+QUASAR_CATALOGUE_PARSER.add_argument("--qso-specid", type=str, default=None, required=False,
                                      help="""Name of the column that will be used as specid.
-                                         Must be included in --qso-cols.""")
+                                         Must be included in --qso-cols. Must be present
+                                         only if --qso-cat is passed""")
+
 
 
 

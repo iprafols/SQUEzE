@@ -8,8 +8,6 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-import  numpy as np
-
 import argparse
 
 from squeze_common_functions import load_pkl
@@ -36,9 +34,18 @@ def main():
 
     # load quasar catalogue
     userprint("Loading quasar catalogue")
-    quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
+    if args.qso_dataframe is not None:
+        if ((args.qso_cat is not None) or (args.qso_cols is not None) or
+            (args.qso_specid is not None)):
+            parser.error("options --qso-cat, --qso-cols, and --qso-specid are incompatible with --qso-dataframe")
+        quasar_catalogue = load_pkl(args.qso_dataframe)
+        quasar_catalogue["loaded"] = True
+    else:
+        if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None):
+            parser.error("--qso-cat, --qso-cols and --qso-specid are required if --qso-dataframe is not passed")
+        quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
                                        args.qso_specid, args.qso_hdu).quasar_catalogue()
-    quasar_catalogue["loaded"] = False
+        quasar_catalogue["loaded"] = False
 
     # load lines
     userprint("Loading lines")
@@ -68,27 +75,27 @@ def main():
         candidates.load_candidates(args.input_candidates)
 
     # load spectra
-    userprint("Loading spectra")
-    userprint("There are {} files with spectra to be loaded".format(len(args.input_spectra)))
-    for index, spectra_filename in enumerate(args.input_spectra):
-        userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
-                                                           len(args.input_spectra)))
-        spectra = load_pkl(spectra_filename)
-        if not isinstance(spectra, Spectra):
-            raise Error("Invalid list of spectra")
+    if args.input_spectra is not None:
+        userprint("Loading spectra")
+        userprint("There are {} files with spectra to be loaded".format(len(args.input_spectra)))
+        for index, spectra_filename in enumerate(args.input_spectra):
+            userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
+                                                               len(args.input_spectra)))
+            spectra = load_pkl(spectra_filename)
+            if not isinstance(spectra, Spectra):
+                raise Error("Invalid list of spectra")
 
-        # flag loaded quasars as such
-        for spec in spectra.spectra_list():
-            if quasar_catalogue[
-                quasar_catalogue["specid"] == spec.metadata_by_key("specid")].shape[0] > 0:
-                quasar_catalogue[quasar_catalogue["specid"] == spec.metadata_by_key("specid")].shape
-                index = quasar_catalogue.index[
-                    quasar_catalogue["specid"] == spec.metadata_by_key("specid")].tolist()[0]
-                quasar_catalogue.at[index, "loaded"] = True
+            # flag loaded quasars as such
+            for spec in spectra.spectra_list():
+                if quasar_catalogue[
+                        quasar_catalogue["specid"] == spec.metadata_by_key("specid")].shape[0] > 0:
+                    index = quasar_catalogue.index[
+                        quasar_catalogue["specid"] == spec.metadata_by_key("specid")].tolist()[0]
+                    quasar_catalogue.at[index, "loaded"] = True
 
-        # look for candidates
-        userprint("Looking for candidates")
-        candidates.find_candidates(spectra.spectra_list())
+            # look for candidates
+            userprint("Looking for candidates")
+            candidates.find_candidates(spectra.spectra_list())
 
     # load cuts
     userprint("Loading cuts")
