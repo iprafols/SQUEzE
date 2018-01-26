@@ -14,10 +14,15 @@ requirements:
 
 ## Description
 
-SQUEzE is a software package to identify quasars and estimate their redshift in a sample ogf spectra.
+SQUEzE is a software package to identify quasars and estimate their redshift in a sample of spectra.
 The quasars id and redshif is estimated in a two-step process:
     1. Generate a high completeness and low purity sample of candidates
     2. Filter the candidates to improve purity while keeping a target completeness
+    
+SQUEzE can run in different modes:
+    1. training - Use a known sample to decide on which cuts to apply
+    2. operation - Apply cuts to unknown sample to build a catalogue
+    3. merge - Merge different candidates objects into a single candidate objects
 
 ## Installation
 
@@ -41,7 +46,7 @@ is used on a controlled sample where a truth table is available, and allows the 
 learn the cuts required to achieve the target completeness. The operation mode is uesd
 on an uncontrolled sample to generate a quasar catalogue.
 
-### Formatting data (both modes)
+### Formatting data (training and operation modes)
 
 Before running SQUEzE data must be formatted so that the code can use it properly.
 This section explains both the optional and required pre-steps to format all data
@@ -96,6 +101,12 @@ options:
 ### Usage in operation mode
 
 
+### Usage in merging mode
 
-
-
+run
+```
+python squeze_merge_candidates.py
+```
+options:
+* --input-candidates : List of pkl files containing candidates objects to merge.
+* --output-candidates : Name of the pkl file where the candidates will be saved

@@ -11,6 +11,20 @@ __version__ = "0.1"
 
 import argparse
 
+def min_length(nmin):
+    """Require a list argument to take a minimum number of items"""
+    class RequiredLength(argparse.Action):
+        # Inheriting from argparse.Action pylint: disable=too-few-public-methods
+        """Require a list argument to take a minimum number of items"""
+        def __call__(self, parser, args, values, option_string=None):
+            if not nmin <= len(values):
+                msg = """argument "{f}" requires at leats {nmin}
+                    arguments""".format(f=self.dest.replace("_", "-"),
+                                        nmin=nmin)
+                raise argparse.ArgumentTypeError(msg)
+            setattr(args, self.dest, values)
+    return RequiredLength
+
 """
 This PARENT_PARSER contains the common options used by all SQUEzE executables.
 Other, more specific parent_parsers are defined later in this file
@@ -43,26 +57,26 @@ MODE_PARSER.add_argument("--load-candidates", action="store_true",
 
 MODE_PARSER.add_argument("--lines", type=str, default=None, required=False,
                          help="""Name of the pkl file containing the lines
-                            ratios to be computed""")
+                            ratios to be computed.""")
 
 MODE_PARSER.add_argument("--try-line", type=str, default=None, required=False,
                          help="""Name of the line that will be associated to the peaks
-                            to estimate the redshift""")
+                            to estimate the redshift.""")
 
 MODE_PARSER.add_argument("--cuts", type=str, default=None, required=False,
                          help="""Name of the pkl file containing the cuts to
-                            be applied""")
+                            be applied.""")
 
 MODE_PARSER.add_argument("--input-candidates", type=str, default=None, required=False,
                          help="""Name of the pkl file from where candidates will be
-                             loaded""")
+                             loaded.""")
 
 MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
-                         help="""Name of the pkl file where the candidates will be saved""")
+                         help="""Name of the pkl file where the candidates will be saved.""")
 
 MODE_PARSER.add_argument("--output-cuts", type=str, default=None, required=True,
                          help="""Name of the pkl and log file (without extension) where the
-                            cuts will be saved""")
+                            cuts will be saved.""")
 """
 This QUASAR_CATALOGUE_PARSER contains the common options used to load the quasar catalogue.
 """ # description of QUASAR_CATALOGUE_PARSER ... pylint: disable=pointless-string-statement
@@ -70,19 +84,19 @@ QUASAR_CATALOGUE_PARSER = argparse.ArgumentParser(add_help=False)
 
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-cat", type=str, default=None, required=True,
                                      help="""Name of the fits file containig the quasar
-                                         catalogue""")
+                                         catalogue.""")
 
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-cols", nargs='+', default=None, required=True,
                                      help="""White-spaced list of the data arrays
-                                         (of the quasar catalogue) to be loaded. """)
+                                         (of the quasar catalogue) to be loaded.""")
 
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-hdu", type=int, default=1, required=False,
                                      help="""Number of the Header Data Unit in --qso-cat
-                                         where the catalogue is stored""")
+                                         where the catalogue is stored.""")
 
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-specid", type=str, default=None, required=True,
                                      help="""Name of the column that will be used as specid.
-                                         Must be included in --qso-cols""")
+                                         Must be included in --qso-cols.""")
 
 
 
@@ -105,7 +119,7 @@ TRAINING_PARSER.add_argument("--cuts-percentiles", nargs='*', default=None, requ
                              help="""Overwrite the percentile cuts specified in the
                                  cuts variable. Values are to be passed as a white-spaced
                                  list of floats or ints. Names of the columns should be
-                                 provided in --cuts-names""")
+                                 provided in --cuts-names.""")
 
 TRAINING_PARSER.add_argument("--cuts-names", nargs='*', default=None, required=False, type=str,
                              help="""Overwrite the percentile cuts specified in the cuts variable.
@@ -121,6 +135,18 @@ TRAINING_PARSER.add_argument("--weighting-mode", type=str, default="weights", re
                                  the rest will be averaged without weighting), or 'none' if weights
                                  are to be ignored.""")
 
+"""
+This MERGING_PARSER contains the options used to run SQUEzE in merging mode
+""" # description of MERGING_PARSER ... pylint: disable=pointless-string-statement
+MERGING_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER])
+
+MERGING_PARSER.add_argument("--input-candidates", nargs='+', default=None, required=True,
+                            action=min_length(2),
+                            help="""List of pkl files containing candidates objects to
+                                merge.""")
+
+MERGING_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
+                            help="""Name of the pkl file where the candidates will be saved.""")
 
 
 if __name__ == '__main__':

@@ -189,7 +189,7 @@ class Candidates(object):
             raise Error("""The given spectrum is not of the correct type. It should
                 be an instance of class Spectrum (see squeze_spectrum.py
                 for details).""")
-        
+
         if not (spectrum.flux().size == spectrum.wave().size and
                 spectrum.flux().size == spectrum.ivar().size):
             raise Error("""The flux, ivar and wave matrixes do not have the same size, but
@@ -201,6 +201,9 @@ class Candidates(object):
         if self.__mode == "training" and "z_true" not in spectrum.metadata_names():
             raise Error("""Mode is set to "training", but spectrum have does not
                 have the property "z_true".""")
+        
+        if self.__mode == "merge":
+            raise Error("""Mode "merge" is not valid for function __find_candidates.""")
 
         # filter small scales fluctuations in the flux
         fft = fftpack.rfft(spectrum.flux()) # compute FFT
@@ -271,6 +274,9 @@ class Candidates(object):
             spectra : list of Spectrum
             The spectra in which candidates will be looked for.
             """
+        if self.__mode == "merge":
+            raise Error("""The function find_candidates is not available in
+                merge mode.""")
 
         for spectrum in tqdm.tqdm(spectra):
             # locate candidates in this spectrum
@@ -484,7 +490,7 @@ class Candidates(object):
 
         # filter magnitudes in quasar catalogue
         quasars_data_frame = filter_absolut_cuts(quasars_data_frame)
-        
+
         # filter magnitudes in dataframe
         data_frame = self.__candidates
         data_frame = filter_absolut_cuts(data_frame)
@@ -590,6 +596,28 @@ class Candidates(object):
             self.__candidates = load_pkl(self.__name)
         else:
             self.__candidates = load_pkl(filename)
+
+    def merge(self, others_list):
+        """
+            Merge self.__candidates with another candidates object
+
+            Parameters
+            ----------
+            other : pd.DataFrame
+            The other candidates object to merge
+            """
+        if self.__mode != "merge":
+            raise  Error(""" The function merge is available in the
+                merge mode only. Detected mode is {}""".format(self.__mode))
+
+        for candidates_filename in tqdm.tqdm(others_list):
+            # load candidates
+            other = load_pkl(candidates_filename)
+
+            # append to candidates list
+            self.__candidates = self.__candidates.append(other, ignore_index=True)
+            
+        self.__save_candidates()
 
     def plot_histograms(self, plot_col, normed=True):
         """
@@ -727,7 +755,7 @@ class Candidates(object):
         save_file.write("found quasars = {}\n".format(stats.get("number of found quasars", np.nan)))
         save_file.write("completeness = {:.2%}\n".format(stats.get("completeness", np.nan)))
         save_file.write("overall completeness = {:.2%}\n".format(stats.get("overall completeness",
-                                                                         np.nan)))
+                                                                           np.nan)))
         save_file.write("purity = {:.2%}\n".format(stats.get("purity", np.nan)))
         save_file.close()
 
