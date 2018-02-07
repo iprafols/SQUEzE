@@ -118,9 +118,12 @@ def main():
                     metadata[column] = entry[column].values[0]
                 metadata["z_true"] = entry["z_vi"].values[0]
             else:
-                metadata = {key: np.nan for key in quasar_catalogue.columns if key != "specid"}
                 metadata["z_true"] = 0.0
                 metadata["specid"] = specid_counter
+                metadata["fiberid"] = int(spectrum_file[16:20])
+                metadata["mjd"] = int(spectrum_file[10:15])
+                metadata["plate"] = plate
+
                 specid_counter -= 1
 
             # add spectra to list
