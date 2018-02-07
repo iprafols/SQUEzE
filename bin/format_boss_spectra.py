@@ -82,6 +82,7 @@ def main():
     plate_list = plate_list_hdu[1].data["plate"][
         np.where((plate_list_hdu[1].data["programname"] == "boss") &
                  (plate_list_hdu[1].data["platequality"] == "good"))].copy()
+    plate_list = np.unique(plate_list)
     del plate_list_hdu[1].data
     plate_list_hdu.close()
 
@@ -90,11 +91,12 @@ def main():
     quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols, args.qso_specid, args.qso_hdu)
     quasar_catalogue = quasar_catalogue.quasar_catalogue()
 
+    # initialize specid_count for those spectra not in the quasar catalogue
+    specid_counter = -1
+
     # loop over plates, will save a pkl file for each plate
     userprint("loading spectra in each of the plates")
     for plate in tqdm.tqdm(plate_list):
-        if plate != 6715:
-            continue
 
         # reset spectra object
         spectra = Spectra()
@@ -116,8 +118,10 @@ def main():
                     metadata[column] = entry[column].values[0]
                 metadata["z_true"] = entry["z_vi"].values[0]
             else:
-                metadata = {key: np.nan for key in quasar_catalogue.columns}
-                metadata["z_true"] = np.nan
+                metadata = {key: np.nan for key in quasar_catalogue.columns if key != "specid"}
+                metadata["z_true"] = 0.0
+                metadata["specid"] = specid_counter
+                specid_counter -= 1
 
             # add spectra to list
             spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata))

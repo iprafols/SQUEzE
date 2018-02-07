@@ -97,6 +97,7 @@ options:
 * --output-candidates : Name of the pkl file where the candidates will be saved
 * --output-cuts : Name of the pkl file where the cuts will be saved
 * --quiet : Do not print messages
+* --test : Run as test mode. If this option is passed, cuts are considered as operation cuts. --cuts-percentiles and --cuts-names, if given, are ignored, and no pkl file is saved as operation cuts.
 
 ### Usage in operation mode
 

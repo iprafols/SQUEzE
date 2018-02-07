@@ -77,6 +77,15 @@ MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required
 MODE_PARSER.add_argument("--output-cuts", type=str, default=None, required=True,
                          help="""Name of the pkl and log file (without extension) where the
                             cuts will be saved.""")
+
+MODE_PARSER.add_argument("--weighting-mode", type=str, default="weights", required=False,
+                         help="""Selects the weighting mode when computing the line ratios.
+                             Can be 'weights' if ivar is to be used as weights when computing
+                             the line ratios, 'flags' if ivar is to be used as flags when
+                             computing the line ratios (pixels with 0 value will be ignored,
+                             the rest will be averaged without weighting), or 'none' if weights
+                             are to be ignored.""")
+
 """
 This QUASAR_CATALOGUE_PARSER contains the common options used to load the quasar catalogue.
 """ # description of QUASAR_CATALOGUE_PARSER ... pylint: disable=pointless-string-statement
@@ -136,13 +145,10 @@ TRAINING_PARSER.add_argument("--cuts-names", nargs='*', default=None, required=F
                                  Values of the columns should be provided in --cuts-percentiles.
                                  This option only works on cuts of type 'percentile'.""")
 
-TRAINING_PARSER.add_argument("--weighting-mode", type=str, default="weights", required=False,
-                             help="""Selects the weighting mode when computing the line ratios.
-                                 Can be 'weights' if ivar is to be used as weights when computing
-                                 the line ratios, 'flags' if ivar is to be used as flags when
-                                 computing the line ratios (pixels with 0 value will be ignored,
-                                 the rest will be averaged without weighting), or 'none' if weights
-                                 are to be ignored.""")
+TRAINING_PARSER.add_argument("--test", action="store_true",
+                             help="""Run as test mode. If this option is passed, cuts are
+                                 considered as operation cuts. --cuts-percentiles and --cuts-names,
+                                 if given, are ignored, and no pkl file is saved as operation cuts.""")
 
 """
 This MERGING_PARSER contains the options used to run SQUEzE in merging mode

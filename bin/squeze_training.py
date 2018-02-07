@@ -102,27 +102,31 @@ def main():
     # load cuts
     userprint("Loading cuts")
     cuts = CUTS if args.cuts is None else load_pkl(args.cuts)
-
+    
     # overload cuts
-    def overload_cuts(cuts):
-        """ Overwrites the information passed down as cuts with the information given
-            in args.cuts_percentiles and args.cuts_names """
-        if (args.cuts_names is None and args.cuts_percentiles is not None) or \
-            (args.cuts_names is not None and args.cuts_percentiles is None):
-            raise Error("""both or none of the arguments --cut-names and
-                --cut-percentiles are required""")
-        elif args.cuts_names is None:
-            pass
-        elif len(args.cuts_names) != len(args.cuts_percentiles):
-            raise Error("""arguments --cut-names and --cut-percentiles should
-                have the same size """)
-        else:
-            for (name, percentile) in zip(args.cuts_names, args.cuts_percentiles):
-                for i in range(0, len(cuts)):
-                    if cuts[i][0] == name and cuts[i][2] == "percentile":
-                        cuts[i][1] = percentile
-        return cuts
-    cuts = overload_cuts(cuts)
+    if args.test:
+        if args.cuts is None:
+            cuts = CUTS_OPERATION
+    else:
+        def overload_cuts(cuts):
+            """ Overwrites the information passed down as cuts with the information given
+                in args.cuts_percentiles and args.cuts_names """
+            if (args.cuts_names is None and args.cuts_percentiles is not None) or \
+                (args.cuts_names is not None and args.cuts_percentiles is None):
+                raise Error("""both or none of the arguments --cut-names and
+                    --cut-percentiles are required""")
+            elif args.cuts_names is None:
+                pass
+            elif len(args.cuts_names) != len(args.cuts_percentiles):
+                raise Error("""arguments --cut-names and --cut-percentiles should
+                    have the same size """)
+            else:
+                for (name, percentile) in zip(args.cuts_names, args.cuts_percentiles):
+                    for i in range(0, len(cuts)):
+                        if cuts[i][0] == name and cuts[i][2] == "percentile":
+                            cuts[i][1] = percentile
+            return cuts
+        cuts = overload_cuts(cuts)
 
     # apply cuts
     userprint("Applying cuts")
@@ -132,7 +136,7 @@ def main():
 
     # process cuts to use them in operation mode
     userprint("Processing cuts to use in operation mode")
-    candidates.process_cuts(cuts, args.output_cuts, stats)
+    candidates.process_cuts(cuts, args.output_cuts, stats, args.test)
 
 if __name__ == '__main__':
     main()

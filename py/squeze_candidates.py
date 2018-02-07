@@ -433,9 +433,9 @@ class Candidates(object):
             for (name, value, cut_type) in cuts:
                 if name in data_frame.columns:
                     if cut_type == "sample-high-cut":
-                        data_frame = data_frame[data_frame[name] < value]
+                        data_frame = data_frame[(data_frame[name] < value) ]#|(data_frame[name].isnull())]
                     elif cut_type == "sample-low-cut":
-                        data_frame = data_frame[data_frame[name] >= value]
+                        data_frame = data_frame[(data_frame[name] >= value) ]#|(data_frame[name].isnull())]
             return data_frame
 
         # nested function to filter percentiles in DataFrame
@@ -575,7 +575,12 @@ class Candidates(object):
             return np.nan
         srtd = np.argsort(col)
         pos = int(col.size*percentile/100)
-        ratio = (col[srtd[pos]] + col[srtd[pos-1]])/2.0
+        ratio = (col[srtd[pos]] + col[srtd[pos + 1]])/2.0
+        
+        #pos = col.size*percentile/100
+        #pos_int = int(pos)
+        #pos_dec = pos - pos_int
+        #ratio = (col[srtd[pos_int]]*(1 - pos_dec) + col[srtd[pos_int + 1]]*pos_dec)
 
         if not quiet:
             print "{}th percentile in {} is {}".format(percentile, column_name, ratio)
@@ -649,17 +654,20 @@ class Candidates(object):
 
         # plot the contaminants and non-contaminants separately
         if self.__mode == "training":
-            contaminants_df[plot_col].hist(ax=fig_ax, bins=100, grid=False, color='r',
-                                           alpha=0.5, normed=normed)
-            correct_df[plot_col].hist(ax=fig_ax, bins=100, grid=False, color='b',
-                                      alpha=0.5, normed=normed)
+            contaminants_df[plot_col].hist(ax=fig_ax, bins=100, range=(-1, 4),
+                                           grid=False, color='r', alpha=0.5, normed=normed)
+            correct_df[plot_col].hist(ax=fig_ax, bins=100, range=(-1, 4),
+                                      grid=False, color='b', alpha=0.5, normed=normed)
 
         # plot the entire sample
-        self.__candidates[plot_col].hist(ax=fig_ax, bins=100, grid=False,
+        self.__candidates[plot_col].hist(ax=fig_ax, bins=100, range=(-1, 4), grid=False,
                                          histtype='step', color='k', normed=normed)
         # set axis labels
         fig_ax.set_xlabel(plot_col, fontsize=fontsize)
-        fig_ax.set_ylabel("counts", fontsize=fontsize)
+        if normed:
+            fig_ax.set_ylabel("normalized distribution", fontsize=fontsize)
+        else:
+            fig_ax.set_ylabel("counts", fontsize=fontsize)
         fig_ax.tick_params(axis='both', labelsize=labelsize, pad=0, top=True,
                            right=True, length=ticksize, direction="inout")
         return fig
@@ -717,7 +725,7 @@ class Candidates(object):
 
         return fig
 
-    def process_cuts(self, cuts, cuts_filename, stats):
+    def process_cuts(self, cuts, cuts_filename, stats, test):
         """ Process cuts to use them in training mode and save the results.
 
             Parameters
@@ -738,25 +746,32 @@ class Candidates(object):
             stats : dict
             A dictionary containing the obtained statistics: purity, completeness, overall
             completeness, number of quasars, number of found quasars, and number of candidates
+            
+            test : bool
+            If True, consider cuts as in operation mode. Otherwise, adapt given cuts for operation
+            mode and save them as a pkl file
             """
         # consistency checks
         if self.__mode != "training":
             raise  Error("The function find_ratio_percentiles is available in the " +
                          "training mode only. Detected mode is {}".format(self.__mode))
 
-        # adapt cuts for operation mode
-        cuts_operation = []
-        for cut in cuts:
-            if cut[2] == "percentile":
-                cuts_operation.append((cut[0],
-                                       self.find_percentiles(cut[0], cut[1], quiet=True,
-                                                             data_frame=self.__candidates),
-                                       "min_ratio"))
-            else:
-                cuts_operation.append(cut)
-    
-        # save cuts for operation mode
-        save_pkl("{}.pkl".format(cuts_filename), cuts_operation)
+        if test:
+            cuts_operation = cuts
+        else:
+            # adapt cuts for operation mode
+            cuts_operation = []
+            for cut in cuts:
+                if cut[2] == "percentile":
+                    cuts_operation.append((cut[0],
+                                           self.find_percentiles(cut[0], cut[1], quiet=True,
+                                                                 data_frame=self.__candidates),
+                                           "min_ratio"))
+                else:
+                    cuts_operation.append(cut)
+        
+            # save cuts for operation mode
+            save_pkl("{}.pkl".format(cuts_filename), cuts_operation)
 
         # write the results in the log
         save_file = open("{}.log".format(cuts_filename), 'w')
