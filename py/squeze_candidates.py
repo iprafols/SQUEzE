@@ -15,6 +15,8 @@ import numpy as np
 
 import pandas as pd
 
+import astropy.io.fits as fits
+
 from scipy import fftpack
 from scipy import signal
 
@@ -262,6 +264,49 @@ class Candidates(object):
         """ Access the lines DataFrame. """
         return self.__lines
 
+    def apply_cuts(self, cuts, cuts_filename):
+        """ Apply cuts to the candidates list, returns the remaining candidates
+
+            Parameters
+            ----------
+            cuts : list
+            A list with tuples (name, value, type). Type can be 'sample-high-cut',
+            "sample-low-cut", or "min_ratio".
+            "sample-high-cut" cuts everything with a value higher or equal than the provided value.
+            "sample-low-cut" cuts everything with a value lower than the provided value.
+            "min_ratio" cuts everything with a value lower than the provided value, and should
+            only be used with cuts in line ratios.
+
+            cuts_filename : string
+            The name of the file where the cuts information will be stored (without extension)
+
+            Returns
+            -------
+            A pandas DataFrame with the filtered candidate list
+            """
+        # consistency checks
+        if self.__mode != "operation":
+            raise  Error("The function find_ratio_percentiles is available in the " +
+                         "operation mode only. Detected mode is {}".format(self.__mode))
+
+        data_frame = self.__candidates.copy()
+        for (name, value, cut_type) in cuts:
+            if name in data_frame.columns:
+                if cut_type == "sample-high-cut":
+                    data_frame = data_frame[(data_frame[name] < value)]
+                    #|(data_frame[name].isnull())]
+                elif cut_type == "sample-low-cut":
+                    data_frame = data_frame[(data_frame[name] >= value)]
+                    #|(data_frame[name].isnull())]
+                elif cut_type == "min_ratio":
+                    data_frame = data_frame[(data_frame[name] > value)]
+                    #|(data_frame[name].isnull())]
+
+        # save cuts
+        save_pkl("{}.pkl".format(cuts_filename), cuts)
+
+        return data_frame
+
     def find_candidates(self, spectra):
         """ Find candidates for a given set of spectra, then integrate them in the
             candidates catalogue and save the new version of the catalogue.
@@ -311,8 +356,12 @@ class Candidates(object):
 
             get_results : boolean - Default: False
             If True, return the computed purity, the completeness, and the total number
-            of found quasars.
-            Otherwise, return None.
+            of found quasars. Otherwise, return None.
+
+            Returns
+            -------
+            If get_results is True, return the computed purity, the completeness, and
+            the total number of found quasars. Otherwise, return None.
             """
         # consistency checks
         if self.__mode != "training":
@@ -433,9 +482,11 @@ class Candidates(object):
             for (name, value, cut_type) in cuts:
                 if name in data_frame.columns:
                     if cut_type == "sample-high-cut":
-                        data_frame = data_frame[(data_frame[name] < value) ]#|(data_frame[name].isnull())]
+                        data_frame = data_frame[(data_frame[name] < value)]
+                        #|(data_frame[name].isnull())]
                     elif cut_type == "sample-low-cut":
-                        data_frame = data_frame[(data_frame[name] >= value) ]#|(data_frame[name].isnull())]
+                        data_frame = data_frame[(data_frame[name] >= value)]
+                        #|(data_frame[name].isnull())]
             return data_frame
 
         # nested function to filter percentiles in DataFrame
@@ -550,6 +601,10 @@ class Candidates(object):
             quiet : boolean - Default: False
             If True it will not print the results, otherwise it will print a
             line with the found percentile.
+
+            Returns
+            -------
+            Return the found ratio or np.nan upon failure
             """
         # consistency checks
         if self.__mode != "training":
@@ -574,13 +629,13 @@ class Candidates(object):
         if col.size == 0:
             return np.nan
         srtd = np.argsort(col)
-        pos = int(col.size*percentile/100)
-        ratio = (col[srtd[pos]] + col[srtd[pos + 1]])/2.0
-        
-        #pos = col.size*percentile/100
-        #pos_int = int(pos)
-        #pos_dec = pos - pos_int
-        #ratio = (col[srtd[pos_int]]*(1 - pos_dec) + col[srtd[pos_int + 1]]*pos_dec)
+        #pos = int(col.size*percentile/100)
+        #ratio = (col[srtd[pos]] + col[srtd[pos + 1]])/2.0
+
+        pos = col.size*percentile/100
+        pos_int = int(pos)
+        pos_dec = pos - pos_int
+        ratio = (col[srtd[pos_int]]*(1 - pos_dec) + col[srtd[pos_int + 1]]*pos_dec)
 
         if not quiet:
             print "{}th percentile in {} is {}".format(percentile, column_name, ratio)
@@ -635,6 +690,10 @@ class Candidates(object):
 
             normed : bool - Default: True
             If True, then plot the normalized histograms
+
+            Returns
+            -------
+            The figure object
             """
         # plot settings
         fontsize = 20
@@ -683,6 +742,10 @@ class Candidates(object):
             ----------
             normed : bool - Default: True
             If True, then plot the normalized histograms
+
+            Returns
+            -------
+            The figure object
             """
         # get the number of plots and the names of the columns
         plot_cols = np.array([item for item in self.__candidates.columns if "ratio" in item])
@@ -740,13 +803,12 @@ class Candidates(object):
             only be used with cuts in line ratios.
 
             cuts_filename : str
-            The name of the file where the cuts information will be stored. Recommended
-            extension is pkl
+            The name of the file where the cuts information will be stored (without extension)
 
             stats : dict
             A dictionary containing the obtained statistics: purity, completeness, overall
             completeness, number of quasars, number of found quasars, and number of candidates
-            
+
             test : bool
             If True, consider cuts as in operation mode. Otherwise, adapt given cuts for operation
             mode and save them as a pkl file
@@ -769,7 +831,7 @@ class Candidates(object):
                                            "min_ratio"))
                 else:
                     cuts_operation.append(cut)
-        
+
             # save cuts for operation mode
             save_pkl("{}.pkl".format(cuts_filename), cuts_operation)
 
@@ -790,6 +852,27 @@ class Candidates(object):
         for cut in cuts_operation:
             save_file.write("{}\n".format(cut))
         save_file.close()
+
+    def to_fits(self, filename, data_frame=None):
+        """Save the DataFrame as a fits file
+
+            Parameters
+            ----------
+            filename : str
+            Name of the fits file the dataframe is going to be saved to
+
+            data_frame : pd.DataFrame - Default: self.__candidates
+            DataFrame to save
+        """
+        if data_frame is None:
+            data_frame = self.__candidates
+
+        hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
+                                                         format=dtype,
+                                                         array=data_frame[col])
+                                             for col, dtype in zip(data_frame.columns,
+                                                                   data_frame.dtypes)])
+        hdu.writeto(filename)
 
 if __name__ == '__main__':
     pass

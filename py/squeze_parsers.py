@@ -147,8 +147,23 @@ TRAINING_PARSER.add_argument("--cuts-names", nargs='*', default=None, required=F
 
 TRAINING_PARSER.add_argument("--test", action="store_true",
                              help="""Run as test mode. If this option is passed, cuts are
-                                 considered as operation cuts. --cuts-percentiles and --cuts-names,
-                                 if given, are ignored, and no pkl file is saved as operation cuts.""")
+                                 considered as operation cuts. --cuts-percentiles and
+                                 --cuts-names, if given, are ignored, and no pkl file is saved
+                                 as operation cuts.""")
+
+
+
+"""
+This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
+""" # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement
+OPERATION_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER,
+                                                                    MODE_PARSER])
+
+OPERATION_PARSER.add_argument("--output-catalogue", default=None, required=True, type=str,
+                              help="""Name of the fits file where the final catalogue will be
+                                  stored.""")
+
+
 
 """
 This MERGING_PARSER contains the options used to run SQUEzE in merging mode

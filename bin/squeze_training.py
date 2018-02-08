@@ -17,10 +17,12 @@ from squeze_quasar_catalogue import QuasarCatalogue
 from squeze_spectra import Spectra
 from squeze_candidates import Candidates
 from squeze_defaults import CUTS_TRAINING as CUTS
+from squeze_defaults import CUTS_OPERATION as CUTS_OPERATION
 from squeze_defaults import LINES
 from squeze_defaults import TRY_LINE
 from squeze_defaults import Z_PRECISION
 from squeze_parsers import TRAINING_PARSER
+
 
 def main():
     """ Run SQUEzE in training mode """
@@ -59,7 +61,7 @@ def main():
     # load redshift precision
     z_precision = Z_PRECISION if args.z_precision is None else args.z_precision
 
-    # load candidates object
+    # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
         candidates = Candidates(lines_settings=(lines, try_line),
@@ -71,7 +73,7 @@ def main():
                                 name=args.output_candidates,
                                 weighting_mode=args.weighting_mode)
 
-    # load candidates object if they have previously looked for
+    # load candidates dataframe if they have previously looked for
     if args.load_candidates:
         userprint("Loading existing candidates")
         candidates.load_candidates(args.input_candidates)
@@ -102,7 +104,7 @@ def main():
     # load cuts
     userprint("Loading cuts")
     cuts = CUTS if args.cuts is None else load_pkl(args.cuts)
-    
+
     # overload cuts
     if args.test:
         if args.cuts is None:

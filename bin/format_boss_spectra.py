@@ -112,8 +112,8 @@ def main():
             entry = quasar_catalogue[(quasar_catalogue["fiberid"] == int(spectrum_file[16:20])) &
                                      (quasar_catalogue["mjd"] == int(spectrum_file[10:15])) &
                                      (quasar_catalogue["plate"] == plate)]
+            metadata = {}
             if entry.shape[0] > 0:
-                metadata = {}
                 for column in quasar_catalogue.columns:
                     metadata[column] = entry[column].values[0]
                 metadata["z_true"] = entry["z_vi"].values[0]

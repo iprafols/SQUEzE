@@ -21,10 +21,10 @@ Format is a list with tuples (name, value, type). Type can be "sample-high-cut",
 only be used with cuts in line ratios.
 """ # description of CUTS_TRAINING ... pylint: disable=pointless-string-statement
 CUTS_TRAINING = [
-                 ("lya_ratio", 1.0, 'percentile'),
-                 ("civ_ratio", 1.0, 'percentile'),
-                 ("ciii_ratio", 1.0, 'percentile'),
-                 ("siiv_ratio", 1.0, 'percentile'),
+    ("lya_ratio", 1.0, 'percentile'),
+    ("civ_ratio", 1.0, 'percentile'),
+    ("ciii_ratio", 1.0, 'percentile'),
+    ("siiv_ratio", 1.0, 'percentile'),
     ("z_vi", 2.1, 'sample-low-cut')
     ]
 

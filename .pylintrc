@@ -1,6 +1,7 @@
 [TYPECHECK]
 
 ignored-classes=HDUList
+ignore-imports=yes
 
 [SIMILARITIES]
 
@@ -23,3 +24,6 @@ max-args=10
 
 # Maximum number of local variables
 max-locals=20
+
+# Maximum number of branches
+max-branches=15
