@@ -9,32 +9,7 @@ __version__ = "0.1"
 
 import pandas as pd
 
-"""
-This function set the cuts to be applied by SQUEzE.
-Format is a list with tuples (name, value, type). Type can be "sample-high-cut",
-"sample-low-cut", or "percentile" for training mode and "sample-high-cut",
-"sample-low-cut", or "min_ratio" for operation mode.
-"sample-high-cut" cuts everything with a value higher or equal than the provided value.
-"sample-low-cut" cuts everything with a value lower than the provided value.
-"percentile" cuts everything with a value lower than the provided percentile.
-"min_ratio" cuts everything with a value lower than the provided value, and should
-only be used with cuts in line ratios.
-""" # description of CUTS_TRAINING ... pylint: disable=pointless-string-statement
-CUTS_TRAINING = [
-    ("lya_ratio", 1.0, 'percentile'),
-    ("civ_ratio", 1.0, 'percentile'),
-    ("ciii_ratio", 1.0, 'percentile'),
-    ("siiv_ratio", 1.0, 'percentile'),
-    ("z_vi", 2.1, 'sample-low-cut')
-    ]
-
-CUTS_OPERATION = [
-    ("lya_ratio", 0.8, 'min_ratio'),
-    ("civ_ratio", 0.8, 'min_ratio'),
-    ("ciii_ratio", 0.8, 'min_ratio'),
-    ("siiv_ratio", 0.8, 'min_ratio'),
-    ("z", 2.0, 'sample-low-cut')
-    ]
+import numpy as np
 
 """
 This variable sets the characteristics of the lines used by the code.
@@ -61,11 +36,18 @@ the candidates DataFrame (see README.md)
 """ # description of LINE ... pylint: disable=pointless-string-statement
 LINES = pd.DataFrame(
     data=[
+        ("lyb",  1033.03, 1023.0, 1041.0, 998.0, 1014.0, 1050.0, 1100.0),
         ("lya", 1215.67, 1194.0, 1250.0, 1103.0, 1159.0, 1285.0, 1341.0),
         ("siiv", 1396.76, 1377.0, 1417.0, 1346.0, 1370.0, 1432.0, 1497.0),
         ("civ", 1549.06, 1515.0, 1575.0, 1449.5, 1494.5, 1603.0, 1668.0),
         ("ciii", 1908.73, 1880.0, 1929.0, 1756.0, 1845.0, 1964.0, 2053.0),
-        ("mgii", 2798.75, 2783.0, 2816.0, 2615.0, 2748.0, 2851.0, 2984.0),
+        ("neiv", 2423.83, 2410.0, 2435.0, 2365.0, 2400.0, 2450.0, 2480.0),
+        ("mgii", 2798.75, 2768.0, 2816.0, 2610.0, 2743.0, 2851.0, 2984.0),
+        ("nev", 3426.84, 3415.0, 3435.0, 3375.0, 3405.0, 3445.0, 3480.0),
+        ("oii", 3728.48, 3720.0, 3745.0, 3650.0, 3710.0, 3750.0, 3790.0),
+        ("hb", 4862.68, 4800.0, 4910.0, 4700.0, 4770.0, 5030.0, 5105.0),
+        ("oiii", 5008.24, 4990.0, 5020.0, 4700.0, 4770.0, 5030.0, 5105.0),
+        ("ha", 6564.61, 6480.0, 6650.0, 6320.0, 6460.0, 6750.0, 6850.0),
         ],
     columns=["line", "wave", "start", "end",
              "blue_start", "blue_end",
@@ -76,7 +58,7 @@ LINES = pd.DataFrame(
 Name of the pkl and log file (without extension) where the
 cuts will be saved
 """ # description of TRY_LINE ... pylint: disable=pointless-string-statement
-TRY_LINE = "lya"
+TRY_LINES = ["lya", "civ", "ciii", "mgii", "hb", "ha"]
 
 """
 This variable sets the redshift precision with which the code will assume
@@ -85,7 +67,109 @@ such that any candidates with z_try = z_true +/- Z_PRECISION
 will be considered as a true quasar.
 This will be ignored in operation mode.
 """ # description of Z_PRECISION ... pylint: disable=pointless-string-statement
-Z_PRECISION = 0.1
+Z_PRECISION = 0.15
+
+
+"""
+This variable sets the width (in pixels) of the typical peak to be detected.
+This parameter will be passed to the peak finding function. Check the documentation
+on the parameter widths on scipy.signal.find_peaks_cwt for more information.
+""" # description of PEAKFIND_WIDTH ... pylint: disable=pointless-string-statement
+PEAKFIND_WIDTH = 170
+
+"""
+This variable sets the minimum signal-to-noise ratio of a peak. It is related to
+the peak amplitude. This parameter will be passed to the peak finding function.
+Check the documentation on the parameter min_snr on scipy.signal.find_peaks_cwt
+for more information.
+""" # description of PEAKFIND_MIN_SNR ... pylint: disable=pointless-string-statement
+PEAKFIND_MIN_SNR = 1.6
+
+"""
+This variable sets the lines that will be included in each of the SVM
+instances that will be used to determine the probability of the
+candidate being a quasar.
+
+DO NOT MODIFY this value. If another set of lines is to be used,
+please define it elsewhere and pass it as an argument when creating
+the candidates DataFrame (see README.md)
+""" # description of SVMS ... pylint: disable=pointless-string-statement
+SVMS = {1: np.array(['lyb_ratio_SN',
+                     'lya_ratio_SN',
+                     'siiv_ratio_SN',
+                     'civ_ratio_SN',
+                     'ciii_ratio_SN',
+                     'is_line', 'is_correct']),
+        2: np.array(['lyb_ratio_SN',
+                     'lya_ratio_SN',
+                     'siiv_ratio_SN',
+                     'civ_ratio_SN',
+                     'ciii_ratio_SN',
+                     'neiv_ratio_SN',
+                     'mgii_ratio_SN',
+                     'is_line', 'is_correct']),
+        3: np.array(['lya_ratio_SN',
+                     'siiv_ratio_SN',
+                     'civ_ratio_SN',
+                     'ciii_ratio_SN',
+                     'neiv_ratio_SN',
+                     'mgii_ratio_SN',
+                     'is_line', 'is_correct']),
+        4: np.array(['siiv_ratio_SN',
+                     'civ_ratio_SN',
+                     'ciii_ratio_SN',
+                     'neiv_ratio_SN',
+                     'mgii_ratio_SN',
+                     'is_line', 'is_correct']),
+        5: np.array(['siiv_ratio_SN',
+                     'civ_ratio_SN',
+                     'ciii_ratio_SN',
+                     'neiv_ratio_SN',
+                     'mgii_ratio_SN',
+                     'nev_ratio_SN',
+                     'oii_ratio_SN',
+                     'is_line', 'is_correct']),
+        6: np.array(['civ_ratio_SN',
+                     'ciii_ratio_SN',
+                     'neiv_ratio_SN',
+                     'mgii_ratio_SN',
+                     'nev_ratio_SN',
+                     'oii_ratio_SN',
+                     'is_line', 'is_correct']),
+        7: np.array(['ciii_ratio_SN',
+                     'neiv_ratio_SN',
+                     'mgii_ratio_SN',
+                     'nev_ratio_SN',
+                     'oii_ratio_SN',
+                     'is_line', 'is_correct']),
+        8: np.array(['ciii_ratio_SN',
+                     'neiv_ratio_SN',
+                     'mgii_ratio_SN',
+                     'nev_ratio_SN',
+                     'oii_ratio_SN',
+                     'hb_ratio_SN',
+                     'oiii_ratio_SN',
+                     'is_line', 'is_correct']),
+        9: np.array(['mgii_ratio_SN',
+                     'nev_ratio_SN',
+                     'oii_ratio_SN',
+                     'hb_ratio_SN',
+                     'oiii_ratio_SN',
+                     'is_line', 'is_correct']),
+        10: np.array(['mgii_ratio_SN',
+                      'nev_ratio_SN',
+                      'oii_ratio_SN',
+                      'hb_ratio_SN',
+                      'oiii_ratio_SN',
+                      'ha_ratio_SN',
+                      'is_line', 'is_correct']),
+      }
+
+"""
+This variable sets the random states of the SVM instances
+""" # description of RANDOM_STATES ... pylint: disable=pointless-string-statement
+RANDOM_STATES = {1: 2081487193, 2: 2302130440, 3: 1566237261, 4: 3197800101, 5: 1478310587,
+6: 1493514726, 7: 2145873089, 8: 912267904, 9: 689368146, 10: 4091585312}
 
 if __name__ == '__main__':
     pass

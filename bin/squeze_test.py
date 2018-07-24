@@ -2,7 +2,7 @@
     SQUEzE
     ======
 
-    This file allows the user to execute SQUEzE in training mode. See
+    This file allows the user to execute SQUEzE in test mode. See
     the 'Usage' section in the README for detailed usage instructions.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
@@ -16,20 +16,14 @@ from squeze_error import Error
 from squeze_quasar_catalogue import QuasarCatalogue
 from squeze_spectra import Spectra
 from squeze_candidates import Candidates
-from squeze_defaults import LINES
-from squeze_defaults import SVMS
-from squeze_defaults import TRY_LINES
-from squeze_defaults import Z_PRECISION
-from squeze_defaults import PEAKFIND_WIDTH
-from squeze_defaults import PEAKFIND_MIN_SNR
-from squeze_parsers import TRAINING_PARSER
+from squeze_parsers import TEST_PARSER
 
 
 def main():
-    """ Run SQUEzE in training mode """
+    """ Run SQUEzE in test mode """
     # load options
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                     parents=[TRAINING_PARSER])
+                                     parents=[TEST_PARSER])
     args = parser.parse_args()
 
     # manage verbosity
@@ -52,38 +46,16 @@ def main():
                                            args.qso_specid, args.qso_hdu).quasar_catalogue()
         quasar_catalogue["loaded"] = False
 
-    # load lines
-    userprint("Loading lines")
-    lines = LINES if args.lines is None else load_pkl(args.lines)
-
-    # load try_line
-    try_line = TRY_LINES if args.try_lines is None else args.try_lines
-
-    # load redshift precision
-    z_precision = Z_PRECISION if args.z_precision is None else args.z_precision
-
-    # load peakfinder options
-    peakfind_width = PEAKFIND_WIDTH if args.peakfind_width is None else args.peakfind_width
-    peakfind_min_snr = PEAKFIND_MIN_SNR if args.peakfind_min_snr is None else args.peakfind_min_snr
-
-    # load SVM options
-    svms, random_states = SVMS, RANDOM_STATES if args.svms is None else load_pkl(args.svms)
+    # load model
+    userprint("Loading model")
+    model = load_pkl(args.model)
 
     # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
-        candidates = Candidates(lines_settings=(lines, try_line),
-                                z_precision=z_precision, mode="training",
-                                weighting_mode=args.weighting_mode,
-                                peakfind=(peakfind_width, peakfind_min_snr),
-                                svms=(SVMS, RANDOM_STATES))
+        candidates = Candidates(mode="test", model=model)
     else:
-        candidates = Candidates(lines_settings=(lines, try_line),
-                                z_precision=z_precision, mode="training",
-                                name=args.output_candidates,
-                                weighting_mode=args.weighting_mode,
-                                peakfind=(peakfind_width, peakfind_min_snr),
-                                svms=(SVMS, RANDOM_STATES))
+        candidates = Candidates(mode="test", name=args.output_candidates, model=model)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
@@ -113,9 +85,9 @@ def main():
             userprint("Looking for candidates")
             candidates.find_candidates(spectra.spectra_list())
 
-    # train model
-    userprint("Training model")
-    candidates.train_model()
+    # compute probabilities
+    userprint("Computing probabilities")
+    candidates.classify_candidates()
 
     # check completeness
     userprint("Check statistics")
@@ -123,6 +95,25 @@ def main():
     userprint("\n---------------")
     userprint("step 1")
     candidates.find_completeness_purity(quasar_catalogue, data_frame)
-
+    userprint("\n---------------")
+    userprint("SVM proba > 0.7")
+    candidates.find_completeness_purity(quasar_catalogue,
+                                        data_frame[(data_frame["prob"] > 0.7) &
+                                                   ~(data_frame["duplicated"])])
+    userprint("\n---------------")
+    userprint("SVM proba > 0.5")
+    candidates.find_completeness_purity(quasar_catalogue,
+                                        data_frame[(data_frame["prob"] > 0.5) &
+                                                   ~(data_frame["duplicated"])])
+    userprint("\n---------------")
+    userprint("SVM proba > 0.3")
+    candidates.find_completeness_purity(quasar_catalogue,
+                                        data_frame[(data_frame["prob"] > 0.3) &
+                                                   ~(data_frame["duplicated"])])
+    userprint("\n---------------")
+    userprint("SVM proba > 0.1")
+    candidates.find_completeness_purity(quasar_catalogue,
+                                        data_frame[(data_frame["prob"] > 0.1) &
+                                                   ~(data_frame["duplicated"])])
 if __name__ == '__main__':
     main()

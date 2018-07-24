@@ -59,7 +59,7 @@ the spectra must be a Spectra object (defined in py/squeze_spectra.py) containin
 a set of Spectrum instances. The package provides the file `format_boss_spectra.py´
 with a working example of how to format BOSS spectra. 
 
-2. Formatting lines (optional):
+2.1 Formatting lines (optional):
 
 The `lines` variable sets the characteristics of the lines used by the code.
 For SQUEzE to use a value different from the default, it needs to be
@@ -67,15 +67,14 @@ formatted as a pandas data frame and saved into a pkl file (python binary).
 The package provides the file `format_lines.py´ with the instructions to
 properly create this object. It is a modifyiable working example.
 
-3. Formatting cuts (optional):
+3. Formatting svms (optional):
 
-The `cuts` variable sets the characteristics of the cuts on the candidates to
-be used by the code.
-For SQUEzE to use a value different from the default, it needs to be
-formatted as a list with tuples (name, value, type) and  be saved into a pkl file
-(python binary).
-The package provides the file `format_cuts.py´ with the instructions to
-properly create this object. It is a modifyiable working example.
+The `svms` variable sets the lines that will be included in each of the SVM
+instances that will be used to determine the probability of the
+candidate being a quasar. For SQUEzE to use a value different from the default, 
+it needs to be formatted as a dictionary contianing arrays of names, and saved 
+into a pkl file (python binary). The package provides the file `format_svms.py´ with 
+the instructions to properly create this object. It is a modifyiable working example.
 
 ### Usage in training mode
 
@@ -83,24 +82,160 @@ run
 ```
 python squeze_training.py
 ```
-options:
-* --qso-cat : Name of the fits file containig the quasar catalogue
-* --qso-cols : White-spaced list of the data arrays (of the quasar catalogue) to be loaded
-* --qso-hdu : Number of the Header Data Unit in --qso-cat where the catalogue is stored
-* --qso-specid : Name of the column that will be used as specid. Must be included in --qso-col
-* --input-spectra : Name of the pkl file(s) containing the spectra that are to be analysed. If multiple files are given, then they must be passed as a white-spaced list. The spectra in each of the files will be loaded into memory as a block, and candidates will be looked for before loading the next set of spectra.
-* --load-candidates : Load candidates previously found. If --input-candidates is passed, then load from there. Otherwise, load from --output-candidates.
-* --lines : Name of the pkl file containing the lines ratios to be computed
-* --cuts : Name of the pkl file containing the cuts to be applied
-* --z-precision : Maximum difference betwee the true redshift and the measured redshift for a candidate to be considered a true detection
-* --input-candidates : Name of the pkl file from where candidates will be loaded
-* --output-candidates : Name of the pkl file where the candidates will be saved
-* --output-cuts : Name of the pkl file where the cuts will be saved
-* --quiet : Do not print messages
-* --test : Run as test mode. If this option is passed, cuts are considered as operation cuts. --cuts-percentiles and --cuts-names, if given, are ignored, and no pkl file is saved as operation cuts.
+optional arguments:
+-h, --help                 show help message and exit
+--quiet                     Do not print messages (default: False)
+--input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]
+                                Name of the pkl file(s) containing the spectra that
+                                are to be analysed. If multiple files are given, then
+                                they must be passed as a white-spaced list. The
+                                spectra in each of the files will be loaded into
+                                memory as a block, and candidates will be looked for
+                                before loading the next set of spectra. (default:
+                                None)
+--load-candidates   Load candidates previously found. If --input-
+                                candidates is passed, then load from there. Otherwise,
+                                load from --output-candidates. (default: False)
+--input-candidates INPUT_CANDIDATES
+                                Name of the pkl file from where candidates will be
+                                loaded. (default: None)
+--output-candidates OUTPUT_CANDIDATES
+                                Name of the pkl file where the candidates will be
+                                saved. In training mode, the model will be saved using
+                                this name (without the extension) as base name and
+                                append the extension _model.pkl to it (default: None)
+--peakfind-width PEAKFIND_WIDTH
+                                Width (in pixels) of the tipical peak (default: None)
+--peakfind-min-snr PEAKFIND_MIN_SNR
+                                Related to the minimum amplitude rqeuired to keep the
+                                peak (default: None)
+--qso-dataframe QSO_DATAFRAME
+                                Name of the pkl file containing the quasar catalogue
+                                formatted into pandas dataframe. Must only contain
+                                information of quasars that will be loaded. Must be
+                                present if --qso-cat is not passed. (default: None)
+--qso-cat QSO_CAT     
+                                Name of the fits file containig the quasar catalogue.
+                                Must be present if --qso-dataframe is not passed
+                                (default: None)
+--qso-cols QSO_COLS [QSO_COLS ...]
+                                White-spaced list of the data arrays (of the quasar
+                                catalogue) to be loaded. Must be present only if
+                                --qso-cat is passed (default: None)
+--qso-hdu QSO_HDU     
+                                Number of the Header Data Unit in --qso-cat where the
+                                catalogue is stored. (default: 1)
+--qso-specid QSO_SPECID
+                                Name of the column that will be used as specid. Must
+                                be included in --qso-cols. Must be present only if
+                                --qso-cat is passed (default: None)
+--z-precision Z_PRECISION
+                                Maximum difference betwee the true redshift and the
+                                measured redshift for a candidate to be considered a
+                                true detection. This option only works on cuts of type
+                                'percentile'. (default: None)
+--lines LINES           Name of the pkl file containing the lines ratios to be
+                                computed. (default: None)
+--svms SVMS          Name of the pkl file containing the lines to be used
+                                for each of the svm instances. (default: None)
+--try-lines [TRY_LINES [TRY_LINES ...]]
+                                Name of the lines that will be associated to the peaks
+                                to estimate the redshift. (default: None)
+--weighting-mode WEIGHTING_MODE
+                                Selects the weighting mode when computing the line
+                                ratios. Can be 'weights' if ivar is to be used as
+                                weights when computing the line ratios, 'flags' if
+                                ivar is to be used as flags when computing the line
+                                ratios (pixels with 0 value will be ignored, the rest
+                                will be averaged without weighting), or 'none' if
+                                weights are to be ignored. (default: weights)
+
+### Usage in test mode
+
+run
+```
+python squeze_test.py
+```
+optional arguments:
+-h, --help                 show this help message and exit
+--quiet                     Do not print messages (default: False)
+--input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]
+                                Name of the pkl file(s) containing the spectra that
+                                are to be analysed. If multiple files are given, then
+                                they must be passed as a white-spaced list. The
+                                spectra in each of the files will be loaded into
+                                memory as a block, and candidates will be looked for
+                                before loading the next set of spectra. (default:
+                                None)
+--load-candidates   Load candidates previously found. If --input-
+                                candidates is passed, then load from there. Otherwise,
+                                load from --output-candidates. (default: False)
+--input-candidates INPUT_CANDIDATES
+                                Name of the pkl file from where candidates will be
+                                loaded. (default: None)
+--output-candidates OUTPUT_CANDIDATES
+                                Name of the pkl file where the candidates will be
+                                saved. In training mode, the model will be saved using
+                                this name (without the extension) as base name and
+                                append the extension _model.pkl to it (default: None)
+--qso-dataframe QSO_DATAFRAME
+                                Name of the pkl file containing the quasar catalogue
+                                formatted into pandas dataframe. Must only contain
+                                information of quasars that will be loaded. Must be
+                                present if --qso-cat is not passed. (default: None)
+--qso-cat QSO_CAT     
+                                Name of the fits file containig the quasar catalogue.
+                                Must be present if --qso-dataframe is not passed
+                                (default: None)
+--qso-cols QSO_COLS [QSO_COLS ...]
+                                White-spaced list of the data arrays (of the quasar
+                                catalogue) to be loaded. Must be present only if
+--qso-cat is passed (default: None)
+--qso-hdu QSO_HDU     
+                                Number of the Header Data Unit in --qso-cat where the
+                                catalogue is stored. (default: 1)
+--qso-specid QSO_SPECID
+                                Name of the column that will be used as specid. Must
+                                be included in --qso-cols. Must be present only if
+--qso-cat is passed (default: None)
+--model MODEL      Name of the pkl file containing the model to be used
+                                in the computation of the probabilities of candidates
+                                being quasars (default: None)
 
 ### Usage in operation mode
 
+run
+```
+python squeze_operation.py
+```
+optional arguments:
+-h, --help                  show this help message and exit
+--quiet                     Do not print messages (default: False)
+--input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]
+                                Name of the pkl file(s) containing the spectra that
+                                are to be analysed. If multiple files are given, then
+                                they must be passed as a white-spaced list. The
+                                spectra in each of the files will be loaded into
+                                memory as a block, and candidates will be looked for
+                                before loading the next set of spectra. (default:
+                                None)
+--load-candidates   Load candidates previously found. If --input-
+                                candidates is passed, then load from there. Otherwise,
+                                load from --output-candidates. (default: False)
+--input-candidates INPUT_CANDIDATES
+                                Name of the pkl file from where candidates will be
+                                loaded. (default: None)
+--output-candidates OUTPUT_CANDIDATES
+                                Name of the pkl file where the candidates will be
+                                saved. In training mode, the model will be saved using
+                                this name (without the extension) as base name and
+                                append the extension _model.pkl to it (default: None)
+--output-catalogue OUTPUT_CATALOGUE
+                                Name of the fits file where the final catalogue will
+                                be stored. (default: None)
+--prob-cut PROB_CUT   
+                                Only objects with probability > PROB_CUT will be
+                                included in the catalogue (default: 0.1)
 
 ### Usage in merging mode
 
@@ -108,6 +243,12 @@ run
 ```
 python squeze_merge_candidates.py
 ```
-options:
-* --input-candidates : List of pkl files containing candidates objects to merge.
-* --output-candidates : Name of the pkl file where the candidates will be saved
+optional arguments:
+-h, --help                  show this help message and exit
+--quiet                     Do not print messages (default: False)
+--input-candidates INPUT_CANDIDATES [INPUT_CANDIDATES ...]
+                                List of pkl files containing candidates objects to
+                                merge. (default: None)
+--output-candidates OUTPUT_CANDIDATES
+                                Name of the pkl file where the candidates will be
+                                saved. (default: None)

@@ -15,9 +15,6 @@ from squeze_common_functions import verboseprint, quietprint
 from squeze_error import Error
 from squeze_spectra import Spectra
 from squeze_candidates import Candidates
-from squeze_defaults import CUTS_OPERATION as CUTS
-from squeze_defaults import LINES
-from squeze_defaults import TRY_LINE
 from squeze_parsers import OPERATION_PARSER
 
 def main():
@@ -30,26 +27,18 @@ def main():
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
 
-    # load lines
-    userprint("Loading lines")
-    lines = LINES if args.lines is None else load_pkl(args.lines)
+    # load model
+    userprint("Loading model")
+    model = load_pkl(args.model)
 
-    # load try_line
-    try_line = TRY_LINE if args.try_line is None else args.try_line
-
-    # load candidates object
+    # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
-        candidates = Candidates(lines_settings=(lines, try_line),
-                                mode="operation",
-                                weighting_mode=args.weighting_mode)
+        candidates = Candidates(mode="operation", model=model)
     else:
-        candidates = Candidates(lines_settings=(lines, try_line),
-                                mode="operation",
-                                name=args.output_candidates,
-                                weighting_mode=args.weighting_mode)
+        candidates = Candidates(mode="operation", name=args.output_candidates, model=model)
 
-    # load candidates object if they have previously looked for
+    # load candidates dataframe if they have previously looked for
     if args.load_candidates:
         userprint("Loading existing candidates")
         candidates.load_candidates(args.input_candidates)
@@ -69,15 +58,14 @@ def main():
             userprint("Looking for candidates")
             candidates.find_candidates(spectra.spectra_list())
 
-    # load cuts
-    userprint("Loading cuts")
-    cuts = CUTS if args.cuts is None else load_pkl(args.cuts)
-
-    # apply cuts
-    userprint("Applying cuts")
-    found_catalogue = candidates.apply_cuts(cuts, args.output_cuts)
+    # compute probabilities
+    userprint("Computing probabilities")
+    candidates.classify_candidates()
 
     # save the catalogue
+    found_catalogue = candidates.candidates()
+    found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
+                                      (found_catalogue["prob"] > args.prob_cut)]
     candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
 if __name__ == '__main__':

@@ -36,6 +36,21 @@ PARENT_PARSER.add_argument("--quiet", action="store_true",
 
 
 """
+This PEAKFIND_PARSER contains the options passed to the peak finding algorithms
+""" # description of PEAKFIND_PARSER ... pylint: disable=pointless-string-statement
+PEAKFIND_PARSER = argparse.ArgumentParser(add_help=False)
+
+PEAKFIND_PARSER.add_argument("--peakfind-width", type=float, default=None,
+                             required=False,
+                             help="""Width (in pixels) of the tipical peak""")
+
+PEAKFIND_PARSER.add_argument("--peakfind-min-snr", type=float, default=None,
+                             required=False,
+                             help="""Related to the minimum amplitude rqeuired
+                                 to keep the peak""")
+
+
+"""
 This MODE_PARSER contains the common options for the training and operation
 mode
 """ # description of MODE_PARSER ... pylint: disable=pointless-string-statement
@@ -55,36 +70,15 @@ MODE_PARSER.add_argument("--load-candidates", action="store_true",
                              --input-candidates is passed, then load from there.
                              Otherwise, load from --output-candidates.""")
 
-MODE_PARSER.add_argument("--lines", type=str, default=None, required=False,
-                         help="""Name of the pkl file containing the lines
-                            ratios to be computed.""")
-
-MODE_PARSER.add_argument("--try-line", type=str, default=None, required=False,
-                         help="""Name of the line that will be associated to the peaks
-                            to estimate the redshift.""")
-
-MODE_PARSER.add_argument("--cuts", type=str, default=None, required=False,
-                         help="""Name of the pkl file containing the cuts to
-                            be applied.""")
-
 MODE_PARSER.add_argument("--input-candidates", type=str, default=None, required=False,
                          help="""Name of the pkl file from where candidates will be
                              loaded.""")
 
 MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
-                         help="""Name of the pkl file where the candidates will be saved.""")
-
-MODE_PARSER.add_argument("--output-cuts", type=str, default=None, required=True,
-                         help="""Name of the pkl and log file (without extension) where the
-                            cuts will be saved.""")
-
-MODE_PARSER.add_argument("--weighting-mode", type=str, default="weights", required=False,
-                         help="""Selects the weighting mode when computing the line ratios.
-                             Can be 'weights' if ivar is to be used as weights when computing
-                             the line ratios, 'flags' if ivar is to be used as flags when
-                             computing the line ratios (pixels with 0 value will be ignored,
-                             the rest will be averaged without weighting), or 'none' if weights
-                             are to be ignored.""")
+                         help="""Name of the pkl file where the candidates will be saved.
+                             In training mode, the model will be saved using this name
+                             (without the extension) as base name and append the extension
+                             _model.pkl to it""")
 
 """
 This QUASAR_CATALOGUE_PARSER contains the common options used to load the quasar catalogue.
@@ -124,6 +118,7 @@ This TRAINING_PARSER contains the common options used to run SQUEzE in training 
 TRAINING_PARSER = argparse.ArgumentParser(add_help=False,
                                           parents=[PARENT_PARSER,
                                                    MODE_PARSER,
+                                                   PEAKFIND_PARSER,
                                                    QUASAR_CATALOGUE_PARSER])
 
 TRAINING_PARSER.add_argument("--z-precision", type=float, default=None, required=False,
@@ -132,25 +127,40 @@ TRAINING_PARSER.add_argument("--z-precision", type=float, default=None, required
                                  true detection. This option only works on cuts of
                                  type 'percentile'.""")
 
-TRAINING_PARSER.add_argument("--cuts-percentiles", nargs='*', default=None, required=False,
-                             type=float,
-                             help="""Overwrite the percentile cuts specified in the
-                                 cuts variable. Values are to be passed as a white-spaced
-                                 list of floats or ints. Names of the columns should be
-                                 provided in --cuts-names.""")
+TRAINING_PARSER.add_argument("--lines", type=str, default=None, required=False,
+                             help="""Name of the pkl file containing the lines ratios
+                                 to be computed.""")
 
-TRAINING_PARSER.add_argument("--cuts-names", nargs='*', default=None, required=False, type=str,
-                             help="""Overwrite the percentile cuts specified in the cuts variable.
-                                 Names are to be passed as a white-spaced list.
-                                 Values of the columns should be provided in --cuts-percentiles.
-                                 This option only works on cuts of type 'percentile'.""")
+TRAINING_PARSER.add_argument("--svms", type=str, default=None, required=False,
+                             help="""Name of the pkl file containing the lines to be used
+                                 for each of the svm instances.""")
 
-TRAINING_PARSER.add_argument("--test", action="store_true",
-                             help="""Run as test mode. If this option is passed, cuts are
-                                 considered as operation cuts. --cuts-percentiles and
-                                 --cuts-names, if given, are ignored, and no pkl file is saved
-                                 as operation cuts.""")
+TRAINING_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, required=False,
+                             help="""Name of the lines that will be associated to the peaks
+                             to estimate the redshift.""")
 
+TRAINING_PARSER.add_argument("--weighting-mode", type=str, default="weights", required=False,
+                             help="""Selects the weighting mode when computing the line ratios.
+                                 Can be 'weights' if ivar is to be used as weights when computing
+                                 the line ratios, 'flags' if ivar is to be used as flags when
+                                 computing the line ratios (pixels with 0 value will be ignored,
+                                 the rest will be averaged without weighting), or 'none' if weights
+                                 are to be ignored.""")
+
+
+
+"""
+This TEST_PARSER contains the common options used to run SQUEzE in training mode
+""" # description of TRAINING_PARSER ... pylint: disable=pointless-string-statement
+TEST_PARSER = argparse.ArgumentParser(add_help=False,
+                                      parents=[PARENT_PARSER,
+                                               MODE_PARSER,
+                                               QUASAR_CATALOGUE_PARSER])
+
+TEST_PARSER.add_argument("--model", required=True, type=str,
+                         help="""Name of the pkl file containing the model to be used
+                             in the computation of the probabilities of candidates
+                             being quasars""")
 
 
 """
@@ -162,6 +172,10 @@ OPERATION_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSE
 OPERATION_PARSER.add_argument("--output-catalogue", default=None, required=True, type=str,
                               help="""Name of the fits file where the final catalogue will be
                                   stored.""")
+
+OPERATION_PARSER.add_argument("--prob-cut", default=0.1, type=float,
+                              help="""Only objects with probability > PROB_CUT will be included
+                                  in the catalogue""")
 
 
 

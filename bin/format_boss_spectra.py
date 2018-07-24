@@ -38,6 +38,7 @@ import astropy.io.fits as fits
 
 from squeze_common_functions import save_pkl
 from squeze_common_functions import verboseprint, quietprint
+from squeze_error import Error
 from squeze_quasar_catalogue import QuasarCatalogue
 from squeze_boss_spectrum import BossSpectrum
 from squeze_spectra import Spectra
@@ -60,6 +61,8 @@ def main():
     parser.add_argument("--plate-list", type=str, required=True,
                         help="""Name of the fits file containing the list of spectra
                             to be loaded""")
+    parser.add_argument("--spall-cat", type=str, required=True,
+                        help="""Name of tht fits files containing the specprimary information of the spectra""")
 
     parser.add_argument("--out", type=str, default="spectra", required=False,
                         help="""Base name of the pkl files where the list of spectra
@@ -70,6 +73,11 @@ def main():
                         help="""Name of the folder containg the spectra to process. In
                             this folder, spectra are found in a subfoldare with the plate
                             number.""")
+    parser.add_argument("--smoothing", type=int, default=0,
+                        help="""Smoothing to be applied to the spectra (in number of pixels).
+                            Negative values are ignored.""")
+    parser.add_argument("--double-noise", action="store_true",
+                        help="""Doubles the noise of the spectra. Ignored if smoothin is present""")
 
     args = parser.parse_args()
 
@@ -91,8 +99,13 @@ def main():
     quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols, args.qso_specid, args.qso_hdu)
     quasar_catalogue = quasar_catalogue.quasar_catalogue()
 
+    # load spAll catalogue
+    userprint("loading spAll catalogue")
+    spall_catalogue = QuasarCatalogue(args.spall_cat, ["plate", "fiberid", "mjd"], "specprimary", 1)
+    spall_catalogue = spall_catalogue.quasar_catalogue()
+    
     # initialize specid_count for those spectra not in the quasar catalogue
-    specid_counter = -1
+    specid_counter = -1000
 
     # loop over plates, will save a pkl file for each plate
     userprint("loading spectra in each of the plates")
@@ -118,16 +131,33 @@ def main():
                     metadata[column] = entry[column].values[0]
                 metadata["z_true"] = entry["z_vi"].values[0]
             else:
+                entry = spall_catalogue[(spall_catalogue["fiberid"] == int(spectrum_file[16:20])) &
+                                        (spall_catalogue["mjd"] == int(spectrum_file[10:15])) &
+                                        (spall_catalogue["plate"] == plate)]
+                if entry.shape[0] == 0:
+                    raise Error(""""Error encountered while formatting file {}
+                                Check spAll catalogue version""".format(spectrum_file))
+                # check if the specprimary flag is set in the spAll flag, ignore the file otherwise
+                if entry["specid"].values[0] == 0:
+                    continue
                 metadata["z_true"] = 0.0
                 metadata["specid"] = specid_counter
                 metadata["fiberid"] = int(spectrum_file[16:20])
                 metadata["mjd"] = int(spectrum_file[10:15])
                 metadata["plate"] = plate
+                for column in quasar_catalogue.columns:
+                    if column not in metadata.keys():
+                        metadata[column] = np.nan
 
                 specid_counter -= 1
 
             # add spectra to list
-            spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata))
+            if args.smoothing > 0:
+                spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
+                                            smoothing=args.smoothing))
+            else:
+                spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file),
+                                            metadata, double_noise=args.double_noise))
 
         # save spectra in the current plate
         save_pkl("{}_plate{:04d}.pkl".format(args.out, plate), spectra)

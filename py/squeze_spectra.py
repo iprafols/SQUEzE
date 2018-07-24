@@ -34,6 +34,10 @@ class Spectra(object):
             raise Error("""Invalid spectrum""")
         self.__spectra_list.append(spectrum)
 
+    def size(self):
+        """ Return the number of spectra """
+        return len(self.__spectra_list)
+
     def spectra_list(self):
         """ Returns the list of spectra. """
         return self.__spectra_list
