@@ -17,7 +17,6 @@ import pandas as pd
 
 import astropy.io.fits as fits
 
-from scipy import fftpack
 from scipy import signal
 
 import matplotlib.pyplot as plt
@@ -45,6 +44,9 @@ class Candidates(object):
         applying specific cuts to the candidates list, and
         creating a final catalogue.
         """
+
+    # pylint: disable=too-many-instance-attributes
+    # 12 is reasonable in this case.
 
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.pkl",
@@ -88,20 +90,20 @@ class Candidates(object):
             construct the catalogue. In training mode, it is supposed to be
             None initially, and the model will be trained and given as an output
             of te code.
-            
-            svms : (dict, list) - Defaut: (SVMS, RANDOM_STATES)
-            The dictionary sets the lines that will be included in each of the SVM
+
+            svms : (dict, dict) - Defaut: (SVMS, RANDOM_STATES)
+            The first dictionary sets the lines that will be included in each of the SVM
             instances that will be used to determine the probability of the
-            candidate being a quasar. The list has to have as many integers as the
-            dictionary and be comprised of integers to set the sandom states of the
-            SVMs. In training mode, they're passed to the model instance before
+            candidate being a quasar. The second dictionary has to have the same keys as
+            the first dictionary and be comprised of integers to set the sandom states of
+            the SVMs. In training mode, they're passed to the model instance before
             training. Otherwise it's ignored.
             """
         self.__mode = mode
         self.__name = name
 
         self.__candidates = None # initialize empty catalogue
-        
+
         # main settings
         self.__lines = lines_settings[0]
         self.__try_lines = lines_settings[1]
@@ -111,15 +113,14 @@ class Candidates(object):
         # options to be passed to the peak finder
         self.__peakfind_width = peakfind[0]
         self.__peakfind_min_snr = peakfind[1]
-    
+
         # model
         if model is None:
             self.__model = None
         else:
             self.__model = model
             self.__load_model_settings()
-        self.__svms = svms[0]
-        self.__random_states = svms[1]
+        self.__svms = svms
 
     def __compute_line_ratio(self, spectrum, index, z_try):
         """ Compute the peak-to-continuum ratio for a specified line.
@@ -157,8 +158,8 @@ class Candidates(object):
         # compute peak and continuum values
         compute_ratio = True
         if ((pix_blue.size == 0) or (pix_peak.size == 0) or (pix_red.size == 0)
-            or (pix_blue.size < pix_peak.size//2)
-            or (pix_red.size < pix_peak.size//2)):
+                or (pix_blue.size < pix_peak.size//2)
+                or (pix_red.size < pix_peak.size//2)):
             compute_ratio = False
         elif self.__weighting_mode == "none":
             cont = (np.average(flux[pix_blue]) +
@@ -171,7 +172,7 @@ class Candidates(object):
                 compute_ratio = False
         elif self.__weighting_mode == "weights":
             if (ivar[pix_blue].sum() == 0.0 or ivar[pix_red].sum() == 0.0 or
-                ivar[pix_peak].sum() == 0.0):
+                    ivar[pix_peak].sum() == 0.0):
                 compute_ratio = False
             else:
                 cont = (np.average(flux[pix_blue], weights=ivar[pix_blue]) +
@@ -191,7 +192,7 @@ class Candidates(object):
             weights_peak[np.where(ivar[pix_peak] == 0.0)] = 0.0
             weights_peak_sum = weights_blue.sum()
             if (weights_blue_sum == 0.0 or weights_red_sum == 0.0 or
-                weights_blue_peak == 0.0):
+                    weights_peak_sum == 0.0):
                 compute_ratio = False
             else:
                 cont = (np.sum(flux[pix_blue][weights_blue])/weights_blue_sum +
@@ -207,16 +208,16 @@ class Candidates(object):
             err_ratio = np.sqrt(peak_err_squared + ratio*ratio*cont_err_squared)/np.fabs(cont)
             diff = peak - cont
             err_diff = np.sqrt(peak_err_squared + cont_err_squared)
-            ratio_SN = (ratio - 1.0)/err_ratio
-            diff_SN = diff/err_diff
+            ratio_sn = (ratio - 1.0)/err_ratio
+            diff_sn = diff/err_diff
         else:
             ratio = np.nan
             err_ratio = np.nan
             diff = np.nan
             err_diff = np.nan
-            ratio_SN = np.nan
-            diff_SN = np.nan
-        return ratio, err_ratio, diff, err_diff, ratio_SN, diff_SN
+            ratio_sn = np.nan
+            diff_sn = np.nan
+        return ratio, err_ratio, diff, err_diff, ratio_sn, diff_sn
 
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """
@@ -226,20 +227,20 @@ class Candidates(object):
                 "weighting_mode": self.__weighting_mode,
                 "peakfind_width": self.__peakfind_width,
                 "peakfind_min_snr": self.__peakfind_min_snr,
-                }
-    
+               }
+
     def __is_correct(self, row):
         """ Returns True if a candidate is a true quasar and False otherwise.
             A true candidate is defined as a candidate having an absolute value
             of Delta_z is lower or equal than self.__z_precision.
             This function should be called using the .apply method of the candidates
             data frame with the option axis=1
-            
+
             Parameters
             ----------
             row : pd.Series
             A row in the candidates data frame
-            
+
             Returns
             -------
             True if a candidate is a true quasar and False otherwise
@@ -247,7 +248,7 @@ class Candidates(object):
         return bool((row["Delta_z"] <= self.__z_precision)
                     and row["Delta_z"] >= -self.__z_precision
                     and not (row["specid"] < 0 and row["z_true"] == 0.0))
-    
+
     def __is_line(self, row):
         """ Returns True if a candidate is a quasar line and False otherwise.
             A quasar line is defined as a candidate where its redshift assuming
@@ -255,12 +256,12 @@ class Candidates(object):
             most self.__z_precision.
             This function should be called using the .apply method of the candidates
             data frame with the option axis=1
-            
+
             Parameters
             ----------
             row : pd.Series
             A row in the candidates data frame
-            
+
             Returns
             -------
             Returns True if a candidate is a quasar line and False otherwise.
@@ -274,8 +275,10 @@ class Candidates(object):
             for line in self.__lines.index:
                 if line == row["assumed_line"]:
                     continue
-                z_try_line = self.__lines["wave"][row["assumed_line"]]/self.__lines["wave"][line]*(1 + row["z_try"]) - 1
-                if (z_try_line - row["z_true"] <= self.__z_precision) and (z_try_line - row["z_true"] >= -self.__z_precision):
+                z_try_line = (self.__lines["wave"][row["assumed_line"]]/
+                              self.__lines["wave"][line])*(1 + row["z_try"]) - 1
+                if ((z_try_line - row["z_true"] <= self.__z_precision) and
+                        (z_try_line - row["z_true"] >= -self.__z_precision)):
                     is_line = True
         return is_line
 
@@ -312,7 +315,7 @@ class Candidates(object):
         if self.__mode == "training" and "z_true" not in spectrum.metadata_names():
             raise Error("Mode is set to 'training', but spectrum have does not " +
                         "have the property 'z_true'.")
-        
+
         if self.__mode == "test" and "z_true" not in spectrum.metadata_names():
             raise Error("Mode is set to 'test', but spectrum have does not " +
                         "have the property 'z_true'.")
@@ -321,7 +324,9 @@ class Candidates(object):
             raise Error("Mode 'merge' is not valid for function __find_candidates.")
 
         # find peaks
-        peak_indexs = signal.find_peaks_cwt(spectrum.flux(), np.array([self.__peakfind_width]), min_snr=self.__peakfind_min_snr)
+        peak_indexs = signal.find_peaks_cwt(spectrum.flux(),
+                                            np.array([self.__peakfind_width]),
+                                            min_snr=self.__peakfind_min_snr)
 
         # find peaks in the spectrum
         candidates = []
@@ -337,21 +342,23 @@ class Candidates(object):
                 err_ratios = np.zeros_like(ratios)
                 diffs = np.zeros_like(ratios)
                 err_diffs = np.zeros_like(ratios)
-                ratios_SN = np.zeros_like(ratios)
-                diffs_SN = np.zeros_like(ratios)
+                ratios_sn = np.zeros_like(ratios)
+                diffs_sn = np.zeros_like(ratios)
                 for i in range(self.__lines.shape[0]):
-                    ratios[i], err_ratios[i], diffs[i], err_diffs[i], ratios_SN[i], diffs_SN[i] = \
+                    ratios[i], err_ratios[i], diffs[i], err_diffs[i], ratios_sn[i], diffs_sn[i] = \
                         self.__compute_line_ratio(spectrum, i, z_try)
 
                 # add candidate to the list
                 candidate_info = spectrum.metadata()
-                for ratio, err_ratio, diff, err_diff, ratio_SN, diff_SN in zip(ratios, err_ratios, diffs, err_diffs, ratios_SN, diffs_SN):
+                for (ratio, err_ratio, diff,
+                     err_diff, ratio_sn, diff_sn) in zip(ratios, err_ratios, diffs,
+                                                         err_diffs, ratios_sn, diffs_sn):
                     candidate_info.append(ratio)
                     candidate_info.append(err_ratio)
                     candidate_info.append(diff)
                     candidate_info.append(err_diff)
-                    candidate_info.append(ratio_SN)
-                    candidate_info.append(diff_SN)
+                    candidate_info.append(ratio_sn)
+                    candidate_info.append(diff_sn)
                 candidate_info.append(z_try)
                 candidate_info.append(try_line)
                 candidates.append(candidate_info)
@@ -410,7 +417,7 @@ class Candidates(object):
                          "test mode only. Detected mode is {}".format(self.__mode))
         self.__candidates = self.__model.compute_probability(self.__candidates)
         self.__save_candidates()
-                
+
     def find_candidates(self, spectra):
         """ Find candidates for a given set of spectra, then integrate them in the
             candidates catalogue and save the new version of the catalogue.
@@ -438,7 +445,7 @@ class Candidates(object):
         self.__save_candidates()
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None,
-                                 quiet=False, get_results=False):
+                                 get_results=False):
         """
             Given a DataFrame with candidates and another one with the catalogued
             quasars, compute the completeness and the purity. Upon error, return
@@ -453,10 +460,6 @@ class Candidates(object):
             data_frame : pd.DataFrame - Default: self.__candidates
             DataFrame where the percentile will be computed. Must contain the
             columns "is_correct" and "specid".
-
-            quiet : boolean - Default: False
-            If True it will not print the results, otherwise it will print
-            the computed stadistics.
 
             get_results : boolean - Default: False
             If True, return the computed purity, the completeness, and the total number
@@ -515,10 +518,13 @@ class Candidates(object):
 
         if float(data_frame.shape[0]) > 0.:
             purity = float(data_frame["is_correct"].sum())/float(data_frame.shape[0])
-            purity_zge1 = float(data_frame[data_frame["z_try"] >= 1]["is_correct"].sum())/float(data_frame[data_frame["z_try"] >= 1].shape[0])
-            purity_zge2_1 = float(data_frame[data_frame["z_try"] >= 2.1]["is_correct"].sum())/float(data_frame[data_frame["z_try"] >= 2.1].shape[0])
+            purity_zge1 = (float(data_frame[data_frame["z_try"] >= 1]["is_correct"].sum())/
+                           float(data_frame[data_frame["z_try"] >= 1].shape[0]))
+            purity_zge2_1 = (float(data_frame[data_frame["z_try"] >= 2.1]["is_correct"].sum())/
+                             float(data_frame[data_frame["z_try"] >= 2.1].shape[0]))
             line_purity = float(data_frame["is_line"].sum())/float(data_frame.shape[0])
-            purity_to_quasars = float(data_frame[data_frame["specid"] > 0].shape[0])/float(data_frame.shape[0])
+            #purity_to_quasars = (float(data_frame[data_frame["specid"] > 0].shape[0])/
+            #                     float(data_frame.shape[0]))
             quasar_specids = np.unique(data_frame[data_frame["specid"] > 0]["specid"])
             specids = np.unique(data_frame["specid"])
             quasar_spectra_fraction = float(quasar_specids.size)/float(specids.size)
@@ -527,9 +533,9 @@ class Candidates(object):
             purity_zge1 = np.nan
             purity_zge2_1 = np.nan
             line_purity = np.nan
-            purity_to_quasars = np.nan
+            #purity_to_quasars = np.nan
             quasar_spectra_fraction = np.nan
-        
+
         print "There are {} candidates ".format(data_frame.shape[0]),
         print "for {} catalogued quasars".format(num_quasars)
         print "number of quasars = {}".format(num_quasars)
@@ -692,20 +698,18 @@ class Candidates(object):
                 axes[index].set_ylim(0, 4)
 
         return fig
-    
+
     def train_model(self):
         """ Create a model instance and train it. Save the resulting model"""
         # consistency checks
         if self.__mode != "training":
             raise  Error("The function train_model is available in the " +
                          "training mode only. Detected mode is {}".format(self.__mode))
-        
+
         self.__model = Model("{}_model.pkl".format(self.__name[:self.__name.rfind(".")]),
-                             self.__get_settings(), svms=self.__svms,
-                             random_states=self.__random_states)
+                             self.__get_settings(), svms=self.__svms)
         self.__model.train(self.__candidates)
         self.__model.save_model()
-    
 
     def to_fits(self, filename, data_frame=None):
         """Save the DataFrame as a fits file

@@ -40,10 +40,10 @@ class BossSpectrum(Spectrum):
 
             metadata : dict
             A dictionary with the metadata. Keys should be strings
-            
+
             smoothing : int - Default: 0
             Number of pixels in the smoothing kernel. Negative values are ignored
-            
+
             double_noise : bool - Default: False
             Doubles the noise of the spectra
             """
@@ -62,7 +62,7 @@ class BossSpectrum(Spectrum):
             self.__double_noise()
         del spectrum_hdu[1].data
         spectrum_hdu.close()
-    
+
     def __double_noise(self):
         """ Doubles the noise of the spectrum by adding a gaussian random number of width
             equal to the given variance. Then increase the variance by a factor of sqrt(2)
@@ -74,7 +74,7 @@ class BossSpectrum(Spectrum):
 
     def __smooth(self, smoothing):
         """ Smooth the flux of the spectrum
-            
+
             Parameters
             ----------
             smoothing : int

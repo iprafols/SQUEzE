@@ -2,6 +2,7 @@
 
 ignored-classes=HDUList
 ignore-imports=yes
+ignored-modules=numpy
 
 [SIMILARITIES]
 
@@ -23,7 +24,10 @@ ignore-imports=no
 max-args=10
 
 # Maximum number of local variables
-max-locals=20
+max-locals=30
 
 # Maximum number of branches
-max-branches=15
+max-branches=20
+
+# Maximum number of statements
+max-statements=70

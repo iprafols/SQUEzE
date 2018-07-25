@@ -36,7 +36,7 @@ the candidates DataFrame (see README.md)
 """ # description of LINE ... pylint: disable=pointless-string-statement
 LINES = pd.DataFrame(
     data=[
-        ("lyb",  1033.03, 1023.0, 1041.0, 998.0, 1014.0, 1050.0, 1100.0),
+        ("lyb", 1033.03, 1023.0, 1041.0, 998.0, 1014.0, 1050.0, 1100.0),
         ("lya", 1215.67, 1194.0, 1250.0, 1103.0, 1159.0, 1285.0, 1341.0),
         ("siiv", 1396.76, 1377.0, 1417.0, 1346.0, 1370.0, 1432.0, 1497.0),
         ("civ", 1549.06, 1515.0, 1575.0, 1449.5, 1494.5, 1603.0, 1668.0),
@@ -163,13 +163,22 @@ SVMS = {1: np.array(['lyb_ratio_SN',
                       'oiii_ratio_SN',
                       'ha_ratio_SN',
                       'is_line', 'is_correct']),
-      }
+       }
 
 """
 This variable sets the random states of the SVM instances
 """ # description of RANDOM_STATES ... pylint: disable=pointless-string-statement
-RANDOM_STATES = {1: 2081487193, 2: 2302130440, 3: 1566237261, 4: 3197800101, 5: 1478310587,
-6: 1493514726, 7: 2145873089, 8: 912267904, 9: 689368146, 10: 4091585312}
+RANDOM_STATES = {1: 2081487193,
+                 2: 2302130440,
+                 3: 1566237261,
+                 4: 3197800101,
+                 5: 1478310587,
+                 6: 1493514726,
+                 7: 2145873089,
+                 8: 912267904,
+                 9: 689368146,
+                 10: 4091585312,
+                }
 
 if __name__ == '__main__':
     pass

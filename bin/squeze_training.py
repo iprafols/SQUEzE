@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 """
     SQUEzE
     ======
@@ -18,6 +19,7 @@ from squeze_spectra import Spectra
 from squeze_candidates import Candidates
 from squeze_defaults import LINES
 from squeze_defaults import SVMS
+from squeze_defaults import RANDOM_STATES
 from squeze_defaults import TRY_LINES
 from squeze_defaults import Z_PRECISION
 from squeze_defaults import PEAKFIND_WIDTH
@@ -76,14 +78,14 @@ def main():
                                 z_precision=z_precision, mode="training",
                                 weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_min_snr),
-                                svms=(SVMS, RANDOM_STATES))
+                                svms=(svms, random_states))
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 name=args.output_candidates,
                                 weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_min_snr),
-                                svms=(SVMS, RANDOM_STATES))
+                                svms=(svms, random_states))
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:

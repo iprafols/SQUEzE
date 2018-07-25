@@ -62,7 +62,8 @@ def main():
                         help="""Name of the fits file containing the list of spectra
                             to be loaded""")
     parser.add_argument("--spall-cat", type=str, required=True,
-                        help="""Name of tht fits files containing the specprimary information of the spectra""")
+                        help="""Name of tht fits files containing the specprimary
+                            information of the spectra""")
 
     parser.add_argument("--out", type=str, default="spectra", required=False,
                         help="""Base name of the pkl files where the list of spectra
@@ -103,7 +104,7 @@ def main():
     userprint("loading spAll catalogue")
     spall_catalogue = QuasarCatalogue(args.spall_cat, ["plate", "fiberid", "mjd"], "specprimary", 1)
     spall_catalogue = spall_catalogue.quasar_catalogue()
-    
+
     # initialize specid_count for those spectra not in the quasar catalogue
     specid_counter = -1000
 
