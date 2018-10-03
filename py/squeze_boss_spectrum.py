@@ -51,10 +51,19 @@ class BossSpectrum(Spectrum):
         if "specid" not in metadata.keys():
             raise Error("""The property "specid" must be present in metadata""")
 
+        # open fits file
         spectrum_hdu = fits.open(spectrum_file)
-        self._flux = spectrum_hdu[1].data["flux"].copy()
+        
+        # compute sky mask
         self._wave = 10**spectrum_hdu[1].data["loglam"].copy()
-        self._ivar = spectrum_hdu[1].data["ivar"].copy()
+        self.__find_skymask()
+        
+        # store the wavelength, flux and inverse variance as masked arrays
+        self._wave = np.am.array(self._wave, mask=self.__skymask)
+        self._flux = np.am.array(spectrum_hdu[1].data["flux"].copy(),
+                                 mask=self.__skymask)
+        self._ivar = np.am.array(spectrum_hdu[1].data["ivar"].copy(),
+                                 mask=self.__skymask)
         self._metadata = metadata
         if smoothing > 0:
             self.__smooth(smoothing)
@@ -72,6 +81,16 @@ class BossSpectrum(Spectrum):
         self._flux = self._flux + var*randn(self._flux.size)
         self._ivar = self._ivar/np.sqrt(2)
 
+    def __find_skymask(self, masklambda, margin):
+        """ Compute the sky mask according to a set of wavelengths and a margin.
+            Keep pixels in each spectrum which meet the following requirement
+            fabs(1e4*log10(lambda/maskLambda)) > margin
+            Sky mask is 0 if pixel doesn't have to be masked and 1 otherwise
+            """
+        self.__skymask = np.zeros_like(self._wave)
+        for wave in masklambda:
+            self.__skymask[np.where(np.abs(np.log10(self._wave/wave)) <= margin)] = 1
+
     def __smooth(self, smoothing):
         """ Smooth the flux of the spectrum
 
@@ -87,7 +106,7 @@ class BossSpectrum(Spectrum):
         self._flux = medfilt(self._flux, smoothing)
         self._ivar = medfilt(self._ivar, smoothing)
 
-
+    
 
 if __name__ == "__main__":
     pass
