@@ -30,7 +30,7 @@ class BossSpectrum(Spectrum):
         PURPOSE: Load and format a BOSS spectrum to be digested by
         SQUEzE
         """
-    def __init__(self, spectrum_file, metadata, smoothing=0, double_noise=False):
+    def __init__(self, spectrum_file, metadata, mask, smoothing=0, double_noise=False):
         """ Initialize class instance
 
             Parameters
@@ -40,6 +40,11 @@ class BossSpectrum(Spectrum):
 
             metadata : dict
             A dictionary with the metadata. Keys should be strings
+            
+            mask : (np.array, float)
+            A tuple containing the array of the wavelengths to mask and the margin
+            used in the masking. Wavelengths separated to wavelength given in the array
+            by less than the margin will be masked
 
             smoothing : int - Default: 0
             Number of pixels in the smoothing kernel. Negative values are ignored
@@ -56,13 +61,15 @@ class BossSpectrum(Spectrum):
         
         # compute sky mask
         self._wave = 10**spectrum_hdu[1].data["loglam"].copy()
-        self.__find_skymask()
+        masklambda = mask[0]
+        margin = mask[1]
+        self.__find_skymask(masklambda, margin)
         
         # store the wavelength, flux and inverse variance as masked arrays
-        self._wave = np.am.array(self._wave, mask=self.__skymask)
-        self._flux = np.am.array(spectrum_hdu[1].data["flux"].copy(),
+        self._wave = np.ma.array(self._wave, mask=self.__skymask)
+        self._flux = np.ma.array(spectrum_hdu[1].data["flux"].copy(),
                                  mask=self.__skymask)
-        self._ivar = np.am.array(spectrum_hdu[1].data["ivar"].copy(),
+        self._ivar = np.ma.array(spectrum_hdu[1].data["ivar"].copy(),
                                  mask=self.__skymask)
         self._metadata = metadata
         if smoothing > 0:

@@ -1,4 +1,11 @@
+"""
+    SQUEzE
+    ======
+    
+    This file provides a peak finder to be used by SQUEzE
+    """
 
+import numpy as np
 
 class PeakFinder(object):
     """ Create and manage the peak finder used by SQUEzE
@@ -24,7 +31,7 @@ class PeakFinder(object):
             Minimum significance of the peak for it to be considered a valid peak
             """
         self.__width = width
-        self.__fwhm = int(2.355)
+        self.__fwhm = int(2.355*width)
         self.__half_fwhm = int(self.__fwhm/2)
         self.__min_significance = min_significance
 
@@ -82,14 +89,14 @@ class PeakFinder(object):
             if ((index > 0) and (index < smoothed_data.size -1) and
                 (flux > smoothed_data[index + 1]) and (flux > smoothed_data[index - 1])):
                 # find significance of the peak
-                significance = self.__find_peak_significance(spectrum, peak_index)
+                significance = self.__find_peak_significance(spectrum, index)
 
                 # add the peak to the list if the significance is large enough
                 if significance >= self.__min_significance:
                     peak_indexs.append(index)
 
         # convert list to array
-        peak_indexs = np.array(peak_indexs)
+        peak_indexs = np.array(peak_indexs, dtype=int)
 
         # return
         return peak_indexs

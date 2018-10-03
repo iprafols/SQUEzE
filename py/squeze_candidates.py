@@ -348,9 +348,7 @@ class Candidates(object):
             raise Error("Mode 'merge' is not valid for function __find_candidates.")
 
         # find peaks
-        peak_indexs = signal.find_peaks_cwt(spectrum.flux(),
-                                            np.array([self.__peakfind_width]),
-                                            min_snr=self.__peakfind_sig)
+        peak_indexs = self.__peak_finder.find_peaks(spectrum)
 
         # find peaks in the spectrum
         candidates = []
