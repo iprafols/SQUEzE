@@ -31,7 +31,7 @@ from squeze_defaults import SVMS
 from squeze_defaults import RANDOM_STATES
 from squeze_defaults import Z_PRECISION
 from squeze_defaults import PEAKFIND_WIDTH
-from squeze_defaults import PEAKFIND_MIN_SNR
+from squeze_defaults import PEAKFIND_SIG
 from squeze_spectrum import Spectrum
 
 class Candidates(object):
@@ -50,7 +50,7 @@ class Candidates(object):
 
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.pkl",
-                 weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_MIN_SNR),
+                 weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
                  model=None, svms=(SVMS, RANDOM_STATES)):
         """ Initialize class instance.
 
@@ -112,7 +112,8 @@ class Candidates(object):
 
         # options to be passed to the peak finder
         self.__peakfind_width = peakfind[0]
-        self.__peakfind_min_snr = peakfind[1]
+        self.__peakfind_sig = peakfind[1]
+        self.__peak_finder = PeakFinder(self.__peakfind_width, self.__peakfind_sig)
 
         # model
         if model is None:
@@ -226,7 +227,7 @@ class Candidates(object):
                 "z_precision": self.__z_precision,
                 "weighting_mode": self.__weighting_mode,
                 "peakfind_width": self.__peakfind_width,
-                "peakfind_min_snr": self.__peakfind_min_snr,
+                "peakfind_sig": self.__peakfind_sig,
                }
 
     def __is_correct(self, row):
@@ -349,7 +350,7 @@ class Candidates(object):
         # find peaks
         peak_indexs = signal.find_peaks_cwt(spectrum.flux(),
                                             np.array([self.__peakfind_width]),
-                                            min_snr=self.__peakfind_min_snr)
+                                            min_snr=self.__peakfind_sig)
 
         # find peaks in the spectrum
         candidates = []
@@ -420,7 +421,7 @@ class Candidates(object):
         self.__z_precision = settings.get("z_precision")
         self.__weighting_mode = settings.get("weighting_mode")
         self.__peakfind_width = settings.get("peakfind_width")
-        self.__peakfind_min_snr = settings.get("peakfind_min_snr")
+        self.__peakfind_sig = settings.get("peakfind_sig")
 
     def __save_candidates(self):
         """ Save the candidates DataFrame. """

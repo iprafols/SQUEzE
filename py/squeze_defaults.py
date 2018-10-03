@@ -75,17 +75,16 @@ Z_PRECISION = 0.15
 """
 This variable sets the width (in pixels) of the typical peak to be detected.
 This parameter will be passed to the peak finding function. Check the documentation
-on the parameter widths on scipy.signal.find_peaks_cwt for more information.
+on the module squeze_peak_finder for more details
 """ # description of PEAKFIND_WIDTH ... pylint: disable=pointless-string-statement
-PEAKFIND_WIDTH = 170
+PEAKFIND_WIDTH = 70
 
 """
-This variable sets the minimum signal-to-noise ratio of a peak. It is related to
-the peak amplitude. This parameter will be passed to the peak finding function.
-Check the documentation on the parameter min_snr on scipy.signal.find_peaks_cwt
-for more information.
-""" # description of PEAKFIND_MIN_SNR ... pylint: disable=pointless-string-statement
-PEAKFIND_MIN_SNR = 1.6
+This variable sets the minimum signal-to-noise ratio of a peak.
+This parameter will be passed to the peak finding function. Check the documentation
+on the module squeze_peak_finder for more details
+""" # description of PEAKFIND_SIG ... pylint: disable=pointless-string-statement
+PEAKFIND_SIG = 15
 
 """
 This variable sets the lines that will be included in each of the SVM

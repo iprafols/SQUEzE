@@ -23,7 +23,7 @@ from squeze_defaults import RANDOM_STATES
 from squeze_defaults import TRY_LINES
 from squeze_defaults import Z_PRECISION
 from squeze_defaults import PEAKFIND_WIDTH
-from squeze_defaults import PEAKFIND_MIN_SNR
+from squeze_defaults import PEAKFIND_SIG
 from squeze_parsers import TRAINING_PARSER
 
 
@@ -66,7 +66,7 @@ def main():
 
     # load peakfinder options
     peakfind_width = PEAKFIND_WIDTH if args.peakfind_width is None else args.peakfind_width
-    peakfind_min_snr = PEAKFIND_MIN_SNR if args.peakfind_min_snr is None else args.peakfind_min_snr
+    peakfind_sig = PEAKFIND_SIG if args.peakfind_sig is None else args.peakfind_sig
 
     # load SVM options
     svms, random_states = SVMS, RANDOM_STATES if args.svms is None else load_pkl(args.svms)
@@ -77,14 +77,14 @@ def main():
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 weighting_mode=args.weighting_mode,
-                                peakfind=(peakfind_width, peakfind_min_snr),
+                                peakfind=(peakfind_width, peakfind_sig),
                                 svms=(svms, random_states))
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 name=args.output_candidates,
                                 weighting_mode=args.weighting_mode,
-                                peakfind=(peakfind_width, peakfind_min_snr),
+                                peakfind=(peakfind_width, peakfind_sig),
                                 svms=(svms, random_states))
 
     # load candidates dataframe if they have previously looked for

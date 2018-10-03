@@ -106,9 +106,8 @@ optional arguments:
                                 append the extension _model.pkl to it (default: None)
 --peakfind-width PEAKFIND_WIDTH
                                 Width (in pixels) of the tipical peak (default: None)
---peakfind-min-snr PEAKFIND_MIN_SNR
-                                Related to the minimum amplitude rqeuired to keep the
-                                peak (default: None)
+--peakfind-sig PEAKFIND_SIG
+                                Minimum significance required to accept a peak (default: None)
 --qso-dataframe QSO_DATAFRAME
                                 Name of the pkl file containing the quasar catalogue
                                 formatted into pandas dataframe. Must only contain

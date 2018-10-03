@@ -16,6 +16,8 @@ __version__ = "0.1"
 
 import numpy as np
 
+from astropy.convolution import convolve, Gaussian1DKernel
+
 class Spectrum(object):
     """
         Manage the spectrum data
@@ -42,15 +44,6 @@ class Spectrum(object):
             Must have the same size as flux and wavelength."""
         # member must be declared in child class ... pylint: disable=no-member
         return self._ivar
-
-    def wave(self):
-        """ Returns the wavelength as a numpy.ndarray
-            Units may be different but Angstroms are suggested
-            The user is responsible to make sure all wavelength
-            are passed with the same units.
-            Must have the same size as flux and ivar."""
-        # member must be declared in child class ... pylint: disable=no-member
-        return self._wave
 
     def metadata(self):
         """ Returns metadata to be included in the catalogue.
@@ -85,6 +78,28 @@ class Spectrum(object):
             """
         # member must be declared in child class ... pylint: disable=no-member
         return self._metadata.keys()
+
+    def smooth(self, width):
+        """ Returns a smoothed version of the flux. The smoothing is computed
+            by convolving the flux with a Gaussian kernel of the specified width
+            
+            Parameters
+            ----------
+            width : float
+            Width of the Gaussian to be used as smoothing kernel (in number of pixels)
+            """
+        gauss_kernel = Gaussian1DKernel(width)
+        # member must be declared in child class ... pylint: disable=no-member
+        return convolve(self._flux, gauss_kernel)
+
+    def wave(self):
+        """ Returns the wavelength as a numpy.ndarray
+            Units may be different but Angstroms are suggested
+            The user is responsible to make sure all wavelength
+            are passed with the same units.
+            Must have the same size as flux and ivar."""
+        # member must be declared in child class ... pylint: disable=no-member
+        return self._wave
 
 if __name__ == "__main__":
     pass
