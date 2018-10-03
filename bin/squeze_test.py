@@ -96,25 +96,12 @@ def main():
     userprint("\n---------------")
     userprint("step 1")
     candidates.find_completeness_purity(quasar_catalogue, data_frame)
-    userprint("\n---------------")
-    userprint("SVM proba > 0.7")
-    candidates.find_completeness_purity(quasar_catalogue,
-                                        data_frame[(data_frame["prob"] > 0.7) &
-                                                   ~(data_frame["duplicated"])])
-    userprint("\n---------------")
-    userprint("SVM proba > 0.5")
-    candidates.find_completeness_purity(quasar_catalogue,
-                                        data_frame[(data_frame["prob"] > 0.5) &
-                                                   ~(data_frame["duplicated"])])
-    userprint("\n---------------")
-    userprint("SVM proba > 0.3")
-    candidates.find_completeness_purity(quasar_catalogue,
-                                        data_frame[(data_frame["prob"] > 0.3) &
-                                                   ~(data_frame["duplicated"])])
-    userprint("\n---------------")
-    userprint("SVM proba > 0.1")
-    candidates.find_completeness_purity(quasar_catalogue,
-                                        data_frame[(data_frame["prob"] > 0.1) &
-                                                   ~(data_frame["duplicated"])])
+    for prob in [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]:
+        userprint("\n---------------")
+        userprint("SVM proba > {}".format(prob))
+        candidates.find_completeness_purity(quasar_catalogue,
+                                            data_frame[(data_frame["prob"] > prob) &
+                                                       ~(data_frame["duplicated"]) &
+                                                       (data_frame["z_conf_person"] == 3)])
 if __name__ == '__main__':
     main()
