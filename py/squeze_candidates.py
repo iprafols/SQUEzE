@@ -247,7 +247,30 @@ class Candidates(object):
             """
         return bool((row["Delta_z"] <= self.__z_precision)
                     and row["Delta_z"] >= -self.__z_precision
-                    and not (row["specid"] < 0 and row["z_true"] == 0.0))
+                    and (np.isin(row["class_person"], [3, 30])))
+
+    def __is_correct_redshift(self, row):
+        """ Returns True if a candidate has a correct redshift and False otherwise.
+            A candidate is assumed to have a correct redshift if it has an absolute
+            value of Delta_z is lower or equal than self.__z_precision.
+            If the object is a star (class_person = 1), then return False.
+            This function should be called using the .apply method of the candidates
+            data frame with the option axis=1
+            
+            Parameters
+            ----------
+            row : pd.Series
+            A row in the candidates data frame
+            
+            Returns
+            -------
+            True if a candidate is a true quasar and False otherwise
+            """
+        correct_redshift = False
+        if row["class_person"] != 1:
+            correct_redshift = bool((row["Delta_z"] <= self.__z_precision)
+                                   and (row["Delta_z"] >= -self.__z_precision))
+        return correct_redshift
 
     def __is_line(self, row):
         """ Returns True if a candidate is a quasar line and False otherwise.
@@ -269,7 +292,7 @@ class Candidates(object):
         is_line = False
         if row["is_correct"]:
             is_line = True
-        elif row["specid"] < 0 and row["z_true"] == 0.0:
+        elif not np.isin(row["class_person"], [3, 30]):
             pass
         else:
             for line in self.__lines.index:
@@ -381,9 +404,11 @@ class Candidates(object):
             if candidates_df.shape[0] > 0:
                 candidates_df["is_correct"] = candidates_df.apply(self.__is_correct, axis=1)
                 candidates_df["is_line"] = candidates_df.apply(self.__is_line, axis=1)
+                candidates_df["correct_redshift"] = candidates_df.apply(self.__is_correct_redshift, axis=1)
             else:
                 candidates_df["is_correct"] = pd.Series(dtype=bool)
                 candidates_df["is_line"] = pd.Series(dtype=bool)
+                candidates_df["correct_redshift"] = pd.Series(dtype=bool)
 
         return candidates_df
 
