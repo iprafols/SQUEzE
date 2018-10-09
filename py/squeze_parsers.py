@@ -44,10 +44,9 @@ PEAKFIND_PARSER.add_argument("--peakfind-width", type=float, default=None,
                              required=False,
                              help="""Width (in pixels) of the tipical peak""")
 
-PEAKFIND_PARSER.add_argument("--peakfind-min-snr", type=float, default=None,
+PEAKFIND_PARSER.add_argument("--peakfind-sig", type=float, default=None,
                              required=False,
-                             help="""Related to the minimum amplitude rqeuired
-                                 to keep the peak""")
+                             help="""Minimum significance required to accept a peak""")
 
 
 """

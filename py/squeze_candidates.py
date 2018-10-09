@@ -25,6 +25,7 @@ from matplotlib import gridspec
 from squeze_common_functions import save_pkl, load_pkl
 from squeze_error import Error
 from squeze_model import Model
+from squeze_peak_finder import PeakFinder
 from squeze_defaults import LINES
 from squeze_defaults import TRY_LINES
 from squeze_defaults import SVMS
