@@ -62,9 +62,11 @@ class PeakFinder(object):
             cont += np.average(flux[index + self.__half_fwhm: index + self.__fwhm])
             cont /= 2.0
             ivar_diff = np.sum(ivar[index - self.__fwhm: index + self.__fwhm])
-            error = 1/np.sqrt(ivar_diff)
-
-            significance = (peak-cont)/error
+            if ivar_diff != 0.0:
+                error = 1/np.sqrt(ivar_diff)
+                significance = (peak-cont)/error
+            else:
+                significance = np.nan
 
         return significance
 

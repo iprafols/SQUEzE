@@ -114,7 +114,6 @@ class Candidates(object):
         # options to be passed to the peak finder
         self.__peakfind_width = peakfind[0]
         self.__peakfind_sig = peakfind[1]
-        self.__peak_finder = PeakFinder(self.__peakfind_width, self.__peakfind_sig)
 
         # model
         if model is None:
@@ -123,6 +122,9 @@ class Candidates(object):
             self.__model = model
             self.__load_model_settings()
         self.__svms = svms
+
+        # initialize peak finder
+        self.__peak_finder = PeakFinder(self.__peakfind_width, self.__peakfind_sig)
 
     def __compute_line_ratio(self, spectrum, index, z_try):
         """ Compute the peak-to-continuum ratio for a specified line.
@@ -182,7 +184,7 @@ class Candidates(object):
                 cont_err_squared = (1.0/ivar[pix_blue].sum() +
                                     1.0/ivar[pix_red].sum())/4.0
                 peak = np.average(flux[pix_peak], weights=ivar[pix_peak])
-                peak_err_squared = 1.0/np.sum(ivar[pix_peak])
+                peak_err_squared = 1.0/ivar[pix_peak].sum()
         elif self.__weighting_mode == "flags":
             weights_blue = np.ones_like(ivar[pix_blue])
             weights_blue[np.where(ivar[pix_blue] == 0.0)] = 0.0
@@ -552,7 +554,7 @@ class Candidates(object):
             #                     float(data_frame.shape[0]))
             quasar_specids = np.unique(data_frame[data_frame["specid"] > 0]["specid"])
             specids = np.unique(data_frame["specid"])
-            quasar_spectra_fraction = float(quasar_specids.size)/float(specids.size)
+            #quasar_spectra_fraction = float(quasar_specids.size)/float(specids.size)
         else:
             purity = np.nan
             purity_zge1 = np.nan
@@ -573,7 +575,7 @@ class Candidates(object):
         print "purity z >=2.1 = {:.2%}".format(purity_zge2_1)
         print "line purity = {:.2%}".format(line_purity)
         #print "purity to quasars = {:.2%}".format(purity_to_quasars)
-        print "fraction of quasars = {:.2%}".format(quasar_spectra_fraction)
+        #print "fraction of quasars = {:.2%}".format(quasar_spectra_fraction)
         if get_results:
             return purity, completeness, found_quasars
 

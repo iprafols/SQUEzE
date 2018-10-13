@@ -107,11 +107,41 @@ class Model(object):
             data_class = -1
             aux_prob = 0.0
             for class_label in self.__clfs.get(1).classes_:
-                if row["prob_class{}".format(class_label)] > aux_prob:
-                    aux_prob = row["prob_class{}".format(class_label)]
-                    data_class = class_label
+                if row["prob_class{:d}".format(int(class_label))] > aux_prob:
+                    aux_prob = row["prob_class{:d}".format(int(class_label))]
+                    data_class = int(class_label)
 
         return data_class
+    
+    def __find_prob(self, row, columns):
+        """ Find the probability of a instance being a quasar by
+            adding the probabilities of classes 3 and 30. If
+            the probability for this classes are not found,
+            then return np.nan
+            
+            Parameters
+            ----------
+            row : pd.Series
+            A row in the DataFrame.
+            
+            Returns
+            -------
+            The probability of the object being a quasar.
+            This probability is the sum of the probabilities for classes
+            3 and 30. If one of them is not available, then the probability
+            is taken as the other one. If both are unavailable, then return
+            np.nan
+            """
+        if "prob_class3" in columns and "prob_class3" in columns:
+            prob = row["prob_class3"] + row["prob_class30"]
+        elif "prob_class30" in columns:
+            prob = row["prob_class30"]
+        elif "prob_class3" in columns:
+            prob = row["prob_class3"]
+        else:
+            prob = np.nan
+        return prob
+
 
     def __match_cuts(self, row, selected_cols):
         """ Return True if the selected columns have all higher than the respective
@@ -151,47 +181,34 @@ class Model(object):
             data_frame : pd.DataFrame
             The dataframe where the probabilities will be predicted
             """
-        def find_class(row):
-            """ Finds the class the instance belongs to from the highest
-                probability.
-                """
-            data_class = -1
-            aux_prob = 0.0
-            for class_label in self.__clfs.get(1).classes_:
-                if row["prob_class{}".format(class_label)] > aux_prob:
-                    aux_prob = row["prob_class{}".format(class_label)]
-                    data_class = class_label
-            return data_class
-
         # compute probabilities for each of the SVM instances
         svc_dict = {}
         for index, selected_cols in tqdm.tqdm(self.__svms.items()):
             data_frame_aux = data_frame[selected_cols].dropna()
             data_vector = data_frame_aux[selected_cols[:-2]].values
             data_vector = self.__scalers.get(index).transform(data_vector)
-            data_frame["SVC{}".format(index)] = -1
             data_class_prob = self.__clfs.get(index).predict_proba(data_vector)
             for class_index, class_label in enumerate(self.__clfs.get(index).classes_):
-                data_frame.at[data_frame_aux.index, "SVC{}_class{}".format(index, class_label)] = data_class_prob[:, class_index]
-                if "class{}".format(class_label) not in svc_dict.keys():
-                    svc_dict["class{}".format(class_label)] = []
-                svc_dict["class{}".format(class_label)].append("SVC{}_class{}".format(index, class_label))
+                data_frame.at[data_frame_aux.index, "SVC{}_class{:d}".format(index, int(class_label))] = data_class_prob[:, class_index]
+                if "class{:d}".format(int(class_label)) not in svc_dict.keys():
+                    svc_dict["class{:d}".format(int(class_label))] = []
+                svc_dict["class{:d}".format(int(class_label))].append("SVC{}_class{:d}".format(index, int(class_label)))
         
         # compute the probability for each of the classes
         for class_label in self.__clfs.get(1).classes_:
-            data_frame["prob_class{}".format(class_label)] = data_frame[svc_dict["class{}".format(class_label)]].max(axis=1)
+            data_frame["prob_class{:d}".format(int(class_label))] = data_frame[svc_dict["class{:d}".format(int(class_label))]].max(axis=1)
     
         # predict class and find the probability of the candidate being a quasar
         data_frame["class_predicted"] = data_frame.apply(self.__find_class, axis=1,
                                                          args=(False, ))
-        data_frame["prob"] = data_frame[["prob_class3", "prob_class30"]].sum(axis=1)
+        data_frame["prob"] = data_frame.apply(self.__find_prob, axis=1,
+                                              args=(data_frame.columns, ))
 
         # apply hard-core cuts
         data_frame["prob_SVM"] = data_frame["prob"].copy()
         for selected_cols in self.__cuts[1]:
             indexs = data_frame[data_frame.apply(self.__match_cuts,
                                                  axis=1, args=(selected_cols, ))].index
-            print indexs
             data_frame.loc[indexs, "prob"] = 1
             data_frame.loc[indexs, "class_predicted"] = CLASS_PREDICTED["quasar"]
         
@@ -221,20 +238,6 @@ class Model(object):
 
         # train SVMs
         for index, selected_cols in tqdm.tqdm(self.__svms.items()):
-            def find_class(row):
-                """ Finds the class the instance belongs to from class_person.
-                    For quasars and galaxies add a new class if the redshift is
-                    wrong"""
-                if row["class_person"] == 30 and not row["correct_redshift"]:
-                    data_class = 305
-                elif row["class_person"] == 3 and not row["correct_redshift"]:
-                    data_class = 35
-                elif row["class_person"] == 4 and not row["correct_redshift"]:
-                    data_class = 45
-                else:
-                    data_class = row["class_person"]
-                return data_class
-
             data_frame_aux = data_frame[selected_cols].dropna()
             data_vector = data_frame_aux[selected_cols[:-2]].values
             scaler = preprocessing.StandardScaler().fit(data_vector)
