@@ -130,6 +130,10 @@ TRAINING_PARSER.add_argument("--lines", type=str, default=None, required=False,
                              help="""Name of the pkl file containing the lines ratios
                                  to be computed.""")
 
+TRAINING_PARSER.add_argument("--cuts", type=str, default=None, required=False,
+                             help="""Name of the pkl file containing the hard-core
+                                 cuts to be included in the model.""")
+
 TRAINING_PARSER.add_argument("--svms", type=str, default=None, required=False,
                              help="""Name of the pkl file containing the lines to be used
                                  for each of the svm instances.""")

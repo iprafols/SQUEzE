@@ -17,6 +17,7 @@ from squeze_error import Error
 from squeze_quasar_catalogue import QuasarCatalogue
 from squeze_spectra import Spectra
 from squeze_candidates import Candidates
+from squeze_defaults import CUTS
 from squeze_defaults import LINES
 from squeze_defaults import SVMS
 from squeze_defaults import RANDOM_STATES
@@ -68,6 +69,9 @@ def main():
     peakfind_width = PEAKFIND_WIDTH if args.peakfind_width is None else args.peakfind_width
     peakfind_sig = PEAKFIND_SIG if args.peakfind_sig is None else args.peakfind_sig
 
+    # load cut options
+    cuts = CUTS if args.cuts is None else load_pkl(args.cuts)
+
     # load SVM options
     svms, random_states = SVMS, RANDOM_STATES if args.svms is None else load_pkl(args.svms)
 
@@ -78,14 +82,16 @@ def main():
                                 z_precision=z_precision, mode="training",
                                 weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_sig),
-                                svms=(svms, random_states))
+                                svms=(svms, random_states),
+                                model=(None, cuts))
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 name=args.output_candidates,
                                 weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_sig),
-                                svms=(svms, random_states))
+                                svms=(svms, random_states),
+                                model=(None, cuts))
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:

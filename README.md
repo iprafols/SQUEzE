@@ -8,6 +8,7 @@ requirements:
 * numpy
 * pandas
 * scipy
+* sklearn
 * astropy
 * tqdm
 * pickle
@@ -135,6 +136,8 @@ optional arguments:
                                 'percentile'. (default: None)
 --lines LINES           Name of the pkl file containing the lines ratios to be
                                 computed. (default: None)
+--cuts CUTS            Name of the pkl file containing the hard-core
+                                cuts to be included in the model. (default: None)
 --svms SVMS          Name of the pkl file containing the lines to be used
                                 for each of the svm instances. (default: None)
 --try-lines [TRY_LINES [TRY_LINES ...]]

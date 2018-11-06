@@ -2,7 +2,7 @@
     SQUEzE
     ======
 
-    This file shows an example of how should the lines varaible be formatted.
+    This file shows an example of how should the lines variable be formatted.
     """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"

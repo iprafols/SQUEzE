@@ -1,0 +1,190 @@
+"""
+    SQUEzE - SupersetDR12Q
+    ==============
+    This file is a modified version of format_spectra tailored to load
+    SuperesetDR12Q data
+
+    From format_spectra.py :
+
+    This file shows an example of how should the spectra should be formatted.
+    The example is based on loading BOSS data and some parts should probably
+    be heavily modified for other surveys.
+
+    Each individual spectrum should be loaded as an instance of the Spectrum
+    class defined in the file squeze_spectum.py. There is basically two ways
+    of doing this. For users with object-oriented exeprience, it is recommended
+    to create a new class YourSurveySpectrum that inherits from Spectrum. A
+    simpler way (but a bit more restrictive) is to make use of the SimpleSpectrum
+    class provided in squeze_simple_spectrum.py. This example covers both options.
+
+    The complete set of spectra is to be loaded in the class Spectra defined
+    in squeze_spectra.py.
+    """
+__author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
+__version__ = "0.1"
+
+import argparse
+
+from os import listdir
+from os.path import isfile, join
+
+import tqdm
+
+import numpy as np
+
+import astropy.io.fits as fits
+
+
+
+from squeze_common_functions import save_pkl
+from squeze_common_functions import verboseprint, quietprint
+from squeze_error import Error
+from squeze_quasar_catalogue import QuasarCatalogue
+from squeze_boss_spectrum import BossSpectrum
+from squeze_spectra import Spectra
+from squeze_parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
+
+def main():
+    """ Load BOSS spectra using the BossSpectrum Class defined in
+        squeze_boss_spectrum.py.
+
+        Spectra will be saved in blocs of spectra belonging to the same
+        plate. This is useful to be able to use SQUEzE without using
+        too much memory.
+        """
+
+    # load options
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                     parents=[PARENT_PARSER,
+                                              QUASAR_CATALOGUE_PARSER])
+
+    parser.add_argument("--plate-list", type=str, required=True,
+                        help="""Name of the fits file containing the list of spectra
+                            to be loaded""")
+    parser.add_argument("--out", type=str, default="spectra", required=False,
+                        help="""Base name of the pkl files where the list of spectra
+                            will be saved. The sufix _plate####.pkl, where #### will be
+                            replaced with the plate number, will be added to save the
+                            spectra on the different plates.""")
+    parser.add_argument("--input-folder", type=str, required=True,
+                        help="""Name of the folder containg the spectra to process. In
+                            this folder, spectra are found in a subfoldare with the plate
+                            number.""")
+    parser.add_argument("--smoothing", type=int, default=0,
+                        help="""Smoothing to be applied to the spectra (in number of pixels).
+                            Negative values are ignored.""")
+    parser.add_argument("--double-noise", action="store_true",
+                        help="""Doubles the noise of the spectra. Ignored if smoothin is present""")
+    parser.add_argument("--sky-mask", type=str, required=True,
+                        help="""Name of the file containing the sky mask""")
+    parser.add_argument("--margin", type=float, default=1.5e-4,
+                        help="""Margin used in the masking. Wavelengths separated to wavelength
+                            given in the array by less than the margin will be masked""")
+
+    args = parser.parse_args()
+
+    # manage verbosity
+    userprint = verboseprint if not args.quiet else quietprint
+
+    # load plate list
+    userprint("loading list of plates")
+    plate_list_hdu = fits.open(args.plate_list)
+    plate_list = plate_list_hdu[1].data["plate"][
+        np.where((plate_list_hdu[1].data["programname"] == "boss") &
+                 (plate_list_hdu[1].data["platequality"] == "good"))].copy()
+    plate_list = np.unique(plate_list.astype(int))
+    del plate_list_hdu[1].data
+    plate_list_hdu.close()
+
+    # load quasar catalogue
+    userprint("loading quasar catalogue")
+    quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols, args.qso_specid, args.qso_hdu)
+    quasar_catalogue = quasar_catalogue.quasar_catalogue()
+    
+    # load sky mask
+    masklambda = np.genfromtxt(args.sky_mask)
+
+    # loop over plates, will save a pkl file for each plate
+    userprint("loading spectra in each of the plates")
+    missing_files = []
+    for plate in tqdm.tqdm(plate_list):
+
+        # reset spectra object
+        spectra = Spectra()
+
+        # get list of spectra in this plate
+        folder = "{}{:04d}/".format(args.input_folder, plate)
+
+        # loop over spectra
+        for index in quasar_catalogue[quasar_catalogue["plate"] == plate].index:
+            entry = quasar_catalogue.loc[index]
+            z_conf_person = entry["z_conf_person"]
+            boss_target1 = entry["boss_target1"].astype(int)
+            eboss_target0 = entry["eboss_target0"].astype(int)
+            if (z_conf_person != 3):
+                continue
+            if not ((boss_target1 & 2**40 > 0) |
+                    (boss_target1 & 2**41 > 0) |
+                    (boss_target1 & 2**42 > 0) |
+                    (boss_target1 & 2**43 > 0) |
+                    (boss_target1 & 2**44 > 0) |
+                    (boss_target1 & 2**10 > 0) |
+                    (boss_target1 & 2**11 > 0) |
+                    (boss_target1 & 2**12 > 0) |
+                    (boss_target1 & 2**13 > 0) |
+                    (boss_target1 & 2**14 > 0) |
+                    (boss_target1 & 2**15 > 0) |
+                    (boss_target1 & 2**16 > 0) |
+                    (boss_target1 & 2**17 > 0) |
+                    (boss_target1 & 2**18 > 0) |
+                    (boss_target1 & 2**19 > 0) |
+                    (eboss_target0 & 2**10 > 0) |
+                    (eboss_target0 & 2**11 > 0) |
+                    (eboss_target0 & 2**12 > 0) |
+                    (eboss_target0 & 2**13 > 0) |
+                    (eboss_target0 & 2**14 > 0) |
+                    (eboss_target0 & 2**15 > 0) |
+                    (eboss_target0 & 2**16 > 0) |
+                    (eboss_target0 & 2**17 > 0) |
+                    (eboss_target0 & 2**18 > 0) |
+                    (eboss_target0 & 2**20 > 0) |
+                    (eboss_target0 & 2**22 > 0) |
+                    (eboss_target0 & 2**30 > 0) |
+                    (eboss_target0 & 2**31 > 0) |
+                    (eboss_target0 & 2**33 > 0) |
+                    (eboss_target0 & 2**34 > 0) |
+                    (eboss_target0 & 2**35 > 0) |
+                    (eboss_target0 & 2**40 > 0) ):
+                continue
+            metadata = {}
+            for column in quasar_catalogue.columns:
+                metadata[column] = entry[column]
+            metadata["z_true"] = entry["z_vi"]
+            spectrum_file = "spec-{:04d}-{:05d}-{:04d}.fits".format(plate,
+                                                                    entry["mjd"].astype(int),
+                                                                    entry["fiberid"].astype(int))
+            
+            
+            # add spectra to list
+            
+            try:
+                if args.smoothing > 0:
+                    spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
+                                                (masklambda, args.margin),
+                                                smoothing=args.smoothing))
+                else:
+                    spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
+                                                (masklambda, args.margin),
+                                                double_noise=args.double_noise))
+            except IOError:
+                missing_files.append(spectrum_file)
+                #print "missing file {}".format(spectrum_file)
+
+        # save spectra in the current plate
+        save_pkl("{}_plate{:04d}.pkl".format(args.out, plate), spectra)
+
+    for item in missing_files:
+        print item
+
+if __name__ == '__main__':
+    main()

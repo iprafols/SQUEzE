@@ -87,6 +87,7 @@ class PeakFinder(object):
 
         # find peaks
         peak_indexs = []
+        significances = []
         for index, flux in enumerate(smoothed_data):
             if ((index > 0) and (index < smoothed_data.size -1) and
                 (flux > smoothed_data[index + 1]) and (flux > smoothed_data[index - 1])):
@@ -96,11 +97,13 @@ class PeakFinder(object):
                 # add the peak to the list if the significance is large enough
                 if significance >= self.__min_significance:
                     peak_indexs.append(index)
+                    significances.append(significance)
 
         # convert list to array
         peak_indexs = np.array(peak_indexs, dtype=int)
+        significances = np.array(significances, dtype=float)
 
         # return
-        return peak_indexs
+        return peak_indexs, significances
 
 
