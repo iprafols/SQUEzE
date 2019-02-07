@@ -4,23 +4,24 @@
 
     This file implements the class Model, that is used to store, train, and
     execute the quasar finding model
+    
+    DEPRECATED
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import numpy as np
-import pandas as pd
 
 import tqdm
 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn import svm
 from sklearn import preprocessing
 
-from squeze_common_functions import load_pkl, save_pkl
+from squeze_common_functions import save_pkl
+from squeze_defaults import SVMS
+from squeze_defaults import RANDOM_STATES
 from squeze_defaults import CUTS
 from squeze_defaults import CLASS_PREDICTED
-from squeze_defaults import RANDOM_STATE
-from squeze_defaults import RANDOM_FOREST_OPTIONS
 
 class Model(object):
     """ Create, train and/or execute the quasar model to find quasars
@@ -30,8 +31,7 @@ class Model(object):
         quasars
         """
 
-    def __init__(self, name, selected_cols, settings, cuts=CUTS,
-                 model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
+    def __init__(self, name, settings, svms=(SVMS, RANDOM_STATES), cuts=CUTS):
         """ Initialize class instance.
 
             Parameters
@@ -44,52 +44,44 @@ class Model(object):
             Candidates. It should be the return of the function get_settings
             of the Candidates object
 
-            random_state : int - Default: RANDOM_STATE
-            Integer to set the sandom states of the classifier
+            svms : dict - Default: SVMS
+            A dictionary containing the lines included in each of the SVM
+            instances that will be used to determine the probability of the
+            candidate being a quasar.
 
-            clf_options : dict -  Default: RANDOM_FOREST_OPTIONS
-            A dictionary with the settings to be passed to the random forest
-            constructor. If high-low split of the training is desired, the
-            dictionary must contain the entries "high" and "low", and the
-            corresponding values must be dictionaries with the options for each
-            of the classifiers
+            svms : (dict, dict) - Default: (SVMS, RANDOM_STATES)
+            The first dictionary sets the lines that will be included in each of the SVM
+            instances that will be used to determine the probability of the
+            candidate being a quasar. The second dictionary has to have the same keys as
+            the first dictionary and be comprised of integers to set the sandom states of
+            the SVMs. In training mode, they're passed to the model instance before
+            training. Otherwise it's ignored.
             """
         self.__name = name
         self.__settings = settings
-        self.__selected_cols = selected_cols
-        self.__clf_options = model_opt[0]
-        self.__random_state = model_opt[1]
+        self.__svms = svms[0]
+        self.__random_states = svms[1]
+        self.__clfs = {}
+        self.__scalers = {}
         self.__cuts = cuts
         self.__percentiles = {}
-        if "high" in self.__clf_options.keys() and "low" in self.__clf_options.keys():
-            self.__highlow_split = True
-        else:
-            self.__highlow_split = False
-
-        # load models
-        if self.__highlow_split:
-            self.__clf_high = RandomForestClassifier(random_state=self.__random_state, **self.__clf_options.get("high"))
-            self.__clf_low = RandomForestClassifier(random_state=self.__random_state, **self.__clf_options.get("low"))
-        else:
-            self.__clf = RandomForestClassifier(random_state=self.__random_state, **self.__clf_options)
-        
-
+    
     def __find_class(self, row, train):
         """ Find the class the instance belongs to. If train is set
             to True, then find the class from class_person. For quasars
             and galaxies add a new class if the redshift is wrong.
             If train is False, then find the class the instance belongs
             to from the highest of the computed probability.
-
+            
             Parameters
             ----------
             row : pd.Series
             A row in the DataFrame.
-
+            
             train : bool
             If True, then dinf the class from the truth table,
             otherwise find it from the computed probabilities
-
+            
             Returns
             -------
             The class the instance belongs to:
@@ -106,38 +98,34 @@ class Model(object):
             if row["class_person"] == 30 and not row["correct_redshift"]:
                 data_class = 305
             elif row["class_person"] == 3 and not row["correct_redshift"]:
-                data_class = 35
+                    data_class = 35
             elif row["class_person"] == 4 and not row["correct_redshift"]:
                 data_class = 45
             else:
                 data_class = row["class_person"]
-
+                
         # find class from the probabilities
         else:
             data_class = -1
             aux_prob = 0.0
-            if self.__highlow_split:
-                class_labels = self.__clf_high.classes_
-            else:
-                class_labels = self.__clf.classes_
-            for class_label in class_labels:
+            for class_label in self.__clfs.get(1).classes_:
                 if row["prob_class{:d}".format(int(class_label))] > aux_prob:
                     aux_prob = row["prob_class{:d}".format(int(class_label))]
                     data_class = int(class_label)
 
         return data_class
-
+    
     def __find_prob(self, row, columns):
         """ Find the probability of a instance being a quasar by
             adding the probabilities of classes 3 and 30. If
             the probability for this classes are not found,
             then return np.nan
-
+            
             Parameters
             ----------
             row : pd.Series
             A row in the DataFrame.
-
+            
             Returns
             -------
             The probability of the object being a quasar.
@@ -156,21 +144,22 @@ class Model(object):
             prob = np.nan
         return prob
 
+
     def __match_cuts(self, row, selected_cols):
         """ Return True if the selected columns have all higher than the respective
             values stored in self.__percentiles and False otherwise.
             This function should be called using the DataFrame.apply function
             qith axis=1.
-
+            
             Parameters
             ----------
             row : pd.Series
             A row in the DataFrame.
-
+            
             selected_cols : list of string
             Names of the columns to compare. Musts be keys of self.__percentiles
             and be present in the DataFrame columns.
-
+            
             Returns
             -------
             True if the selected columns have all higher values than the respective
@@ -194,98 +183,74 @@ class Model(object):
             data_frame : pd.DataFrame
             The dataframe where the probabilities will be predicted
             """
+        # compute probabilities for each of the SVM instances
+        svc_dict = {}
+        for index, selected_cols in tqdm.tqdm(self.__svms.items()):
+            data_frame_aux = data_frame[selected_cols].dropna()
+            data_vector = data_frame_aux[selected_cols[:-2]].values
+            data_vector = self.__scalers.get(index).transform(data_vector)
+            data_class_prob = self.__clfs.get(index).predict_proba(data_vector)
+            for class_index, class_label in enumerate(self.__clfs.get(index).classes_):
+                data_frame.at[data_frame_aux.index, "SVC{}_class{:d}".format(index, int(class_label))] = data_class_prob[:, class_index]
+                if "class{:d}".format(int(class_label)) not in svc_dict.keys():
+                    svc_dict["class{:d}".format(int(class_label))] = []
+                svc_dict["class{:d}".format(int(class_label))].append("SVC{}_class{:d}".format(index, int(class_label)))
         
-        if self.__highlow_split:
-            # high-z split
-            # compute probabilities for each of the classes
-            data_frame_high = data_frame[data_frame["z_try"] >= 2.1].fillna(-9999.99)
-            data_vector = data_frame_high[self.__selected_cols[:-2]].values
-            data_class_probs = self.__clf_high.predict_proba(data_vector)
-
-            # save the probability for each of the classes
-            for index, class_label in enumerate(self.__clf_high.classes_):
-                data_frame_high["prob_class{:d}".format(int(class_label))] = data_class_probs[:,index]
-
-            # low-z split
-            # compute probabilities for each of the classes
-            data_frame_low = data_frame[data_frame["z_try"] < 2.1].fillna(-9999.99)
-            data_vector = data_frame_low[self.__selected_cols[:-2]].values
-            data_class_probs = self.__clf_low.predict_proba(data_vector)
-                
-            # save the probability for each of the classes
-            for index, class_label in enumerate(self.__clf_low.classes_):
-                data_frame_low["prob_class{:d}".format(int(class_label))] = data_class_probs[:,index]
-
-            data_frame = pd.concat([data_frame_high, data_frame_low])
-
-        else:
-            # compute probabilities for each of the classes
-            data_vector = data_frame[self.__selected_cols[:-2]].fillna(-9999.99).values
-            data_class_probs = self.__clf.predict_proba(data_vector)
-
-            # save the probability for each of the classes
-            for index, class_label in enumerate(self.__clf.classes_):
-                data_frame["prob_class{:d}".format(int(class_label))] = data_class_probs[:,index]
-
+        # compute the probability for each of the classes
+        for class_label in self.__clfs.get(1).classes_:
+            data_frame["prob_class{:d}".format(int(class_label))] = data_frame[svc_dict["class{:d}".format(int(class_label))]].max(axis=1)
+    
         # predict class and find the probability of the candidate being a quasar
         data_frame["class_predicted"] = data_frame.apply(self.__find_class, axis=1,
                                                          args=(False, ))
         data_frame["prob"] = data_frame.apply(self.__find_prob, axis=1,
                                               args=(data_frame.columns, ))
 
-        # TODO: delete this
-        """# apply hard-core cuts
-        data_frame["prob_classifier"] = data_frame["prob"].copy()
+        # apply hard-core cuts
+        data_frame["prob_SVM"] = data_frame["prob"].copy()
         for selected_cols in self.__cuts[1]:
             indexs = data_frame[data_frame.apply(self.__match_cuts,
                                                  axis=1, args=(selected_cols, ))].index
             data_frame.loc[indexs, "prob"] = 1
-            data_frame.loc[indexs, "class_predicted"] = CLASS_PREDICTED["quasar"]"""
-
+            data_frame.loc[indexs, "class_predicted"] = CLASS_PREDICTED["quasar"]
+        
         # flag duplicated instances
-        # TODO: delete this
-        #data_frame["duplicated"] = data_frame.sort_values(["specid", "prob", "prob_classifier"], ascending=False).duplicated(subset=("specid", "z_true"), keep="first").sort_index()
-        data_frame["duplicated"] = data_frame.sort_values(["specid", "prob"], ascending=False).duplicated(subset=("specid", "z_true"), keep="first").sort_index()
+        data_frame["duplicated"] = data_frame.sort_values([
+            "specid", "prob", "prob_SVM"], ascending=False).duplicated(subset=("specid", "z_true"),
+                                                                    keep="first").sort_index()
 
         return data_frame
 
     def train(self, data_frame):
         """ Create and train all the instances of SVMs specified in self.__svms
             to estimate the probability of a candidate being a quasar
-            
+
             Parameters
             ----------
             data_frame : pd.DataFrame
             The dataframe where the SVMs are trained
             """
         # compute percentiles to apply hard-core cuts
-        # TODO: delete this
-        #self.__percentiles = {selected_col: data_frame[~data_frame["is_correct"]][selected_col].quantile(self.__cuts[0]) for selected_col in np.unique(self.__cuts[1])}
-        
+        self.__percentiles = {selected_col: data_frame[~data_frame["is_correct"]][selected_col].quantile(self.__cuts[0]) for selected_col in np.unique(self.__cuts[1])}
+
         # filter data_frame by excluding objects that meet the hard-core cuts
         for selected_cols in self.__cuts[1]:
-            # TODO: delete this
-            #data_frame = data_frame[~data_frame.apply(self.__match_cuts,
-            #                                          axis=1, args=(selected_cols, ))]
-                
-            # train classifier
-            if self.__highlow_split:
-                # high-z split
-                data_frame_high = data_frame[data_frame["z_try"] >= 2.1].fillna(-9999.99)
-                data_vector = data_frame_high[self.__selected_cols[:-2]].values
-                data_class = data_frame_high.apply(self.__find_class, axis=1, args=(True,))
-                self.__clf_high.fit(data_vector, data_class)
-                # low-z split
-                data_frame_low = data_frame[data_frame["z_try"] < 2.1].fillna(-9999.99)
-                data_vector = data_frame_low[self.__selected_cols[:-2]].values
-                data_class = data_frame_low.apply(self.__find_class, axis=1, args=(True,))
-                self.__clf_low.fit(data_vector, data_class)
+            data_frame = data_frame[~data_frame.apply(self.__match_cuts,
+                                                      axis=1, args=(selected_cols, ))]
 
-            else:
-                data_frame = data_frame[self.__selected_cols].fillna(-9999.99)
-                data_vector = data_frame[self.__selected_cols[:-2]].values
-                data_class = data_frame.apply(self.__find_class, axis=1, args=(True,))
-                self.__clf.fit(data_vector, data_class)
+        # train SVMs
+        for index, selected_cols in tqdm.tqdm(self.__svms.items()):
+            data_frame_aux = data_frame[selected_cols].dropna()
+            data_vector = data_frame_aux[selected_cols[:-2]].values
+            scaler = preprocessing.StandardScaler().fit(data_vector)
+            data_vector = scaler.transform(data_vector)
+            data_class = data_frame_aux.apply(self.__find_class, axis=1, args=(True,))
+            clf = svm.SVC(probability=True, class_weight="balanced",
+                          random_state=self.__random_states.get(index))
+            clf.fit(data_vector, data_class)
+
+            self.__clfs[index] = clf
+            self.__scalers[index] = scaler
 
 if __name__ == '__main__':
     pass

@@ -72,9 +72,6 @@ def main():
     # load cut options
     cuts = CUTS if args.cuts is None else load_pkl(args.cuts)
 
-    # load SVM options
-    svms, random_states = SVMS, RANDOM_STATES if args.svms is None else load_pkl(args.svms)
-
     # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
@@ -82,7 +79,6 @@ def main():
                                 z_precision=z_precision, mode="training",
                                 weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_sig),
-                                svms=(svms, random_states),
                                 model=(None, cuts))
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
@@ -90,7 +86,6 @@ def main():
                                 name=args.output_candidates,
                                 weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_sig),
-                                svms=(svms, random_states),
                                 model=(None, cuts))
 
     # load candidates dataframe if they have previously looked for
@@ -126,11 +121,20 @@ def main():
     candidates.train_model()
 
     # check completeness
-    userprint("Check statistics")
-    data_frame = candidates.candidates()
-    userprint("\n---------------")
-    userprint("step 1")
-    candidates.find_completeness_purity(quasar_catalogue, data_frame)
+    if args.check_statistics:
+        probs = args.check_probs if args.check_probs is not None else np.arange(0.9, 0.0, -0.05)
+        userprint("Check statistics")
+        data_frame = candidates.candidates()
+        userprint("\n---------------")
+        userprint("step 1")
+        candidates.find_completeness_purity(quasar_catalogue, data_frame)
+        for prob in probs:
+            userprint("\n---------------")
+            userprint("SVM proba > {}".format(prob))
+            candidates.find_completeness_purity(quasar_catalogue,
+                                                data_frame[(data_frame["prob"] > prob) &
+                                                           ~(data_frame["duplicated"]) &
+                                                           (data_frame["z_conf_person"] == 3)])
 
 if __name__ == '__main__':
     main()

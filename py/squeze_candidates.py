@@ -29,8 +29,8 @@ from squeze_peak_finder import PeakFinder
 from squeze_defaults import CUTS
 from squeze_defaults import LINES
 from squeze_defaults import TRY_LINES
-from squeze_defaults import SVMS
-from squeze_defaults import RANDOM_STATES
+from squeze_defaults import RANDOM_FOREST_OPTIONS
+from squeze_defaults import RANDOM_STATE
 from squeze_defaults import Z_PRECISION
 from squeze_defaults import PEAKFIND_WIDTH
 from squeze_defaults import PEAKFIND_SIG
@@ -53,7 +53,7 @@ class Candidates(object):
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.pkl",
                  weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
-                 model=(None, CUTS), svms=(SVMS, RANDOM_STATES)):
+                 model=(None, CUTS), model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
 
             Parameters
@@ -97,13 +97,13 @@ class Candidates(object):
             fix the probability of some of the candidates to 1. In testing and
             operation mode this will be ignored.
 
-            svms : (dict, dict) - Defaut: (SVMS, RANDOM_STATES)
-            The first dictionary sets the lines that will be included in each of the SVM
-            instances that will be used to determine the probability of the
-            candidate being a quasar. The second dictionary has to have the same keys as
-            the first dictionary and be comprised of integers to set the sandom states of
-            the SVMs. In training mode, they're passed to the model instance before
-            training. Otherwise it's ignored.
+            model_opt : (dict, int) - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
+            The first dictionary sets the options to be passed to the random forest
+            cosntructor. If high-low split of the training is desired, the
+            dictionary must contain the entries "high" and "low", and the
+            corresponding values must be dictionaries with the options for each
+            of the classifiers. In training mode, they're passed to the model
+            instance before training. Otherwise it's ignored.
             """
         self.__mode = mode
         self.__name = name
@@ -127,7 +127,7 @@ class Candidates(object):
         else:
             self.__model = model[0]
             self.__load_model_settings()
-        self.__svms = svms
+        self.__model_opt = model_opt
 
         # initialize peak finder
         self.__peak_finder = PeakFinder(self.__peakfind_width, self.__peakfind_sig)
@@ -178,91 +178,24 @@ class Candidates(object):
             peak_err_squared = 1.0/ivar[pix_peak].sum()
             cont_err_squared = (1.0/ivar[pix_blue].sum() +
                                 1.0/ivar[pix_red].sum())/4.0
-        
-            cont_blue_err_squared = 1.0/ivar[pix_blue].sum()
-            cont_red_err_squared = 1.0/ivar[pix_red].sum()
-        
+            cont_blue_err_squared = 1.0/ivar[pix_blue].sum() # TODO: delete this
+            cont_red_err_squared = 1.0/ivar[pix_red].sum() # TODO: delete this
         # compute ratios
         if compute_ratio:
             ratio = 2.0*peak/(cont_red + cont_blue)
             ratio2 = np.abs((cont_red - cont_blue)/(cont_red + cont_blue))
             err_ratio = np.sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/np.abs(cont_red + cont_blue)
-            diff = peak - (cont_red + cont_blue)/2.0
-            err_diff = np.sqrt(peak_err_squared + cont_err_squared)
-            ratio_sn = (ratio - 1.0)/err_ratio#*(1.0 - ratio2)
-            diff_sn = diff/err_diff
-        else:
-            ratio = np.nan
-            err_ratio = np.nan
-            diff = np.nan
-            err_diff = np.nan
-            ratio_sn = np.nan
-            diff_sn = np.nan
-            peak = np.nan
-            cont_red = np.nan
-            cont_blue = np.nan
-            peak_err_squared = np.nan
-            cont_red_err_squared = np.nan
-            cont_blue_err_squared = np.nan
-        
-        # TODO: delete old stuff
-        """elif self.__weighting_mode == "none":
-            cont = (np.average(flux[pix_blue]) +
-                    np.average(flux[pix_red]))/2.0
-            cont_err_squared = (np.nansum(1.0/ivar[pix_blue])/pix_blue.size**2 +
-                                np.nansum(1.0/ivar[pix_red])/pix_red.size**2)/4.0
-            peak = np.average(flux[pix_peak])
-            peak_err_squared = np.nansum(1.0/ivar[pix_peak])/pix_peak.size/pix_peak.size
-            if cont_err_squared == 0.0 or peak_err_squared == 0.0:
-                compute_ratio = False
-        elif self.__weighting_mode == "weights":
-            if (ivar[pix_blue].sum() == 0.0 or ivar[pix_red].sum() == 0.0 or
-                    ivar[pix_peak].sum() == 0.0):
-                compute_ratio = False
-            else:
-                cont = (np.average(flux[pix_blue], weights=ivar[pix_blue]) +
-                        np.average(flux[pix_red], weights=ivar[pix_red]))/2.0
-                cont_err_squared = (1.0/ivar[pix_blue].sum() +
-                                    1.0/ivar[pix_red].sum())/4.0
-                peak = np.average(flux[pix_peak], weights=ivar[pix_peak])
-                peak_err_squared = 1.0/ivar[pix_peak].sum()
-        elif self.__weighting_mode == "flags":
-            weights_blue = np.ones_like(ivar[pix_blue])
-            weights_blue[np.where(ivar[pix_blue] == 0.0)] = 0.0
-            weights_blue_sum = weights_blue.sum()
-            weights_red = np.ones_like(ivar[pix_red])
-            weights_red[np.where(ivar[pix_red] == 0.0)] = 0.0
-            weights_red_sum = weights_blue.sum()
-            weights_peak = np.ones_like(ivar[pix_peak])
-            weights_peak[np.where(ivar[pix_peak] == 0.0)] = 0.0
-            weights_peak_sum = weights_blue.sum()
-            if (weights_blue_sum == 0.0 or weights_red_sum == 0.0 or
-                    weights_peak_sum == 0.0):
-                compute_ratio = False
-            else:
-                cont = (np.sum(flux[pix_blue][weights_blue])/weights_blue_sum +
-                        np.sum(flux[pix_red][weights_red])/weights_red_sum)/2.0
-                cont_err_squared = (np.sum(1.0/ivar[pix_blue][weights_blue])/weights_blue_sum**2 +
-                                    np.sum(1.0/ivar[pix_red][weights_red])/weights_red_sum**2)/4.0
-                peak = np.sum(flux[pix_peak][weights_peak])/weights_peak_sum
-                peak_err_squared = np.sum(1.0/ivar[pix_peak][weights_peak])/weights_peak_sum**2
-
-        # compute ratios
-        if compute_ratio:
-            ratio = peak/cont
-            err_ratio = np.sqrt(peak_err_squared + ratio*ratio*cont_err_squared)/np.fabs(cont)
-            diff = peak - cont
-            err_diff = np.sqrt(peak_err_squared + cont_err_squared)
+            err_ratio2 = 2/np.fabs(cont_blue + cont_red)*np.sqrt(cont_blue**2*cont_blue_err_squared**2 + cont_red**2*cont_red_err_squared**2) # TODO: delete this
             ratio_sn = (ratio - 1.0)/err_ratio
-            diff_sn = diff/err_diff
+            ratio2_sn = ratio2/err_ratio2 # TODO: delete this
         else:
             ratio = np.nan
-            err_ratio = np.nan
-            diff = np.nan
-            err_diff = np.nan
+            ratio2 = np.nan
             ratio_sn = np.nan
-            diff_sn = np.nan"""
-        return ratio, err_ratio, diff, err_diff, ratio_sn, diff_sn, peak, cont_red, cont_blue, peak_err_squared, cont_red_err_squared, cont_blue_err_squared
+            ratio2_sn = np.nan # TODO: delete this
+
+        return ratio, ratio_sn, ratio2, ratio2_sn # TODO: delete this
+        return ratio, ratio_sn, ratio2
 
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """
@@ -405,45 +338,23 @@ class Candidates(object):
 
                 # compute peak ratio for the different lines
                 ratios = np.zeros(self.__lines.shape[0], dtype=float)
-                err_ratios = np.zeros_like(ratios)
-                diffs = np.zeros_like(ratios)
-                err_diffs = np.zeros_like(ratios)
                 ratios_sn = np.zeros_like(ratios)
-                diffs_sn = np.zeros_like(ratios)
-                peaks = np.zeros_like(ratios)
-                cont_reds = np.zeros_like(ratios)
-                cont_blues = np.zeros_like(ratios)
-                peak_err_squareds = np.zeros_like(ratios)
-                cont_red_err_squareds = np.zeros_like(ratios)
-                cont_blue_err_squareds = np.zeros_like(ratios)
+                ratios2 = np.zeros_like(ratios)
+                ratios2_sn = np.zeros_like(ratios) # TODO: delete this
                 for i in range(self.__lines.shape[0]):
-                    ratios[i], err_ratios[i], diffs[i], err_diffs[i], ratios_sn[i], diffs_sn[i], peaks[i], cont_reds[i], cont_blues[i], peak_err_squareds[i], cont_red_err_squareds[i], cont_blue_err_squareds[i] = \
-                        self.__compute_line_ratio(spectrum, i, z_try)
+                    ratios[i], ratios_sn[i], ratios2[i], ratios2_sn[i] = \
+                        self.__compute_line_ratio(spectrum, i, z_try) # TODO: delete this
+                    #ratios[i], ratios_sn[i], ratios2[i] = \
+                    #    self.__compute_line_ratio(spectrum, i, z_try) # TODO: uncomment this line
 
                 # add candidate to the list
                 candidate_info = spectrum.metadata()
-                for (ratio, err_ratio, diff,
-                     err_diff, ratio_sn, diff_sn,
-                     peak, cont_red, cont_blue,
-                     peak_err_squared,
-                     cont_red_err_squared,
-                     cont_blue_err_squared) in zip(ratios, err_ratios, diffs,
-                                                         err_diffs, ratios_sn, diffs_sn,
-                                                       peaks, cont_reds, cont_blues,
-                                                   peak_err_squareds, cont_red_err_squareds,
-                                                   cont_blue_err_squareds):
+                for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
                     candidate_info.append(ratio)
-                    candidate_info.append(err_ratio)
-                    candidate_info.append(diff)
-                    candidate_info.append(err_diff)
                     candidate_info.append(ratio_sn)
-                    candidate_info.append(diff_sn)
-                    candidate_info.append(peak)
-                    candidate_info.append(cont_red)
-                    candidate_info.append(cont_blue)
-                    candidate_info.append(peak_err_squared)
-                    candidate_info.append(cont_red_err_squared)
-                    candidate_info.append(cont_blue_err_squared)
+                    candidate_info.append(ratio2)
+                for ratio2_sn in ratios2_sn: # TODO: delete this
+                    candidate_info.append(ratio2_sn) # TODO: delete this
                 candidate_info.append(z_try)
                 candidate_info.append(significance)
                 candidate_info.append(try_line)
@@ -452,17 +363,9 @@ class Candidates(object):
         columns_candidates = spectrum.metadata_names()
         for i in range(self.__lines.shape[0]):
             columns_candidates.append("{}_ratio".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_ratio_error".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_diff".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_diff_error".format(self.__lines.ix[i].name))
             columns_candidates.append("{}_ratio_SN".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_diff_SN".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_peak".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_cont_red".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_cont_blue".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_peak_err_squared".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_cont_red_err_squared".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_cont_blue_err_squared".format(self.__lines.ix[i].name))
+            columns_candidates.append("{}_ratio2".format(self.__lines.ix[i].name))
+            columns_candidates.append("{}_ratio2_SN".format(self.__lines.ix[i].name)) # TODO: delete this
         columns_candidates.append("z_try")
         columns_candidates.append("peak_significance")
         columns_candidates.append("assumed_line")
@@ -801,8 +704,19 @@ class Candidates(object):
             raise  Error("The function train_model is available in the " +
                          "training mode only. Detected mode is {}".format(self.__mode))
 
+        selected_cols = [col for col in self.__candidates.columns if col.endswith("ratio_SN")]
+        #selected_cols += [col for col in self.__candidates.columns if col.endswith("ratio2_SN")] # TODO: delete this
+        selected_cols += [col for col in self.__candidates.columns if col.endswith("ratio2")]
+        selected_cols += [col for col in self.__candidates.columns if col.endswith("ratio")]
+        selected_cols += ["peak_significance"]
+
+        # add columns to compute the class in training
+        selected_cols += ['class_person', 'correct_redshift']
+        
         self.__model = Model("{}_model.pkl".format(self.__name[:self.__name.rfind(".")]),
-                             self.__get_settings(), svms=self.__svms, cuts=self.__cuts)
+                             selected_cols, self.__get_settings(),
+                             model_opt=self.__model_opt,
+                             cuts=self.__cuts)
         self.__model.train(self.__candidates)
         self.__model.save_model()
 

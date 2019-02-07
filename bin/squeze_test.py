@@ -10,6 +10,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import numpy as np
 
 from squeze_common_functions import load_pkl
 from squeze_common_functions import verboseprint, quietprint
@@ -17,6 +18,7 @@ from squeze_error import Error
 from squeze_quasar_catalogue import QuasarCatalogue
 from squeze_spectra import Spectra
 from squeze_candidates import Candidates
+from squeze_defaults import CUTS
 from squeze_parsers import TEST_PARSER
 
 
@@ -54,9 +56,10 @@ def main():
     # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
-        candidates = Candidates(mode="test", model=model)
+        candidates = Candidates(mode="test", model=(model, CUTS))
     else:
-        candidates = Candidates(mode="test", name=args.output_candidates, model=model)
+        candidates = Candidates(mode="test", name=args.output_candidates,
+                                model=(model, CUTS))
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
@@ -91,17 +94,19 @@ def main():
     candidates.classify_candidates()
 
     # check completeness
-    userprint("Check statistics")
-    data_frame = candidates.candidates()
-    userprint("\n---------------")
-    userprint("step 1")
-    candidates.find_completeness_purity(quasar_catalogue, data_frame)
-    for prob in [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]:
+    if args.check_statistics:
+        probs = args.check_probs if args.check_probs is not None else np.arange(0.9, 0.0, -0.05)
+        userprint("Check statistics")
+        data_frame = candidates.candidates()
         userprint("\n---------------")
-        userprint("SVM proba > {}".format(prob))
-        candidates.find_completeness_purity(quasar_catalogue,
-                                            data_frame[(data_frame["prob"] > prob) &
-                                                       ~(data_frame["duplicated"]) &
-                                                       (data_frame["z_conf_person"] == 3)])
+        userprint("step 1")
+        candidates.find_completeness_purity(quasar_catalogue, data_frame)
+        for prob in probs:
+            userprint("\n---------------")
+            userprint("SVM proba > {}".format(prob))
+            candidates.find_completeness_purity(quasar_catalogue,
+                                                data_frame[(data_frame["prob"] > prob) &
+                                                           ~(data_frame["duplicated"]) &
+                                                           (data_frame["z_conf_person"] == 3)])
 if __name__ == '__main__':
     main()

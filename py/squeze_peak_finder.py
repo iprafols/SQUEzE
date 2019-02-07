@@ -25,7 +25,7 @@ class PeakFinder(object):
             ----------
             width : float
             Width of the Gaussian used as a kernel for the convolution (see
-            method 'smooth' from module 'squeze_spectrum' for details
+            method 'smooth' from module 'squeze_spectrum' for details)
 
             min_significance : float
             Minimum significance of the peak for it to be considered a valid peak
@@ -60,7 +60,7 @@ class PeakFinder(object):
             peak = np.average(flux[index - self.__half_fwhm: index + self.__half_fwhm])
             cont = np.average(flux[index - self.__fwhm: index - self.__half_fwhm])
             cont += np.average(flux[index + self.__half_fwhm: index + self.__fwhm])
-            cont /= 2.0
+            cont = cont/2.0
             ivar_diff = np.sum(ivar[index - self.__fwhm: index + self.__fwhm])
             if ivar_diff != 0.0:
                 error = 1/np.sqrt(ivar_diff)

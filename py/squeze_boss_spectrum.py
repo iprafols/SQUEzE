@@ -30,7 +30,7 @@ class BossSpectrum(Spectrum):
         PURPOSE: Load and format a BOSS spectrum to be digested by
         SQUEzE
         """
-    def __init__(self, spectrum_file, metadata, mask, smoothing=0, double_noise=False):
+    def __init__(self, spectrum_file, metadata, mask, smoothing=0, noise_increase=1):
         """ Initialize class instance
 
             Parameters
@@ -49,8 +49,10 @@ class BossSpectrum(Spectrum):
             smoothing : int - Default: 0
             Number of pixels in the smoothing kernel. Negative values are ignored
 
-            double_noise : bool - Default: False
-            Doubles the noise of the spectra
+            noise_increase : int, >0 - Default: 1
+            Adds noise to the spectrum by adding a gaussian random number of width
+            equal to the (noise_amount-1) times the given variance. Then increase the
+            variance by a factor of sqrt(noise_amount)
             """
         # check that "specid" is present in metadata
         if "specid" not in metadata.keys():
@@ -72,21 +74,23 @@ class BossSpectrum(Spectrum):
         self._ivar = np.ma.array(spectrum_hdu[1].data["ivar"].copy(),
                                  mask=self.__skymask)
         self._metadata = metadata
+        if noise_increase > 1:
+            self.__add_noise(noise_increase)
         if smoothing > 0:
-            self.__smooth(smoothing)
-        if double_noise:
-            self.__double_noise()
+            self._flux = self.smooth(smoothing)
+            self._ivar = self.smooth_ivar(smoothing)
         del spectrum_hdu[1].data
         spectrum_hdu.close()
 
-    def __double_noise(self):
-        """ Doubles the noise of the spectrum by adding a gaussian random number of width
-            equal to the given variance. Then increase the variance by a factor of sqrt(2)
+    def __add_noise(self, noise_amount):
+        """ Adds noise to the spectrum by adding a gaussian random number of width
+            equal to the (noise_amount-1) times the given variance. Then increase the
+            variance by a factor of sqrt(noise_amount)
             """
-        var = 1/self.ivar()
-        var[np.where(var == np.inf)] = 0
-        self._flux = self._flux + var*randn(self._flux.size)
-        self._ivar = self._ivar/np.sqrt(2)
+        var = 1./self._ivar
+        var[np.where(var == np.inf)] = 0.
+        self._ivar = self._ivar/np.sqrt(noise_amount)
+        self._flux = self._flux + (noise_amount - 1.)*var*randn(self._flux.size)
 
     def __find_skymask(self, masklambda, margin):
         """ Compute the sky mask according to a set of wavelengths and a margin.
@@ -97,23 +101,6 @@ class BossSpectrum(Spectrum):
         self.__skymask = np.zeros_like(self._wave)
         for wave in masklambda:
             self.__skymask[np.where(np.abs(np.log10(self._wave/wave)) <= margin)] = 1
-
-    def __smooth(self, smoothing):
-        """ Smooth the flux of the spectrum
-
-            Parameters
-            ----------
-            smoothing : int
-            Number of pixels in the smoothing kernel
-            """
-        # if smoothing is even, add 1
-        if smoothing % 2 == 0:
-            smoothing += 1
-
-        self._flux = medfilt(self._flux, smoothing)
-        self._ivar = medfilt(self._ivar, smoothing)
-
-    
 
 if __name__ == "__main__":
     pass

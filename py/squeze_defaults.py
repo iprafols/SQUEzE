@@ -84,7 +84,22 @@ This variable sets the minimum signal-to-noise ratio of a peak.
 This parameter will be passed to the peak finding function. Check the documentation
 on the module squeze_peak_finder for more details
 """ # description of PEAKFIND_SIG ... pylint: disable=pointless-string-statement
-PEAKFIND_SIG = 15
+PEAKFIND_SIG = 6
+
+"""
+This variable sets the options to be passed to the random forest classifier
+""" # description of RANDOM_FOREST_OPTIONS ... pylint: disable=pointless-string-statement
+RANDOM_FOREST_OPTIONS = {"high": {"class_weight": "balanced_subsample",
+                                  "n_jobs": 3, "n_estimators": 1000},
+                         "low": {"class_weight": "balanced_subsample",
+                                  "n_jobs": 3, "n_estimators": 1000,
+                                  "max_depth": 10,},
+                        }
+
+"""
+This variable sets the random states of the random forest instances
+""" # description of RANDOM_STATE ... pylint: disable=pointless-string-statement
+RANDOM_STATE = 2081487193
 
 """
 This variable sets the lines that will be included in each of the SVM
@@ -94,6 +109,8 @@ candidate being a quasar.
 DO NOT MODIFY this value. If another set of lines is to be used,
 please define it elsewhere and pass it as an argument when creating
 the candidates DataFrame (see README.md)
+
+Deprecated.
 """ # description of SVMS ... pylint: disable=pointless-string-statement
 SVMS = {1: np.array(['lyb_ratio_SN',
                      'lya_ratio_SN',
@@ -179,7 +196,7 @@ SVMS = {1: np.array(['lyb_ratio_SN',
        }
 
 """
-This variable sets the random states of the SVM instances
+This variable sets the random states of the SVM instances. Deprecated.
 """ # description of RANDOM_STATES ... pylint: disable=pointless-string-statement
 RANDOM_STATES = {1: 2081487193,
                  2: 2302130440,

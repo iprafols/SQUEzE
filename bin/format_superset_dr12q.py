@@ -73,13 +73,18 @@ def main():
     parser.add_argument("--smoothing", type=int, default=0,
                         help="""Smoothing to be applied to the spectra (in number of pixels).
                             Negative values are ignored.""")
-    parser.add_argument("--double-noise", action="store_true",
-                        help="""Doubles the noise of the spectra. Ignored if smoothin is present""")
+    parser.add_argument("--noise", type=int, default=1,
+                        help="""Adds noise to the spectrum by adding a gaussian random
+                            number of width equal to the (noise-1) times the given
+                            variance. Then increase the variance by a factor of
+                            sqrt(noise)""")
     parser.add_argument("--sky-mask", type=str, required=True,
                         help="""Name of the file containing the sky mask""")
     parser.add_argument("--margin", type=float, default=1.5e-4,
                         help="""Margin used in the masking. Wavelengths separated to wavelength
                             given in the array by less than the margin will be masked""")
+    parser.add_argument("--sequels", action="store_true",
+                        help="""Format SEQUELS plates instead of BOSS plates""")
 
     args = parser.parse_args()
 
@@ -89,9 +94,14 @@ def main():
     # load plate list
     userprint("loading list of plates")
     plate_list_hdu = fits.open(args.plate_list)
-    plate_list = plate_list_hdu[1].data["plate"][
-        np.where((plate_list_hdu[1].data["programname"] == "boss") &
-                 (plate_list_hdu[1].data["platequality"] == "good"))].copy()
+    if args.sequels:
+        plate_list = plate_list_hdu[1].data["plate"][
+            np.where((plate_list_hdu[1].data["programname"] == "sequels") &
+                     (plate_list_hdu[1].data["platequality"] == "good"))].copy()
+    else:
+        plate_list = plate_list_hdu[1].data["plate"][
+            np.where((plate_list_hdu[1].data["programname"] == "boss") &
+                     (plate_list_hdu[1].data["platequality"] == "good"))].copy()
     plate_list = np.unique(plate_list.astype(int))
     del plate_list_hdu[1].data
     plate_list_hdu.close()
@@ -166,16 +176,11 @@ def main():
             
             
             # add spectra to list
-            
             try:
-                if args.smoothing > 0:
-                    spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
-                                                (masklambda, args.margin),
-                                                smoothing=args.smoothing))
-                else:
-                    spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
-                                                (masklambda, args.margin),
-                                                double_noise=args.double_noise))
+                spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
+                                            (masklambda, args.margin),
+                                            smoothing=args.smoothing,
+                                            noise_increase=args.noise))
             except IOError:
                 missing_files.append(spectrum_file)
                 #print "missing file {}".format(spectrum_file)

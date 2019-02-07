@@ -79,6 +79,20 @@ MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required
                              (without the extension) as base name and append the extension
                              _model.pkl to it""")
 
+MODE_PARSER.add_argument("--check-statistics", action="store_true",
+                         help="""Check the candidates' statistics at the end""")
+
+MODE_PARSER.add_argument("--check-probs", nargs='+', default=None, required=False,
+                         type=float,
+                         help="""White-spaced list of the probabilities to check.
+                             The candidates' statistics will be computed for these
+                             cuts in probabilities. Ignored if --check-statistics
+                             is not passed. If it is not passed and --check-statistics
+                             is then np.arange(0.9, 0.0, -0.05)""")
+
+MODE_PARSER.add_argument("--save-fits", action="store_true",
+                         help="""Save the final catalogue also as a fits file""")
+
 """
 This QUASAR_CATALOGUE_PARSER contains the common options used to load the quasar catalogue.
 """ # description of QUASAR_CATALOGUE_PARSER ... pylint: disable=pointless-string-statement
@@ -133,10 +147,6 @@ TRAINING_PARSER.add_argument("--lines", type=str, default=None, required=False,
 TRAINING_PARSER.add_argument("--cuts", type=str, default=None, required=False,
                              help="""Name of the pkl file containing the hard-core
                                  cuts to be included in the model.""")
-
-TRAINING_PARSER.add_argument("--svms", type=str, default=None, required=False,
-                             help="""Name of the pkl file containing the lines to be used
-                                 for each of the svm instances.""")
 
 TRAINING_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, required=False,
                              help="""Name of the lines that will be associated to the peaks
