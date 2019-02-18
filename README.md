@@ -94,7 +94,7 @@ loading the next set of spectra. (default: None)
 Load candidates previously found. If --input- candidates is passed, then load from there. 
 Otherwise, load from --output-candidates. (default: False)
 
---input-candidates INPUT_CANDIDATES
+--input-candidates INPUT_CANDIDATES  
 Name of the pkl file from where candidates will be loaded. (default: None)
 
 --output-candidates OUTPUT_CANDIDATES
