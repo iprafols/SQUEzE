@@ -84,75 +84,75 @@ Show this help message and exit
 --quiet               
 Do not print messages (default: False)
 
---input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]
+--input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]               
 Name of the pkl file(s) containing the spectra that are to be analysed. If multiple files 
 are given, then they must be passed as a white-spaced list. The spectra in each of the 
 files will be loaded into memory as a block, and candidates will be looked for before 
 loading the next set of spectra. (default: None)
 
---load-candidates     
+--load-candidates                    
 Load candidates previously found. If --input- candidates is passed, then load from there. 
 Otherwise, load from --output-candidates. (default: False)
 
---input-candidates INPUT_CANDIDATES  
+--input-candidates INPUT_CANDIDATES                 
 Name of the pkl file from where candidates will be loaded. (default: None)
 
---output-candidates OUTPUT_CANDIDATES
+--output-candidates OUTPUT_CANDIDATES               
 Name of the pkl file where the candidates will be saved. In training mode, the model will 
 be saved using this name (without the extension) as base name and append the extension 
 _model.pkl to it (default: None)
 
---check-statistics   
+--check-statistics                  
 Check the candidates' statistics at the end (default: False)
 
---check-probs CHECK_PROBS [CHECK_PROBS ...]
+--check-probs CHECK_PROBS [CHECK_PROBS ...]               
 White-spaced list of the probabilities to check. The candidates' statistics will be computed 
 for these cuts in probabilities. Ignored if --check-statistics is not passed. If it is not passed 
 and --check-statistics is then np.arange(0.9, 0.0, -0.05) (default: None)
 
---save-fits           
+--save-fits                          
 Save the final catalogue also as a fits file (default: False)
 
---peakfind-width PEAKFIND_WIDTH
+--peakfind-width PEAKFIND_WIDTH               
 Width (in pixels) of the tipical peak (default: None)
 
---peakfind-sig PEAKFIND_SIG
+--peakfind-sig PEAKFIND_SIG               
 Minimum significance required to accept a peak (default: None)
 
---qso-dataframe QSO_DATAFRAME
+--qso-dataframe QSO_DATAFRAME               
 Name of the pkl file containing the quasar catalogue formatted into pandas dataframe. Must 
 only contain information of quasars that will be loaded. Must be present if --qso-cat is not 
 passed. (default: None)
 
---qso-cat QSO_CAT     
+--qso-cat QSO_CAT                    
 Name of the fits file containig the quasar catalogue. Must be present if --qso-dataframe is not 
 passed (default: None)
 
---qso-cols QSO_COLS [QSO_COLS ...]
+--qso-cols QSO_COLS [QSO_COLS ...]               
 White-spaced list of the data arrays (of the quasar catalogue) to be loaded. Must be present 
 only if --qso-cat is passed (default: None)
 
---qso-hdu QSO_HDU     
+--qso-hdu QSO_HDU                    
 Number of the Header Data Unit in --qso-cat where the catalogue is stored. (default: 1)
 
---qso-specid QSO_SPECID
+--qso-specid QSO_SPECID               
 Name of the column that will be used as specid. Must be included in --qso-cols. Must be present 
 only if --qso-cat is passed (default: None)
 
---z-precision Z_PRECISION
+--z-precision Z_PRECISION               
 Maximum difference betwee the true redshift and the measured redshift for a candidate to be 
 considered a true detection. This option only works on cuts of type 'percentile'. (default: None)
 
---lines LINES         
+--lines LINES                        
 Name of the pkl file containing the lines ratios to be computed. (default: None)
 
---cuts CUTS           
+--cuts CUTS                          
 Name of the pkl file containing the hard-core cuts to be included in the model. (default: None)
 
---try-lines [TRY_LINES [TRY_LINES ...]]
+--try-lines [TRY_LINES [TRY_LINES ...]]               
 Name of the lines that will be associated to the peaks to estimate the redshift. (default: None)
 
---weighting-mode WEIGHTING_MODE
+--weighting-mode WEIGHTING_MODE               
 Selects the weighting mode when computing the line ratios. Can be 'weights' if ivar is to be 
 used as weights when computing the line ratios, 'flags' if ivar is to be used as flags when 
 computing the line ratios (pixels with 0 value will be ignored, the rest will be averaged without 
@@ -172,28 +172,28 @@ Show this help message and exit
 --quiet               
 Do not print messages (default: False)
 
---input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]
+--input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]               
 Name of the pkl file(s) containing the spectra that are to be analysed. If multiple files are given, 
 then they must be passed as a white-spaced list. The spectra in each of the files will be loaded 
 into memory as a block, and candidates will be looked for before loading the next set of spectra.
 (default: None)
 
---load-candidates     
+--load-candidates                    
 Load candidates previously found. If --input-candidates is passed, then load from there. Otherwise,
 load from --output-candidates. (default: False) 
 
---input-candidates INPUT_CANDIDATES 
+--input-candidates INPUT_CANDIDATES                
 Name of the pkl file from where candidates will be loaded. (default: None)
 
---output-candidates OUTPUT_CANDIDATES
+--output-candidates OUTPUT_CANDIDATES               
 Name of the pkl file where the candidates will be saved. In training mode, the model will be saved 
 using this name (without the extension) as base name and append the extension _model.pkl to it 
 (default: None)
 
---check-statistics    Check the candidates' statistics at the end (default:
-False)
+--check-statistics                  
+Check the candidates' statistics at the end (default: False)
 
---check-probs CHECK_PROBS [CHECK_PROBS ...]
+--check-probs CHECK_PROBS [CHECK_PROBS ...]               
 White-spaced list of the probabilities to check. The candidates' statistics will be computed for 
 these cuts in probabilities. Ignored if --check-statistics is not passed. If it is not passed and 
 --check-statistics is then np.arange(0.9, 0.0, -0.05) (default: None)
@@ -201,27 +201,27 @@ these cuts in probabilities. Ignored if --check-statistics is not passed. If it 
 --save-fits           
 Save the final catalogue also as a fits file (default: False)
 
---qso-dataframe QSO_DATAFRAME
+--qso-dataframe QSO_DATAFRAME               
 Name of the pkl file containing the quasar catalogue formatted into pandas dataframe. Must only 
 contain information of quasars that will be loaded. Must be present if --qso-cat is not passed. 
 (default: None)
 
---qso-cat QSO_CAT     
+--qso-cat QSO_CAT                    
 Name of the fits file containig the quasar catalogue. Must be present if --qso-dataframe is not 
 passed (default: None)
 
---qso-cols QSO_COLS [QSO_COLS ...]
+--qso-cols QSO_COLS [QSO_COLS ...]               
 White-spaced list of the data arrays (of the quasar catalogue) to be loaded. Must be present only 
 if --qso-cat is passed (default: None)
 
---qso-hdu QSO_HDU     
+--qso-hdu QSO_HDU                    
 Number of the Header Data Unit in --qso-cat where the catalogue is stored. (default: 1)
 
---qso-specid QSO_SPECID
+--qso-specid QSO_SPECID               
 Name of the column that will be used as specid. Must be included in --qso-cols. Must be present 
 only if --qso-cat is passed (default: None)
 
---model MODEL         
+--model MODEL                        
 Name of the pkl file containing the model to be used in the computation of the probabilities of 
 candidates being quasars (default: None)
 
@@ -239,38 +239,38 @@ Show this help message and exit
 --quiet               
 Do not print messages (default: False)
 
---input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]
+--input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]               
 Name of the pkl file(s) containing the spectra that are to be analysed. If multiple files are given, then 
 they must be passed as a white-spaced list. The spectra in each of the files will be loaded into memory 
 as a block, and candidates will be looked for before loading the next set of spectra. (default: None)
 
---load-candidates     
+--load-candidates                    
 Load candidates previously found. If --input-candidates is passed, then load from there. Otherwise,
 load from --output-candidates. (default: False)
 
---input-candidates INPUT_CANDIDATES
+--input-candidates INPUT_CANDIDATES               
 Name of the pkl file from where candidates will be loaded. (default: None)
 
---output-candidates OUTPUT_CANDIDATES
+--output-candidates OUTPUT_CANDIDATES               
 Name of the pkl file where the candidates will be saved. In training mode, the model will be saved 
 using this name (without the extension) as base name and append the extension _model.pkl to it 
 (default: None)
 
---check-statistics    
+--check-statistics                   
 Check the candidates' statistics at the end (default:False)
 
---check-probs CHECK_PROBS [CHECK_PROBS ...]
+--check-probs CHECK_PROBS [CHECK_PROBS ...]               
 White-spaced list of the probabilities to check. The candidates' statistics will be computed for 
 these cuts in probabilities. Ignored if --check-statistics is not passed. If it is not passed and 
 --check-statistics is then np.arange(0.9, 0.0, -0.05) (default: None)
 
---save-fits           
+--save-fits                          
 Save the final catalogue also as a fits file (default: False)
 
---output-catalogue OUTPUT_CATALOGUE
+--output-catalogue OUTPUT_CATALOGUE               
 Name of the fits file where the final catalogue will be stored. (default: None)
 
---prob-cut PROB_CUT   
+--prob-cut PROB_CUT                  
 Only objects with probability > PROB_CUT will be included in the catalogue (default: 0.1)
 
 ### Usage in merging mode
@@ -280,11 +280,14 @@ run
 python squeze_merge_candidates.py
 ```
 optional arguments:
--h, --help                  show this help message and exit
---quiet                     Do not print messages (default: False)
---input-candidates INPUT_CANDIDATES [INPUT_CANDIDATES ...]
-                                List of pkl files containing candidates objects to
-                                merge. (default: None)
---output-candidates OUTPUT_CANDIDATES
-                                Name of the pkl file where the candidates will be
-                                saved. (default: None)
+-h, --help                 
+Show this help message and exit
+
+--quiet                     
+Do not print messages (default: False)
+
+--input-candidates INPUT_CANDIDATES [INPUT_CANDIDATES ...]               
+List of pkl files containing candidates objects to merge. (default: None)
+
+--output-candidates OUTPUT_CANDIDATES               
+Name of the pkl file where the candidates will be saved. (default: None)
