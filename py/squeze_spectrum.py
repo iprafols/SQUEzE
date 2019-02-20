@@ -104,7 +104,7 @@ class Spectrum(object):
 
         # rebin
         for index in range(0, rebinned_flux.size):
-            rebinned_flux[index] = np.average(self._flux[index*num_pixels: (index + 1)*num_pixels], weigths=self._ivar[index*num_pixels: (index + 1)*num_pixels])
+            rebinned_flux[index] = np.average(self._flux[index*num_pixels: (index + 1)*num_pixels], weights=self._ivar[index*num_pixels: (index + 1)*num_pixels])
             rebinned_ivar[index] = np.sum(self._ivar[index*num_pixels: (index + 1)*num_pixels])
             rebinned_wave[index] = self._wave[index*num_pixels: (index + 1)*num_pixels].mean()
 
