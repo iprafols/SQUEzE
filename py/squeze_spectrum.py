@@ -86,8 +86,7 @@ class Spectrum(object):
             are discarded.
 
             The flux of the new bin is computed by averaging the fluxes of the
-            original array, weighted by the inverse variance associated to each
-            pixel. The inverse variance of the new bin is computed by summing the
+            original array. The inverse variance of the new bin is computed by summing the
             inverse variances of the original array. The wavelength of the new bin
             is computed by averaging the wavelength of the original array.
 
@@ -104,7 +103,7 @@ class Spectrum(object):
 
         # rebin
         for index in range(0, rebinned_flux.size):
-            rebinned_flux[index] = np.average(self._flux[index*num_pixels: (index + 1)*num_pixels], weights=self._ivar[index*num_pixels: (index + 1)*num_pixels])
+            rebinned_flux[index] = np.average(self._flux[index*num_pixels: (index + 1)*num_pixels])
             rebinned_ivar[index] = np.sum(self._ivar[index*num_pixels: (index + 1)*num_pixels])
             rebinned_wave[index] = self._wave[index*num_pixels: (index + 1)*num_pixels].mean()
 
