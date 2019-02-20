@@ -97,7 +97,7 @@ class Spectrum(object):
             Number of pixels to combine in the rebinning
             """
         # define matrixes
-        new_size = self.flux.size//num_pixels
+        new_size = self._flux.size//num_pixels
         rebinned_flux = np.zeros(new_size, dtype=float)
         rebinned_ivar = np.zeros_like(rebinned_flux)
         rebinned_wave = np.zeros_like(rebinned_flux)
