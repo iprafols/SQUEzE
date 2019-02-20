@@ -179,7 +179,7 @@ def main():
             try:
                 spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
                                             (masklambda, args.margin),
-                                            rebin=args.rebin_num_pixels,
+                                            rebin_num_pixels=args.rebin_num_pixels,
                                             noise_increase=args.noise))
             except IOError:
                 missing_files.append(spectrum_file)
