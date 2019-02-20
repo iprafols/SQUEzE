@@ -78,6 +78,38 @@ class Spectrum(object):
             """
         # member must be declared in child class ... pylint: disable=no-member
         return self._metadata.keys()
+    
+    def rebin(self, num_pixels):
+        """ Returns a rebinned version of the flux, inverse variance and wavelength.
+            The rebinning is done by combining num_pixels pixels. If the total number
+            of pixels is not multiple of num_pixels, pixels with highest wavelength
+            are discarded.
+
+            The flux of the new bin is computed by averaging the fluxes of the
+            original array, weighted by the inverse variance associated to each
+            pixel. The inverse variance of the new bin is computed by summing the
+            inverse variances of the original array. The wavelength of the new bin
+            is computed by averaging the wavelength of the original array.
+
+            Parameters
+            ----------
+            num_pixels : int
+            Number of pixels to combine in the rebinning
+            """
+        # define matrixes
+        new_size = self.flux.size//num_pixels
+        rebinned_flux = np.zeros(new_size, dtype=float)
+        rebinned_ivar = np.zeros_like(rebinned_flux)
+        rebinned_wave = np.zeros_like(rebinned_flux)
+
+        # rebin
+        for index in range(0, rebinned_flux.size):
+            rebinned_flux[index] = np.average(self._flux[index*num_pixels: (index + 1)*num_pixels], weigths=self._ivar[index*num_pixels: (index + 1)*num_pixels])
+            rebinned_ivar[index] = np.sum(self._ivar[index*num_pixels: (index + 1)*num_pixels])
+            rebinned_wave[index] = self._wave[index*num_pixels: (index + 1)*num_pixels].mean()
+
+        # return flux, error and wavelength
+        return rebinned_flux, rebinned_ivar, rebinned_wave
 
     def smooth(self, width):
         """ Returns a smoothed version of the flux. The smoothing is computed

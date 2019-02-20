@@ -70,9 +70,9 @@ def main():
                         help="""Name of the folder containg the spectra to process. In
                             this folder, spectra are found in a subfoldare with the plate
                             number.""")
-    parser.add_argument("--smoothing", type=int, default=0,
-                        help="""Smoothing to be applied to the spectra (in number of pixels).
-                            Negative values are ignored.""")
+    parser.add_argument("--rebin-num-pixels", type=int, default=0,
+                        help="""Rebinning to be applied to the spectra (in number
+                            of pixels).""")
     parser.add_argument("--noise", type=int, default=1,
                         help="""Adds noise to the spectrum by adding a gaussian random
                             number of width equal to the (noise-1) times the given
@@ -179,7 +179,7 @@ def main():
             try:
                 spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
                                             (masklambda, args.margin),
-                                            smoothing=args.smoothing,
+                                            rebin=args.rebin_num_pixels,
                                             noise_increase=args.noise))
             except IOError:
                 missing_files.append(spectrum_file)
