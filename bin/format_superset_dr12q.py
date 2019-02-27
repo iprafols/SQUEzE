@@ -81,10 +81,13 @@ def main():
     parser.add_argument("--sky-mask", type=str, required=True,
                         help="""Name of the file containing the sky mask""")
     parser.add_argument("--margin", type=float, default=1.5e-4,
-                        help="""Margin used in the masking. Wavelengths separated to wavelength
-                            given in the array by less than the margin will be masked""")
+                        help="""Margin used in the masking. Wavelengths separated to
+                            wavelength given in the array by less than the margin
+                            will be masked""")
     parser.add_argument("--sequels", action="store_true",
                         help="""Format SEQUELS plates instead of BOSS plates""")
+    parser.add_argument("--single-plate", type=int, required=False, default=0,
+                        help="""Loadd BOSS spectra only from this plate""")
 
     args = parser.parse_args()
 
@@ -118,6 +121,9 @@ def main():
     userprint("loading spectra in each of the plates")
     missing_files = []
     for plate in tqdm.tqdm(plate_list):
+        
+        if not (args.single_plate == 0 or plate == args.single_plate):
+            continue
 
         # reset spectra object
         spectra = Spectra()
