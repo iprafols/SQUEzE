@@ -79,11 +79,11 @@ class Spectrum(object):
         # member must be declared in child class ... pylint: disable=no-member
         return self._metadata.keys()
     
-    def rebin(self, num_pixels):
+    def rebin(self, pixel_width):
         """ Returns a rebinned version of the flux, inverse variance and wavelength.
-            The rebinning is done by combining num_pixels pixels. If the total number
-            of pixels is not multiple of num_pixels, pixels with highest wavelength
-            are discarded.
+            New bins are centered around 4000 Angstroms and have a width specified by
+            pixel_width. The rebinning is made by combining all the bins within
+            +- half the pixel width of the new pixel centers. 
 
             The flux of the new bin is computed by averaging the fluxes of the
             original array. The inverse variance of the new bin is computed by summing the
@@ -92,20 +92,22 @@ class Spectrum(object):
 
             Parameters
             ----------
-            num_pixels : int
-            Number of pixels to combine in the rebinning
+            pixel_width : float
+            Width of the new pixel (in Angstroms)
             """
         # define matrixes
-        new_size = self._flux.size//num_pixels
-        rebinned_flux = np.zeros(new_size, dtype=float)
-        rebinned_ivar = np.zeros_like(rebinned_flux)
-        rebinned_wave = np.zeros_like(rebinned_flux)
+        start_wave = 4000 # Angstroms
+        half_width = pixel_width/2.0
+        rebinned_wave = np.append(np.arange(start_wave, self._wave.min() - pixel_width, -pixel_width)[::-1],
+                                  np.arange(start_wave, self._wave.max() + pixel_width, pixel_width))
+        rebinned_ivar = np.zeros_like(rebinned_wave)
+        rebinned_flux = np.zeros_like(rebinned_wave)
 
         # rebin
-        for index in range(0, rebinned_flux.size):
-            rebinned_flux[index] = np.average(self._flux[index*num_pixels: (index + 1)*num_pixels])
-            rebinned_ivar[index] = np.sum(self._ivar[index*num_pixels: (index + 1)*num_pixels])
-            rebinned_wave[index] = self._wave[index*num_pixels: (index + 1)*num_pixels].mean()
+        for index, wave in enumerate(rebinned_wave):
+            pos = np.where((self._wave >= wave - half_width) & (self._wave < wave + half_width))
+            rebinned_flux[index] = self._flux[pos].mean()
+            rebinned_ivar[index] = self._ivar[pos].sum()
 
         # return flux, error and wavelength
         return rebinned_flux, rebinned_ivar, rebinned_wave
