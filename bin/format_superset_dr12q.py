@@ -70,7 +70,7 @@ def main():
                         help="""Name of the folder containg the spectra to process. In
                             this folder, spectra are found in a subfoldare with the plate
                             number.""")
-    parser.add_argument("--rebin-pixels-width", type=int, default=0,
+    parser.add_argument("--rebin-pixels-width", type=float, default=0,
                         help="""Width of the new pixel (in Angstroms).""")
     parser.add_argument("--noise", type=int, default=1,
                         help="""Adds noise to the spectrum by adding a gaussian random
