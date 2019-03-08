@@ -118,12 +118,15 @@ class Spectrum(object):
             
             Parameters
             ----------
-            width : float
+            width : int
             Width of the Gaussian to be used as smoothing kernel (in number of pixels)
             """
-        gauss_kernel = Gaussian1DKernel(width)
-        # member must be declared in child class ... pylint: disable=no-member
-        return convolve(self._flux, gauss_kernel)
+        if width > 0:
+            gauss_kernel = Gaussian1DKernel(width)
+            # member must be declared in child class ... pylint: disable=no-member
+            return convolve(self._flux, gauss_kernel)
+        else:
+            return self._flux
 
     def wave(self):
         """ Returns the wavelength as a numpy.ndarray
