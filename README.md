@@ -19,6 +19,8 @@ SQUEzE is a software package to identify quasars and estimate their redshift in 
 The quasars id and redshif is estimated in a two-step process:
     1. Generate a high completeness and low purity sample of candidates
     2. Filter the candidates to improve purity while keeping a target completeness
+See Perez-Rafols et al. 2019 (https://arxiv.org/abs/1903.00023) for more details. Consider referencing
+this paper if you are using SQUEzE in your analysis.
     
 SQUEzE can run in different modes:
     1. training - Use a known sample to decide on which cuts to apply
@@ -32,6 +34,18 @@ download
 git clone https://github.com/iprafols/SQUEzE.git
 ```
 Add <path_to_SQUEzE>/`SQUEzE/py/` to your `PYTHONPATH`.
+
+It is recommended to pretrain SQUEzE using the provided results from BOSS. 
+To do so run 
+```
+cd <path_to_SQUEzE>/SQUEzE/data
+tar -xzvf BOSS_train_64plates.tar.gz
+cd ../bin
+python pretrain_squeze.py
+```
+from the `bin/` folder. This will generate a model named `BOSS_train_64plates_model.pkl`
+stored in the `data/` folder.
+
 
 ## Usage
 
