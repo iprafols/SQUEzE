@@ -102,12 +102,18 @@ class Spectrum(object):
                                   np.arange(start_wave, self._wave.max() + pixel_width, pixel_width))
         rebinned_ivar = np.zeros_like(rebinned_wave)
         rebinned_flux = np.zeros_like(rebinned_wave)
+        mask = np.zeros_like(rebinned_wave, dtype=bool)
 
         # rebin
         for index, wave in enumerate(rebinned_wave):
             pos = np.where((self._wave >= wave - half_width) & (self._wave < wave + half_width))
             rebinned_flux[index] = self._flux[pos].mean()
             rebinned_ivar[index] = self._ivar[pos].sum()
+        
+        mask[np.where((np.isnan(rebinned_flux)) | (np.isnan(rebinned_ivar)))] = True
+        rebinned_wave = np.ma.array(rebinned_wave, mask=mask)
+        rebinned_flux = np.ma.array(rebinned_flux, mask=mask)
+        rebinned_ivar = np.ma.array(rebinned_ivar, mask=mask)
 
         # return flux, error and wavelength
         return rebinned_flux, rebinned_ivar, rebinned_wave
