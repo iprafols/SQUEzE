@@ -30,7 +30,8 @@ class BossSpectrum(Spectrum):
         PURPOSE: Load and format a BOSS spectrum to be digested by
         SQUEzE
         """
-    def __init__(self, spectrum_file, metadata, mask, rebin_pixels_width=0, noise_increase=1):
+    def __init__(self, spectrum_file, metadata, sky_mask, rebin_pixels_width=0, noise_increase=1,
+                 forbidden_wavelenghts=None):
         """ Initialize class instance
 
             Parameters
@@ -41,7 +42,7 @@ class BossSpectrum(Spectrum):
             metadata : dict
             A dictionary with the metadata. Keys should be strings
             
-            mask : (np.array, float)
+            sky_mask : (np.array, float)
             A tuple containing the array of the wavelengths to mask and the margin
             used in the masking. Wavelengths separated to wavelength given in the array
             by less than the margin will be masked
@@ -53,6 +54,12 @@ class BossSpectrum(Spectrum):
             Adds noise to the spectrum by adding a gaussian random number of width
             equal to the (noise_amount-1) times the given variance. Then increase the
             variance by a factor of sqrt(noise_amount)
+            
+            forbidden_wavelengths : list of tuples or None - Default: None
+            If not None, a list containing tuples specifying ranges of wavelengths that will
+            be masked (both ends included). Each tuple must contain the initial and final range
+            of wavelenghts. This is intended to be complementary to the sky mask to limit the
+            wavelength coverage, and hard cuts will be applied
             """
         # check that "specid" is present in metadata
         if "specid" not in metadata.keys():
@@ -63,9 +70,13 @@ class BossSpectrum(Spectrum):
         
         # compute sky mask
         self._wave = 10**spectrum_hdu[1].data["loglam"].copy()
-        masklambda = mask[0]
-        margin = mask[1]
+        masklambda = sky_mask[0]
+        margin = sky_mask[1]
         self.__find_skymask(masklambda, margin)
+
+        # mask forbidden lines
+        if forbidden_wavelenghts is not None:
+            self.__filter_wavelengths(forbidden_wavelenghts)
         
         # store the wavelength, flux and inverse variance as masked arrays
         self._wave = np.ma.array(self._wave, mask=self.__skymask)
@@ -100,6 +111,14 @@ class BossSpectrum(Spectrum):
         self.__skymask = np.zeros_like(self._wave)
         for wave in masklambda:
             self.__skymask[np.where(np.abs(np.log10(self._wave/wave)) <= margin)] = 1
+
+    def __filter_wavelengths(forbidden_wavelenghts):
+        """ Mask the wavelengths in the ranges specified by the tuples in
+            forbidden_wavelenghts
+            """
+        for item in forbidden_wavelenghts:
+            self.__skymask[np.where((self._wave >= item[0]) & (self._wave <= item[1]))] = 1
+            
 
 if __name__ == "__main__":
     pass

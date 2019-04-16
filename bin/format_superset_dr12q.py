@@ -87,8 +87,22 @@ def main():
                         help="""Format SEQUELS plates instead of BOSS plates""")
     parser.add_argument("--single-plate", type=int, required=False, default=0,
                         help="""Loadd BOSS spectra only from this plate""")
+    parser.add_argument("--forbidden-wavelengths", type=float, nargs='*',
+                        help="""A list containing floats specifying ranges of wavelengths
+                            that will be masked (both ends included). Odd (even) positions
+                            will be lower (upper) limits of the ranges""")
 
     args = parser.parse_args()
+    # parsing --forbidden-wavelengths
+    if args.forbidden_wavelengths is not None:
+        aux = []
+        for i in range(0, len(args.forbidden_wavelengths), 2):
+            try:
+                aux.append((args.forbidden_wavelengths[i], args.forbidden_wavelengths[i + 1]))
+            except IndexError:
+                verboseprint("--forbidden-wavelengths must have an even number of elements.\n Stopping...")
+                return
+        args.forbidden_wavelengths = aux
 
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
@@ -185,7 +199,8 @@ def main():
                 spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
                                             (masklambda, args.margin),
                                             rebin_pixels_width=args.rebin_pixels_width,
-                                            noise_increase=args.noise))
+                                            noise_increase=args.noise,
+                                            forbidden_wavelenghts=args.forbidden_wavelenghts))
             except IOError:
                 missing_files.append(spectrum_file)
                 #print "missing file {}".format(spectrum_file)
