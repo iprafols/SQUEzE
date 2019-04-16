@@ -78,6 +78,45 @@ class Spectrum(object):
             """
         # member must be declared in child class ... pylint: disable=no-member
         return self._metadata.keys()
+    
+    def rebin(self, pixel_width):
+        """ Returns a rebinned version of the flux, inverse variance and wavelength.
+            New bins are centered around 4000 Angstroms and have a width specified by
+            pixel_width. The rebinning is made by combining all the bins within
+            +- half the pixel width of the new pixel centers. 
+
+            The flux of the new bin is computed by averaging the fluxes of the
+            original array. The inverse variance of the new bin is computed by summing the
+            inverse variances of the original array. The wavelength of the new bin
+            is computed by averaging the wavelength of the original array.
+
+            Parameters
+            ----------
+            pixel_width : float
+            Width of the new pixel (in Angstroms)
+            """
+        # define matrixes
+        start_wave = 4000 # Angstroms
+        half_width = pixel_width/2.0
+        rebinned_wave = np.append(np.arange(start_wave, self._wave.min() - pixel_width, -pixel_width)[::-1],
+                                  np.arange(start_wave, self._wave.max() + pixel_width, pixel_width))
+        rebinned_ivar = np.zeros_like(rebinned_wave)
+        rebinned_flux = np.zeros_like(rebinned_wave)
+        mask = np.zeros_like(rebinned_wave, dtype=bool)
+
+        # rebin
+        for index, wave in enumerate(rebinned_wave):
+            pos = np.where((self._wave >= wave - half_width) & (self._wave < wave + half_width))
+            rebinned_flux[index] = self._flux[pos].mean()
+            rebinned_ivar[index] = self._ivar[pos].sum()
+        
+        mask[np.where((np.isnan(rebinned_flux)) | (np.isnan(rebinned_ivar)))] = True
+        rebinned_wave = np.ma.array(rebinned_wave, mask=mask)
+        rebinned_flux = np.ma.array(rebinned_flux, mask=mask)
+        rebinned_ivar = np.ma.array(rebinned_ivar, mask=mask)
+
+        # return flux, error and wavelength
+        return rebinned_flux, rebinned_ivar, rebinned_wave
 
     def smooth(self, width):
         """ Returns a smoothed version of the flux. The smoothing is computed
@@ -85,12 +124,15 @@ class Spectrum(object):
             
             Parameters
             ----------
-            width : float
+            width : int
             Width of the Gaussian to be used as smoothing kernel (in number of pixels)
             """
-        gauss_kernel = Gaussian1DKernel(width)
-        # member must be declared in child class ... pylint: disable=no-member
-        return convolve(self._flux, gauss_kernel)
+        if width > 0:
+            gauss_kernel = Gaussian1DKernel(width)
+            # member must be declared in child class ... pylint: disable=no-member
+            return convolve(self._flux, gauss_kernel)
+        else:
+            return self._flux
 
     def wave(self):
         """ Returns the wavelength as a numpy.ndarray

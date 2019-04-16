@@ -70,9 +70,8 @@ def main():
                         help="""Name of the folder containg the spectra to process. In
                             this folder, spectra are found in a subfoldare with the plate
                             number.""")
-    parser.add_argument("--smoothing", type=int, default=0,
-                        help="""Smoothing to be applied to the spectra (in number of pixels).
-                            Negative values are ignored.""")
+    parser.add_argument("--rebin-pixels-width", type=float, default=0,
+                        help="""Width of the new pixel (in Angstroms).""")
     parser.add_argument("--noise", type=int, default=1,
                         help="""Adds noise to the spectrum by adding a gaussian random
                             number of width equal to the (noise-1) times the given
@@ -81,10 +80,13 @@ def main():
     parser.add_argument("--sky-mask", type=str, required=True,
                         help="""Name of the file containing the sky mask""")
     parser.add_argument("--margin", type=float, default=1.5e-4,
-                        help="""Margin used in the masking. Wavelengths separated to wavelength
-                            given in the array by less than the margin will be masked""")
+                        help="""Margin used in the masking. Wavelengths separated to
+                            wavelength given in the array by less than the margin
+                            will be masked""")
     parser.add_argument("--sequels", action="store_true",
                         help="""Format SEQUELS plates instead of BOSS plates""")
+    parser.add_argument("--single-plate", type=int, required=False, default=0,
+                        help="""Loadd BOSS spectra only from this plate""")
 
     args = parser.parse_args()
 
@@ -118,6 +120,9 @@ def main():
     userprint("loading spectra in each of the plates")
     missing_files = []
     for plate in tqdm.tqdm(plate_list):
+        
+        if not (args.single_plate == 0 or plate == args.single_plate):
+            continue
 
         # reset spectra object
         spectra = Spectra()
@@ -179,7 +184,7 @@ def main():
             try:
                 spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
                                             (masklambda, args.margin),
-                                            smoothing=args.smoothing,
+                                            rebin_pixels_width=args.rebin_pixels_width,
                                             noise_increase=args.noise))
             except IOError:
                 missing_files.append(spectrum_file)

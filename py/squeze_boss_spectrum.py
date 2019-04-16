@@ -30,7 +30,7 @@ class BossSpectrum(Spectrum):
         PURPOSE: Load and format a BOSS spectrum to be digested by
         SQUEzE
         """
-    def __init__(self, spectrum_file, metadata, mask, smoothing=0, noise_increase=1):
+    def __init__(self, spectrum_file, metadata, mask, rebin_pixels_width=0, noise_increase=1):
         """ Initialize class instance
 
             Parameters
@@ -46,8 +46,8 @@ class BossSpectrum(Spectrum):
             used in the masking. Wavelengths separated to wavelength given in the array
             by less than the margin will be masked
 
-            smoothing : int - Default: 0
-            Number of pixels in the smoothing kernel. Negative values are ignored
+            rebin_pixels_width : float, >0 - Default: 0
+            Width of the new pixel (in Angstroms)
 
             noise_increase : int, >0 - Default: 1
             Adds noise to the spectrum by adding a gaussian random number of width
@@ -76,9 +76,8 @@ class BossSpectrum(Spectrum):
         self._metadata = metadata
         if noise_increase > 1:
             self.__add_noise(noise_increase)
-        if smoothing > 0:
-            self._flux = self.smooth(smoothing)
-            self._ivar = self.smooth_ivar(smoothing)
+        if rebin_pixels_width > 0:
+            self._flux, self._ivar, self._wave = self.rebin(rebin_pixels_width)
         del spectrum_hdu[1].data
         spectrum_hdu.close()
 

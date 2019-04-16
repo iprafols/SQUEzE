@@ -31,7 +31,10 @@ class PeakFinder(object):
             Minimum significance of the peak for it to be considered a valid peak
             """
         self.__width = width
-        self.__fwhm = int(2.355*width)
+        if self.__width > 0:
+            self.__fwhm = int(2.355*width)
+        else:
+            self.__fwhm = 2
         self.__half_fwhm = int(self.__fwhm/2)
         self.__min_significance = min_significance
 
