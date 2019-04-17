@@ -112,7 +112,7 @@ class BossSpectrum(Spectrum):
         for wave in masklambda:
             self.__skymask[np.where(np.abs(np.log10(self._wave/wave)) <= margin)] = 1
 
-    def __filter_wavelengths(forbidden_wavelenghts):
+    def __filter_wavelengths(self, forbidden_wavelenghts):
         """ Mask the wavelengths in the ranges specified by the tuples in
             forbidden_wavelenghts
             """
