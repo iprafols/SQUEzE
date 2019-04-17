@@ -200,7 +200,7 @@ def main():
                                             (masklambda, args.margin),
                                             rebin_pixels_width=args.rebin_pixels_width,
                                             noise_increase=args.noise,
-                                            forbidden_wavelenghts=args.forbidden_wavelenghts))
+                                            forbidden_wavelenghts=args.forbidden_wavelengths))
             except IOError:
                 missing_files.append(spectrum_file)
                 #print "missing file {}".format(spectrum_file)
