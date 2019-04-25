@@ -534,17 +534,17 @@ class Candidates(object):
             #purity_to_quasars = np.nan
             quasar_spectra_fraction = np.nan
 
-        print "There are {} candidates ".format(data_frame.shape[0]),
-        print "for {} catalogued quasars".format(num_quasars)
-        print "number of quasars = {}".format(num_quasars)
-        print "found quasars = {}".format(found_quasars)
-        print "completeness = {:.2%}".format(completeness)
-        print "completeness z>=1 = {:.2%}".format(completeness_zge1)
-        print "completeness z>=2.1 = {:.2%}".format(completeness_zge2_1)
-        print "purity = {:.2%}".format(purity)
-        print "purity z >=1 = {:.2%}".format(purity_zge1)
-        print "purity z >=2.1 = {:.2%}".format(purity_zge2_1)
-        print "line purity = {:.2%}".format(line_purity)
+        userprint("There are {} candidates ".format(data_frame.shape[0]),)
+        userprint("for {} catalogued quasars".format(num_quasars))
+        userprint("number of quasars = {}".format(num_quasars))
+        userprint("found quasars = {}".format(found_quasars))
+        userprint("completeness = {:.2%}".format(completeness))
+        userprint("completeness z>=1 = {:.2%}".format(completeness_zge1))
+        userprint("completeness z>=2.1 = {:.2%}".format(completeness_zge2_1))
+        userprint("purity = {:.2%}".format(purity))
+        userprint("purity z >=1 = {:.2%}".format(purity_zge1))
+        userprint("purity z >=2.1 = {:.2%}".format(purity_zge2_1))
+        userprint("line purity = {:.2%}".format(line_purity))
         #print "purity to quasars = {:.2%}".format(purity_to_quasars)
         #print "fraction of quasars = {:.2%}".format(quasar_spectra_fraction)
         if get_results:
