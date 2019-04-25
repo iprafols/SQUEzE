@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
     SQUEzE
     ======
@@ -8,7 +9,6 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-from __future__ import print_function
 import pickle
 
 def save_pkl(filename, user_object):
