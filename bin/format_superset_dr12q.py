@@ -209,7 +209,7 @@ def main():
         save_pkl("{}_plate{:04d}.pkl".format(args.out, plate), spectra)
 
     for item in missing_files:
-        print item
+        userprint(item)
 
 if __name__ == '__main__':
     main()

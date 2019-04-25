@@ -66,7 +66,7 @@ class PeakFinder(object):
             cont = cont/2.0
             ivar_diff = np.sum(ivar[index - self.__fwhm: index + self.__fwhm])
             if ivar_diff != 0.0:
-                error = 1/np.sqrt(ivar_diff)
+                error = 1.0/np.sqrt(ivar_diff)
                 significance = (peak-cont)/error
             else:
                 significance = np.nan

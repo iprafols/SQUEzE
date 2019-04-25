@@ -33,8 +33,8 @@ def verboseprint(*args):
         stuff everything to be printed into a single string
         """
     for arg in args:
-        print arg,
-    print
+        print(arg, end=" ")
+    print("")
 
 def quietprint(*args):
     """ Don't print anything
