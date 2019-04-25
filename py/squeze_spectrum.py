@@ -57,7 +57,7 @@ class Spectrum(object):
             via a property named "specid"
             """
         # member must be declared in child class ... pylint: disable=no-member
-        return self._metadata.values()
+        return list(self._metadata.values())
 
     def metadata_by_key(self, key):
         """ Access one of the elements in self._metadata by name. Return
@@ -77,7 +77,7 @@ class Spectrum(object):
             via a property named "specid"
             """
         # member must be declared in child class ... pylint: disable=no-member
-        return self._metadata.keys()
+        return list(self._metadata)
     
     def rebin(self, pixel_width):
         """ Returns a rebinned version of the flux, inverse variance and wavelength.
