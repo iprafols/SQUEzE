@@ -107,6 +107,7 @@ def main():
             candidates.find_completeness_purity(quasar_catalogue,
                                                 data_frame[(data_frame["prob"] > prob) &
                                                            ~(data_frame["duplicated"]) &
-                                                           (data_frame["z_conf_person"] == 3)])
+                                                           (data_frame["z_conf_person"] == 3)],
+                                                userprint=userprint)
 if __name__ == '__main__':
     main()

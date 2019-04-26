@@ -22,7 +22,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-from squeze_common_functions import save_pkl, load_pkl
+from squeze_common_functions import save_pkl, load_pkl, verboseprint
 from squeze_error import Error
 from squeze_model import Model
 from squeze_peak_finder import PeakFinder
@@ -443,7 +443,7 @@ class Candidates(object):
         self.__save_candidates()
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None,
-                                 get_results=False):
+                                 get_results=False, userprint=verboseprint):
         """
             Given a DataFrame with candidates and another one with the catalogued
             quasars, compute the completeness and the purity. Upon error, return
@@ -462,6 +462,9 @@ class Candidates(object):
             get_results : boolean - Default: False
             If True, return the computed purity, the completeness, and the total number
             of found quasars. Otherwise, return None.
+            
+            userprint : function - Default: verboseprint
+            Print function to use
 
             Returns
             -------

@@ -3,7 +3,7 @@
 Spectroscopic QUasar Extractor and redshift (z) Estimator
 
 requirements:
-* python 2.7
+* python 2.7 or 3.6
 * argparse
 * numpy
 * pandas
