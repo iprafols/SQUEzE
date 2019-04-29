@@ -178,23 +178,17 @@ class Candidates(object):
             peak_err_squared = 1.0/ivar[pix_peak].sum()
             cont_err_squared = (1.0/ivar[pix_blue].sum() +
                                 1.0/ivar[pix_red].sum())/4.0
-            cont_blue_err_squared = 1.0/ivar[pix_blue].sum() # TODO: delete this
-            cont_red_err_squared = 1.0/ivar[pix_red].sum() # TODO: delete this
         # compute ratios
         if compute_ratio:
             ratio = 2.0*peak/(cont_red + cont_blue)
             ratio2 = np.abs((cont_red - cont_blue)/(cont_red + cont_blue))
             err_ratio = np.sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/np.abs(cont_red + cont_blue)
-            err_ratio2 = 2/np.fabs(cont_blue + cont_red)*np.sqrt(cont_blue**2*cont_blue_err_squared**2 + cont_red**2*cont_red_err_squared**2) # TODO: delete this
             ratio_sn = (ratio - 1.0)/err_ratio
-            ratio2_sn = ratio2/err_ratio2 # TODO: delete this
         else:
             ratio = np.nan
             ratio2 = np.nan
             ratio_sn = np.nan
-            ratio2_sn = np.nan # TODO: delete this
 
-        return ratio, ratio_sn, ratio2, ratio2_sn # TODO: delete this
         return ratio, ratio_sn, ratio2
 
     def __get_settings(self):
@@ -340,12 +334,9 @@ class Candidates(object):
                 ratios = np.zeros(self.__lines.shape[0], dtype=float)
                 ratios_sn = np.zeros_like(ratios)
                 ratios2 = np.zeros_like(ratios)
-                ratios2_sn = np.zeros_like(ratios) # TODO: delete this
                 for i in range(self.__lines.shape[0]):
-                    ratios[i], ratios_sn[i], ratios2[i], ratios2_sn[i] = \
-                        self.__compute_line_ratio(spectrum, i, z_try) # TODO: delete this
-                    #ratios[i], ratios_sn[i], ratios2[i] = \
-                    #    self.__compute_line_ratio(spectrum, i, z_try) # TODO: uncomment this line
+                    ratios[i], ratios_sn[i], ratios2[i] = \
+                        self.__compute_line_ratio(spectrum, i, z_try)
 
                 # add candidate to the list
                 candidate_info = spectrum.metadata()
@@ -353,8 +344,6 @@ class Candidates(object):
                     candidate_info.append(ratio)
                     candidate_info.append(ratio_sn)
                     candidate_info.append(ratio2)
-                for ratio2_sn in ratios2_sn: # TODO: delete this
-                    candidate_info.append(ratio2_sn) # TODO: delete this
                 candidate_info.append(z_try)
                 candidate_info.append(significance)
                 candidate_info.append(try_line)
@@ -365,7 +354,6 @@ class Candidates(object):
             columns_candidates.append("{}_ratio".format(self.__lines.ix[i].name))
             columns_candidates.append("{}_ratio_SN".format(self.__lines.ix[i].name))
             columns_candidates.append("{}_ratio2".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_ratio2_SN".format(self.__lines.ix[i].name)) # TODO: delete this
         columns_candidates.append("z_try")
         columns_candidates.append("peak_significance")
         columns_candidates.append("assumed_line")
@@ -708,7 +696,6 @@ class Candidates(object):
                          "training mode only. Detected mode is {}".format(self.__mode))
 
         selected_cols = [col for col in self.__candidates.columns if col.endswith("ratio_SN")]
-        #selected_cols += [col for col in self.__candidates.columns if col.endswith("ratio2_SN")] # TODO: delete this
         selected_cols += [col for col in self.__candidates.columns if col.endswith("ratio2")]
         selected_cols += [col for col in self.__candidates.columns if col.endswith("ratio")]
         selected_cols += ["peak_significance"]

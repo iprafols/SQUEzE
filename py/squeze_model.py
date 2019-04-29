@@ -233,18 +233,7 @@ class Model(object):
         data_frame["prob"] = data_frame.apply(self.__find_prob, axis=1,
                                               args=(data_frame.columns, ))
 
-        # TODO: delete this
-        """# apply hard-core cuts
-        data_frame["prob_classifier"] = data_frame["prob"].copy()
-        for selected_cols in self.__cuts[1]:
-            indexs = data_frame[data_frame.apply(self.__match_cuts,
-                                                 axis=1, args=(selected_cols, ))].index
-            data_frame.loc[indexs, "prob"] = 1
-            data_frame.loc[indexs, "class_predicted"] = CLASS_PREDICTED["quasar"]"""
-
         # flag duplicated instances
-        # TODO: delete this
-        #data_frame["duplicated"] = data_frame.sort_values(["specid", "prob", "prob_classifier"], ascending=False).duplicated(subset=("specid", "z_true"), keep="first").sort_index()
         data_frame["duplicated"] = data_frame.sort_values(["specid", "prob"], ascending=False).duplicated(subset=("specid", "z_true"), keep="first").sort_index()
 
         return data_frame
@@ -258,16 +247,8 @@ class Model(object):
             data_frame : pd.DataFrame
             The dataframe where the SVMs are trained
             """
-        # compute percentiles to apply hard-core cuts
-        # TODO: delete this
-        #self.__percentiles = {selected_col: data_frame[~data_frame["is_correct"]][selected_col].quantile(self.__cuts[0]) for selected_col in np.unique(self.__cuts[1])}
-        
         # filter data_frame by excluding objects that meet the hard-core cuts
         for selected_cols in self.__cuts[1]:
-            # TODO: delete this
-            #data_frame = data_frame[~data_frame.apply(self.__match_cuts,
-            #                                          axis=1, args=(selected_cols, ))]
-                
             # train classifier
             if self.__highlow_split:
                 # high-z split

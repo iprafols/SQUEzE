@@ -75,15 +75,6 @@ formatted as a pandas data frame and saved into a pkl file (python binary).
 The package provides the file `format_lines.py´ with the instructions to
 properly create this object. It is a modifyiable working example.
 
-3. Formatting svms (optional):
-
-The `svms` variable sets the lines that will be included in each of the SVM
-instances that will be used to determine the probability of the
-candidate being a quasar. For SQUEzE to use a value different from the default, 
-it needs to be formatted as a dictionary contianing arrays of names, and saved 
-into a pkl file (python binary). The package provides the file `format_svms.py´ with 
-the instructions to properly create this object. It is a modifyiable working example.
-
 ### Usage in training mode
 
 run
