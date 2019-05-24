@@ -79,7 +79,7 @@ class Spectrum(object):
         # member must be declared in child class ... pylint: disable=no-member
         return list(self._metadata)
     
-    def rebin(self, pixel_width):
+    def rebin(self, pixel_width, extend_pixels=0):
         """ Returns a rebinned version of the flux, inverse variance and wavelength.
             New bins are centered around 4000 Angstroms and have a width specified by
             pixel_width. The rebinning is made by combining all the bins within
@@ -94,6 +94,9 @@ class Spectrum(object):
             ----------
             pixel_width : float
             Width of the new pixel (in Angstroms)
+
+            extend_pixels : float, >0 - Default: 0
+            Pixel overlap region (in Angstroms)
             """
         # define matrixes
         start_wave = 4000 # Angstroms
@@ -106,7 +109,8 @@ class Spectrum(object):
 
         # rebin
         for index, wave in enumerate(rebinned_wave):
-            pos = np.where((self._wave >= wave - half_width) & (self._wave < wave + half_width))
+            pos = np.where((self._wave >= wave - half_width - extend_pixels) &
+                           (self._wave < wave + half_width + extend_pixels))
             rebinned_flux[index] = self._flux[pos].mean()
             rebinned_ivar[index] = self._ivar[pos].sum()
         

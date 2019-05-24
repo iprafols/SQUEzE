@@ -30,8 +30,9 @@ class BossSpectrum(Spectrum):
         PURPOSE: Load and format a BOSS spectrum to be digested by
         SQUEzE
         """
-    def __init__(self, spectrum_file, metadata, sky_mask, rebin_pixels_width=0, noise_increase=1,
-                 forbidden_wavelenghts=None):
+    def __init__(self, spectrum_file, metadata, sky_mask, mask_odd_pixels=False,
+                 rebin_pixels_width=0, extend_pixels=0,
+                 noise_increase=1, forbidden_wavelenghts=None):
         """ Initialize class instance
 
             Parameters
@@ -46,9 +47,15 @@ class BossSpectrum(Spectrum):
             A tuple containing the array of the wavelengths to mask and the margin
             used in the masking. Wavelengths separated to wavelength given in the array
             by less than the margin will be masked
+            
+            mask_odd_pixels : bool - Default: False
+            Mask pixels with odd indexes
 
             rebin_pixels_width : float, >0 - Default: 0
             Width of the new pixel (in Angstroms)
+
+            extend_pixels : float, >0 - Default: 0
+            Pixel overlap region (in Angstroms)
 
             noise_increase : int, >0 - Default: 1
             Adds noise to the spectrum by adding a gaussian random number of width
@@ -78,6 +85,10 @@ class BossSpectrum(Spectrum):
         if forbidden_wavelenghts is not None:
             self.__filter_wavelengths(forbidden_wavelenghts)
         
+        # mask odd pixels
+        if mask_odd_pixels:
+            self.__skymask[1::2] = 1
+        
         # store the wavelength, flux and inverse variance as masked arrays
         self._wave = np.ma.array(self._wave, mask=self.__skymask)
         self._flux = np.ma.array(spectrum_hdu[1].data["flux"].copy(),
@@ -88,7 +99,8 @@ class BossSpectrum(Spectrum):
         if noise_increase > 1:
             self.__add_noise(noise_increase)
         if rebin_pixels_width > 0:
-            self._flux, self._ivar, self._wave = self.rebin(rebin_pixels_width)
+            self._flux, self._ivar, self._wave = self.rebin(rebin_pixels_width,
+                                                            extend_pixels=extend_pixels)
         del spectrum_hdu[1].data
         spectrum_hdu.close()
 

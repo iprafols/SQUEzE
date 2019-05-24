@@ -72,6 +72,10 @@ def main():
                             number.""")
     parser.add_argument("--rebin-pixels-width", type=float, default=0,
                         help="""Width of the new pixel (in Angstroms).""")
+    parser.add_argument("--extend-pixels", type=float, default=0,
+                        help="""Pixel overlap region (in Angstroms)""")
+    parser.add_argument("--mask-odd-pixels", action="store_true",
+                        help="""If set, pixels with odd indexes""")
     parser.add_argument("--noise", type=int, default=1,
                         help="""Adds noise to the spectrum by adding a gaussian random
                             number of width equal to the (noise-1) times the given
@@ -198,8 +202,10 @@ def main():
             try:
                 spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
                                             (masklambda, args.margin),
+                                            mask_odd_pixels=args.mask_odd_pixels,
                                             rebin_pixels_width=args.rebin_pixels_width,
                                             noise_increase=args.noise,
+                                            extend_pixels=args.extend_pixels,
                                             forbidden_wavelenghts=args.forbidden_wavelengths))
             except IOError:
                 missing_files.append(spectrum_file)
