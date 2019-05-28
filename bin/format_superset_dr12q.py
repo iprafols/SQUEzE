@@ -74,8 +74,9 @@ def main():
                         help="""Width of the new pixel (in Angstroms).""")
     parser.add_argument("--extend-pixels", type=float, default=0,
                         help="""Pixel overlap region (in Angstroms)""")
-    parser.add_argument("--mask-odd-pixels", action="store_true",
-                        help="""If set, pixels with odd indexes""")
+    parser.add_argument("--mask-jpas", action="store_true",
+                        help="""If set, mask pixels corresponding to filters in trays T3 and T4
+                            Only works if the bin size is 100 Angstroms""")
     parser.add_argument("--noise", type=int, default=1,
                         help="""Adds noise to the spectrum by adding a gaussian random
                             number of width equal to the (noise-1) times the given
