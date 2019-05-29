@@ -203,7 +203,7 @@ def main():
             try:
                 spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
                                             (masklambda, args.margin),
-                                            mask_odd_pixels=args.mask_odd_pixels,
+                                            mask_jpas=args.mask_jpas,
                                             rebin_pixels_width=args.rebin_pixels_width,
                                             noise_increase=args.noise,
                                             extend_pixels=args.extend_pixels,
