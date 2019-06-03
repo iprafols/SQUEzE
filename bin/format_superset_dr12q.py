@@ -77,6 +77,9 @@ def main():
     parser.add_argument("--mask-jpas", action="store_true",
                         help="""If set, mask pixels corresponding to filters in trays T3 and T4
                             Only works if the bin size is 100 Angstroms""")
+    parser.add_argument("--mask-jpas-alt", action="store_true",
+                        help="""If set, mask pixels corresponding to filters in trays T3* and T4
+                            Only works if the bin size is 100 Angstroms""")
     parser.add_argument("--noise", type=int, default=1,
                         help="""Adds noise to the spectrum by adding a gaussian random
                             number of width equal to the (noise-1) times the given

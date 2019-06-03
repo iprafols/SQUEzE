@@ -51,6 +51,10 @@ class BossSpectrum(Spectrum):
             mask_jpas : bool - Default: False
             If set, mask pixels corresponding to filters in trays T3 and T4. Only works if
             the bin size is 100 Angstroms
+            
+            mask_jpas-alt : bool - Default: False
+            If set, mask pixels corresponding to filters in trays T3* and T4. Only works if
+            the bin size is 100 Angstroms
 
             rebin_pixels_width : float, >0 - Default: 0
             Width of the new pixel (in Angstroms)
@@ -101,8 +105,14 @@ class BossSpectrum(Spectrum):
         
         # JPAS mask
         if mask_jpas:
-            pos = np.where(~((np.isin(self._wave, [3800, 4000, 4200, 4400, 4600, 4800, 5000,
+            pos = np.where(~((np.isin(self._wave, [3900, 4000, 4300, 4400, 4700, 4800, 5100,
                                                  5200])) | (self._wave >= 7300)))
+            self._wave = self._wave[pos].copy()
+            self._ivar = self._ivar[pos].copy()
+            self._flux = self._flux[pos].copy()
+        if mask_jpas_alt:
+            pos = np.where(~((np.isin(self._wave, [3800, 4000, 4200, 4400, 4600, 4800, 5000,
+                                                   5200])) | (self._wave >= 7300)))
             self._wave = self._wave[pos].copy()
             self._ivar = self._ivar[pos].copy()
             self._flux = self._flux[pos].copy()
