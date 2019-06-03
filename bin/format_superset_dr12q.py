@@ -79,7 +79,8 @@ def main():
                             Only works if the bin size is 100 Angstroms""")
     parser.add_argument("--mask-jpas-alt", action="store_true",
                         help="""If set, mask pixels corresponding to filters in trays T3* and T4
-                            Only works if the bin size is 100 Angstroms""")
+                            Only works if the bin size is 100 Angstroms. Ignored if --mask-jpas is
+                            passed""")
     parser.add_argument("--noise", type=int, default=1,
                         help="""Adds noise to the spectrum by adding a gaussian random
                             number of width equal to the (noise-1) times the given
@@ -207,6 +208,7 @@ def main():
                 spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
                                             (masklambda, args.margin),
                                             mask_jpas=args.mask_jpas,
+                                            mask_jpas_alt=args.mask_jpas_alt,
                                             rebin_pixels_width=args.rebin_pixels_width,
                                             noise_increase=args.noise,
                                             extend_pixels=args.extend_pixels,

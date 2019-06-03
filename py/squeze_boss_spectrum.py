@@ -31,7 +31,7 @@ class BossSpectrum(Spectrum):
         SQUEzE
         """
     def __init__(self, spectrum_file, metadata, sky_mask, mask_jpas=False,
-                 rebin_pixels_width=0, extend_pixels=0,
+                 mask_jpas_alt=False, rebin_pixels_width=0, extend_pixels=0,
                  noise_increase=1, forbidden_wavelenghts=None):
         """ Initialize class instance
 
@@ -52,7 +52,7 @@ class BossSpectrum(Spectrum):
             If set, mask pixels corresponding to filters in trays T3 and T4. Only works if
             the bin size is 100 Angstroms
             
-            mask_jpas-alt : bool - Default: False
+            mask_jpas_alt : bool - Default: False
             If set, mask pixels corresponding to filters in trays T3* and T4. Only works if
             the bin size is 100 Angstroms
 
@@ -110,7 +110,7 @@ class BossSpectrum(Spectrum):
             self._wave = self._wave[pos].copy()
             self._ivar = self._ivar[pos].copy()
             self._flux = self._flux[pos].copy()
-        if mask_jpas_alt:
+        elif mask_jpas_alt:
             pos = np.where(~((np.isin(self._wave, [3800, 4000, 4200, 4400, 4600, 4800, 5000,
                                                    5200])) | (self._wave >= 7300)))
             self._wave = self._wave[pos].copy()
