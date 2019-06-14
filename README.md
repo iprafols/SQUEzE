@@ -64,7 +64,7 @@ correctly.
 
 The `spectra` variable sets the spectra where SQUEzE will be run. Format of
 the spectra must be a Spectra object (defined in py/squeze_spectra.py) containing
-a set of Spectrum instances. The package provides the file `format_boss_spectra.py´
+a set of Spectrum instances. The package provides the file `format_superset_dr12q.py´
 with a working example of how to format BOSS spectra. 
 
 2.1 Formatting lines (optional):
