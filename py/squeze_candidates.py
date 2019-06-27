@@ -711,7 +711,8 @@ class Candidates(object):
         self.__model.save_model()
 
     def to_fits(self, filename, data_frame=None):
-        """Save the DataFrame as a fits file
+        """Save the DataFrame as a fits file. String columns with length greater than 15
+            characters might be truncated
 
             Parameters
             ----------
@@ -724,8 +725,14 @@ class Candidates(object):
         if data_frame is None:
             data_frame = self.__candidates
 
+        def convert_dtype(dtype):
+             if dtype == "O":
+                 return "15A"
+             else:
+                 return dtype
+        
         hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
-                                                         format=dtype,
+                                                         format=convert_dtype(dtype),
                                                          array=data_frame[col])
                                              for col, dtype in zip(data_frame.columns,
                                                                    data_frame.dtypes)])
