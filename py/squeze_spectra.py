@@ -46,5 +46,10 @@ class Spectra(object):
         """ Return the nth spectrum of the list of spectra. """
         return self.__spectra_list[index]
 
+    @classmethod
+    def from_json(cls, data):
+        self.__spectra_list = list(map(Spectrum.from_json, data["_Spectra__spectra_list"]))
+        return cls(students)
+
 if __name__ == "__main__":
     pass

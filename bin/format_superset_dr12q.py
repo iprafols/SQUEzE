@@ -36,7 +36,7 @@ import astropy.io.fits as fits
 
 
 
-from squeze_common_functions import save_pkl
+from squeze_common_functions import save_json
 from squeze_common_functions import verboseprint, quietprint
 from squeze_error import Error
 from squeze_quasar_catalogue import QuasarCatalogue
@@ -218,7 +218,7 @@ def main():
                 #print "missing file {}".format(spectrum_file)
 
         # save spectra in the current plate
-        save_pkl("{}_plate{:04d}.pkl".format(args.out, plate), spectra)
+        save_json("{}_plate{:04d}.pkl".format(args.out, plate), spectra)
 
     for item in missing_files:
         userprint(item)

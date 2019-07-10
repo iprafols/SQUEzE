@@ -20,9 +20,11 @@ def save_pkl(filename, user_object):
     save_file.close()
 
 def save_json(filename, user_object):
-    """ Saves object into filename. Encoding file as a python object """
+    """ Saves object into filename. Encoding file as a json object.
+        Complex object are saved using their __dict__ property"""
     with open(filename, 'w') as outfile:
-        json.dump(user_object, outfile)
+        json.dump(user_object, outfile, indent=4,
+                  default=lambda o: o.__dict__)
 
 def save_pd(filename, user_object):
     """ Saves pandas data frame into csv."""

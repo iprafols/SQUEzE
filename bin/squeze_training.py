@@ -11,7 +11,7 @@ __version__ = "0.1"
 
 import argparse
 
-from squeze_common_functions import load_pkl, load_json
+from squeze_common_functions import load_json
 from squeze_common_functions import verboseprint, quietprint
 from squeze_error import Error
 from squeze_quasar_catalogue import QuasarCatalogue
@@ -45,7 +45,7 @@ def main():
                 (args.qso_specid is not None)):
             parser.error("options --qso-cat, --qso-cols, and --qso-specid " \
                          "are incompatible with --qso-dataframe")
-        quasar_catalogue = load_pkl(args.qso_dataframe)
+        quasar_catalogue = load_pd(args.qso_dataframe)
         quasar_catalogue["loaded"] = True
     else:
         if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None):
@@ -57,7 +57,7 @@ def main():
 
     # load lines
     userprint("Loading lines")
-    lines = LINES if args.lines is None else load_pkl(args.lines).set_index("line")
+    lines = LINES if args.lines is None else load_pd(args.lines).set_index("line")
 
     # load try_line
     try_line = TRY_LINES if args.try_lines is None else args.try_lines
@@ -100,7 +100,7 @@ def main():
         for index, spectra_filename in enumerate(args.input_spectra):
             userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
                                                                len(args.input_spectra)))
-            spectra = load_pkl(spectra_filename)
+            spectra = load_json(spectra_filename)
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
 

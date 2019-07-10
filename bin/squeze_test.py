@@ -39,7 +39,7 @@ def main():
                 (args.qso_specid is not None)):
             parser.error("options --qso-cat, --qso-cols, and --qso-specid " \
                          "are incompatible with --qso-dataframe")
-        quasar_catalogue = load_pkl(args.qso_dataframe)
+        quasar_catalogue = load_pd(args.qso_dataframe)
         quasar_catalogue["loaded"] = True
     else:
         if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None):
@@ -73,7 +73,7 @@ def main():
         for index, spectra_filename in enumerate(args.input_spectra):
             userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
                                                                len(args.input_spectra)))
-            spectra = load_pkl(spectra_filename)
+            spectra = load_json(spectra_filename)
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
 

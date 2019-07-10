@@ -147,5 +147,9 @@ class Spectrum(object):
         # member must be declared in child class ... pylint: disable=no-member
         return self._wave
 
+    @classmethod
+    def from_json(cls, data):
+        return cls(**data)
+
 if __name__ == "__main__":
     pass
