@@ -22,6 +22,14 @@ def save_pkl(filename, user_object):
 def save_json(filename, user_object):
     """ Saves object into filename. Encoding file as a json object.
         Complex object are saved using their __dict__ property"""
+    def default(object):
+        if hasattr(object, "__dict__"):
+            return object.__dict__
+        else:
+            obj_type = str(type(object))
+            if obj_type.startswith("<class '"):
+                obj_type = obj_type[8:-2]
+            raise TypeError("Object of type {} is not JSON serializable".format(obj_type))
     with open(filename, 'w') as outfile:
         json.dump(user_object, outfile, indent=4,
                   default=lambda o: o.__dict__)
