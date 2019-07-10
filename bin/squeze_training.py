@@ -57,7 +57,7 @@ def main():
 
     # load lines
     userprint("Loading lines")
-    lines = LINES if args.lines is None else load_pkl(args.lines)
+    lines = LINES if args.lines is None else load_pkl(args.lines).set_index("line")
 
     # load try_line
     try_line = TRY_LINES if args.try_lines is None else args.try_lines

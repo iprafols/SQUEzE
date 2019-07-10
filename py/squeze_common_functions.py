@@ -11,8 +11,7 @@ __version__ = "0.1"
 
 import pickle
 import json
-
-from squeze_error import ParserError
+import pandas as pd
 
 def save_pkl(filename, user_object):
     """ Saves object into filename. Encoding file as a python object """
@@ -24,6 +23,10 @@ def save_json(filename, user_object):
     """ Saves object into filename. Encoding file as a python object """
     with open(filename, 'w') as outfile:
         json.dump(user_object, outfile)
+
+def save_pd(filename, user_object):
+    """ Saves pandas data frame into csv."""
+    user_object.to_csv(filename, index=False)
 
 def load_pkl(filename):
     """ Loads object from filename. File must be encoded as a python object
@@ -46,6 +49,16 @@ def load_json(filename):
         """
     with open(filename) as json_file:
         user_object = json.load(json_file)
+    return user_object
+
+def load_pd(filename):
+    """ Loads pandas DataFrame from filename. File must be a csv file
+        
+        Returns
+        -------
+        The loaded object
+        """
+    user_object = pd.read_csv(filename)
     return user_object
 
 def verboseprint(*args):
