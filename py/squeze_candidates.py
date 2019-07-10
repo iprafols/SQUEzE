@@ -52,7 +52,7 @@ class Candidates(object):
     # 12 is reasonable in this case.
 
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
-                 mode="operation", name="SQUEzE_candidates.pkl",
+                 mode="operation", name="SQUEzE_candidates.csv",
                  weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
                  model=(None, CUTS), model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
