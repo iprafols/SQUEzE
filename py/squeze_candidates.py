@@ -22,7 +22,8 @@ from scipy import signal
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-from squeze_common_functions import save_pkl, load_pkl, verboseprint
+from squeze_common_functions import save_pd, load_pd
+from squeze_common_functions import verboseprint
 from squeze_error import Error
 from squeze_model import Model
 from squeze_peak_finder import PeakFinder
@@ -385,7 +386,7 @@ class Candidates(object):
 
     def __save_candidates(self):
         """ Save the candidates DataFrame. """
-        save_pkl(self.__name, self.__candidates)
+        save_pd(self.__name, self.__candidates)
 
     def candidates(self):
         """ Access the candidates DataFrame. """
@@ -551,9 +552,9 @@ class Candidates(object):
             If None, then load from self.__name
             """
         if filename is None:
-            self.__candidates = load_pkl(self.__name)
+            self.__candidates = load_pd(self.__name)
         else:
-            self.__candidates = load_pkl(filename)
+            self.__candidates = load_pd(filename)
 
     def merge(self, others_list):
         """
@@ -570,7 +571,7 @@ class Candidates(object):
 
         for candidates_filename in tqdm.tqdm(others_list):
             # load candidates
-            other = load_pkl(candidates_filename)
+            other = load_pd(candidates_filename)
 
             # append to candidates list
             self.__candidates = self.__candidates.append(other, ignore_index=True)
