@@ -7,9 +7,9 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-import pandas as pd
+import json
 
-from squeze_common_functions import save_pkl
+from squeze_common_functions import save_json
 
 def main():
     """
@@ -38,7 +38,7 @@ def main():
             ])
 
     # save them as a pkl file to be used by SQUEzE
-    save_pkl("cuts.pkl", lines)
+    save_json("cuts.json", cuts)
 
 if __name__ == '__main__':
     main()

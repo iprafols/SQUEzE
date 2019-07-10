@@ -12,7 +12,7 @@ __version__ = "0.1"
 import argparse
 import numpy as np
 
-from squeze_common_functions import load_pkl
+from squeze_common_functions import load_pkl, load_json
 from squeze_common_functions import verboseprint, quietprint
 from squeze_error import Error
 from squeze_quasar_catalogue import QuasarCatalogue

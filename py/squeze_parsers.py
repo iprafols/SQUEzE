@@ -145,7 +145,7 @@ TRAINING_PARSER.add_argument("--lines", type=str, default=None, required=False,
                                  to be computed.""")
 
 TRAINING_PARSER.add_argument("--cuts", type=str, default=None, required=False,
-                             help="""Name of the pkl file containing the hard-core
+                             help="""Name of the json file containing the hard-core
                                  cuts to be included in the model.""")
 
 TRAINING_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, required=False,

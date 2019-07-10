@@ -11,7 +11,7 @@ __version__ = "0.1"
 
 import argparse
 
-from squeze_common_functions import load_pkl
+from squeze_common_functions import load_pkl, load_json
 from squeze_common_functions import verboseprint, quietprint
 from squeze_error import Error
 from squeze_quasar_catalogue import QuasarCatalogue
@@ -70,7 +70,7 @@ def main():
     peakfind_sig = PEAKFIND_SIG if args.peakfind_sig is None else args.peakfind_sig
 
     # load cut options
-    cuts = CUTS if args.cuts is None else load_pkl(args.cuts)
+    cuts = CUTS if args.cuts is None else load_json(args.cuts)
 
     # initialize candidates object
     userprint("Looking for candidates")

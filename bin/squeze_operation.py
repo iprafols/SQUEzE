@@ -11,7 +11,7 @@ __version__ = "0.1"
 
 import argparse
 
-from squeze_common_functions import load_pkl
+from squeze_common_functions import load_pkl, load_json
 from squeze_common_functions import verboseprint, quietprint
 from squeze_error import Error
 from squeze_spectra import Spectra
