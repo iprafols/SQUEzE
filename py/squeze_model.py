@@ -16,7 +16,7 @@ import tqdm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import preprocessing
 
-from squeze_common_functions import load_pkl, save_pkl
+from squeze_common_functions import save_pkl
 from squeze_defaults import CUTS
 from squeze_defaults import CLASS_PREDICTED
 from squeze_defaults import RANDOM_STATE
