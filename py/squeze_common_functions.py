@@ -12,6 +12,7 @@ __version__ = "0.1"
 import pickle
 import json
 import pandas as pd
+import numpy as np
 
 def save_pkl(filename, user_object):
     """ Saves object into filename. Encoding file as a python object """
@@ -23,7 +24,16 @@ def save_json(filename, user_object):
     """ Saves object into filename. Encoding file as a json object.
         Complex object are saved using their __dict__ property"""
     def default(object):
-        if hasattr(object, "__dict__"):
+        if type(object) == np.ndarray:
+            object_dict = {}
+            object_dict["data"] = object.tolist()
+            return object_dict
+        elif type(object) == np.ma.core.MaskedArray:
+            object_dict = {}
+            object_dict["data"] = object.data.tolist()
+            object_dict["mask"] = object.mask.tolist()
+            return object_dict
+        elif hasattr(object, "__dict__"):
             return object.__dict__
         else:
             obj_type = str(type(object))
