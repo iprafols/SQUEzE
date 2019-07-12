@@ -28,8 +28,6 @@ import argparse
 from os import listdir
 from os.path import isfile, join
 
-import tqdm
-
 import numpy as np
 
 import astropy.io.fits as fits
@@ -142,7 +140,7 @@ def main():
     # loop over plates, will save a pkl file for each plate
     userprint("loading spectra in each of the plates")
     missing_files = []
-    for plate in tqdm.tqdm(plate_list):
+    for plate in plate_list:
         
         if not (args.single_plate == 0 or plate == args.single_plate):
             continue
