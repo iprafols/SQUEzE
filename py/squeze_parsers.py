@@ -99,7 +99,7 @@ This QUASAR_CATALOGUE_PARSER contains the common options used to load the quasar
 QUASAR_CATALOGUE_PARSER = argparse.ArgumentParser(add_help=False)
 
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-dataframe", type=str, default=None, required=False,
-                                     help="""Name of the csv file containing the quasar catalogue
+                                     help="""Name of the pkl file containing the quasar catalogue
                                          formatted into pandas dataframe. Must only contain information
                                          of quasars that will be loaded. Must be present if --qso-cat
                                          is not passed.""")
@@ -145,7 +145,7 @@ TRAINING_PARSER.add_argument("--lines", type=str, default=None, required=False,
                                  to be computed.""")
 
 TRAINING_PARSER.add_argument("--cuts", type=str, default=None, required=False,
-                             help="""Name of the json file containing the hard-core
+                             help="""Name of the pkl file containing the hard-core
                                  cuts to be included in the model.""")
 
 TRAINING_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, required=False,
