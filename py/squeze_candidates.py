@@ -398,7 +398,7 @@ class Candidates(object):
     def classify_candidates(self):
         """ Create a model instance and train it. Save the resulting model"""
         # consistency checks
-        if self.__mode != "test":
+        if self.__mode not in ["test", "operation"]:
             raise  Error("The function classify_candidates is available in the " +
                          "test mode only. Detected mode is {}".format(self.__mode))
         self.__candidates = self.__model.compute_probability(self.__candidates)

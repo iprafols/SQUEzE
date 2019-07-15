@@ -79,19 +79,15 @@ MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required
                              (without the extension) as base name and append the extension
                              _model.pkl to it""")
 
-MODE_PARSER.add_argument("--check-statistics", action="store_true",
-                         help="""Check the candidates' statistics at the end""")
-
-MODE_PARSER.add_argument("--check-probs", nargs='+', default=None, required=False,
-                         type=float,
-                         help="""White-spaced list of the probabilities to check.
-                             The candidates' statistics will be computed for these
-                             cuts in probabilities. Ignored if --check-statistics
-                             is not passed. If it is not passed and --check-statistics
-                             is then np.arange(0.9, 0.0, -0.05)""")
-
 MODE_PARSER.add_argument("--save-fits", action="store_true",
                          help="""Save the final catalogue also as a fits file""")
+
+MODE_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
+                         help="""Name of the fits file where the final catalogue will be
+                             stored. If not specified, the catalogue will be saved using
+                             --output-candidates as name base, Ignored if --save-fits is
+                             not passed""")
+
 
 """
 This QUASAR_CATALOGUE_PARSER contains the common options used to load the quasar catalogue.
@@ -175,6 +171,18 @@ TEST_PARSER.add_argument("--model", required=True, type=str,
                              in the computation of the probabilities of candidates
                              being quasars""")
 
+TEST_PARSER.add_argument("--check-statistics", action="store_true",
+                         help="""Check the candidates' statistics at the end""")
+
+TEST_PARSER.add_argument("--check-probs", nargs='+', default=None, required=False,
+                         type=float,
+                         help="""White-spaced list of the probabilities to check.
+                             The candidates' statistics will be computed for these
+                             cuts in probabilities. Ignored if --check-statistics
+                             is not passed. If it is not passed and --check-statistics
+                             is then np.arange(0.9, 0.0, -0.05)""")
+
+
 
 """
 This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
@@ -182,15 +190,14 @@ This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
 OPERATION_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER,
                                                                     MODE_PARSER])
 
-OPERATION_PARSER.add_argument("--output-catalogue", default=None, required=True, type=str,
-                              help="""Name of the fits file where the final catalogue will be
-                                  stored.""")
-
 OPERATION_PARSER.add_argument("--prob-cut", default=0.1, type=float,
                               help="""Only objects with probability > PROB_CUT will be included
                                   in the catalogue""")
 
-
+OPERATION_PARSER.add_argument("--model", required=True, type=str,
+                              help="""Name of the pkl file containing the model to be used
+                                  in the computation of the probabilities of candidates
+                                  being quasars""")
 
 """
 This MERGING_PARSER contains the options used to run SQUEzE in merging mode

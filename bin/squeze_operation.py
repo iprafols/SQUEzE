@@ -17,6 +17,7 @@ from squeze_error import Error
 from squeze_spectra import Spectra
 from squeze_candidates import Candidates
 from squeze_parsers import OPERATION_PARSER
+from squeze_defaults import CUTS
 
 def main():
     """ Run SQUEzE in operation mode """
@@ -35,9 +36,9 @@ def main():
     # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
-        candidates = Candidates(mode="operation", model=model)
+        candidates = Candidates(mode="operation", model=(model, CUTS))
     else:
-        candidates = Candidates(mode="operation", name=args.output_candidates, model=model)
+        candidates = Candidates(mode="operation", name=args.output_candidates, model=(model, CUTS))
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
