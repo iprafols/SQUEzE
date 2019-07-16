@@ -11,8 +11,6 @@ __version__ = "0.1"
 import numpy as np
 import pandas as pd
 
-import tqdm
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import preprocessing
 
