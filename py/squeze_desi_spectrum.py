@@ -57,16 +57,15 @@ class DesiSpectrum(Spectrum):
 
         # variables to store the information initially they are dictionaries
         # but they will be np.ndarrays by the end of __init__
-        self._flux = flux
+        self._flux = np.ma.array(flux, mask=mask)
         self._wave = wave
-        self._ivar = ivar
-        self._mask = mask # temporary variable
+        self._ivar = np.ma.array(ivar, maks=maks)
+
         # keep metadata
         self._metadata = metadata
         
         # combine reobservations
         self.__combine_reobservations()
-        del self._mask
 
         # combine bands
         self.__combine_bands()
@@ -92,18 +91,16 @@ class DesiSpectrum(Spectrum):
         self._flux = flux
         self._ivar = ivar
 
-
     def __combine_reobservations(self):
         """ Combine the different reobservations into a single one"""
         # loop over bands
         for band in self._flux.keys():
             flux = self._flux[band]
             ivar = self._ivar[band]
-            mask = self._mask[band]
 
             # do weighted sum, masked elements are set to have 0 ivar
-            sivar = (ivar*(mask==0)).sum(axis=0)
-            flux = np.sum(flux*ivar*(mask==0),axis=0)/(sivar+(sivar==0))
+            sivar = ivar.sum(axis=0)
+            flux = np.sum(flux*ivar,axis=0)/(sivar+(sivar==0))
             ivar = sivar
 
             # update arrays
