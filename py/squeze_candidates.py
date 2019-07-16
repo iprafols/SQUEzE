@@ -9,8 +9,6 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-import tqdm
-
 import numpy as np
 
 import pandas as pd
@@ -399,7 +397,7 @@ class Candidates(object):
     def classify_candidates(self):
         """ Create a model instance and train it. Save the resulting model"""
         # consistency checks
-        if self.__mode != "test":
+        if self.__mode not in ["test", "operation"]:
             raise  Error("The function classify_candidates is available in the " +
                          "test mode only. Detected mode is {}".format(self.__mode))
         self.__candidates = self.__model.compute_probability(self.__candidates)
@@ -418,7 +416,7 @@ class Candidates(object):
             raise Error("The function find_candidates is not available in " +
                         "merge mode.")
 
-        for spectrum in tqdm.tqdm(spectra):
+        for spectrum in spectra:
             # locate candidates in this spectrum
             candidates_df = self.__find_candidates(spectrum)
 
@@ -482,7 +480,7 @@ class Candidates(object):
         num_quasars = quasars_data_frame.shape[0]
         num_quasars_zge1 = quasars_data_frame[quasars_data_frame["z_vi"] >= 1.0].shape[0]
         num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["z_vi"] >= 2.1].shape[0]
-        for index in tqdm.tqdm(np.arange(num_quasars)):
+        for index in np.arange(num_quasars):
             specid = quasars_data_frame.ix[quasars_data_frame.index[index]]["specid"]
             if data_frame[(data_frame["specid"] == specid) &
                           (data_frame["is_correct"])].shape[0] > 0:
@@ -569,7 +567,7 @@ class Candidates(object):
             raise  Error("The function merge is available in the " +
                          "merge mode only. Detected mode is {}".format(self.__mode))
 
-        for candidates_filename in tqdm.tqdm(others_list):
+        for candidates_filename in others_list:
             # load candidates
             other = load_pd(candidates_filename)
 

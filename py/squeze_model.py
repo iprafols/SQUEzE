@@ -11,8 +11,6 @@ __version__ = "0.1"
 import numpy as np
 import pandas as pd
 
-import tqdm
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import preprocessing
 
@@ -234,7 +232,7 @@ class Model(object):
                                               args=(data_frame.columns, ))
 
         # flag duplicated instances
-        data_frame["duplicated"] = data_frame.sort_values(["specid", "prob"], ascending=False).duplicated(subset=("specid", "z_true"), keep="first").sort_index()
+        data_frame["duplicated"] = data_frame.sort_values(["specid", "prob"], ascending=False).duplicated(subset=("specid",), keep="first").sort_index()
 
         return data_frame
 
