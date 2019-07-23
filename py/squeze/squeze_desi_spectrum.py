@@ -18,8 +18,8 @@ import numpy as np
 
 from desispec.interpolation import resample_flux
 
-from squeze_error import Error
-from squeze_spectrum import Spectrum
+from squeze.squeze_error import Error
+from squeze.squeze_spectrum import Spectrum
 
 class DesiSpectrum(Spectrum):
     """

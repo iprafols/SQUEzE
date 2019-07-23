@@ -14,11 +14,11 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import preprocessing
 
-from squeze_common_functions import load_pkl, save_pkl
-from squeze_defaults import CUTS
-from squeze_defaults import CLASS_PREDICTED
-from squeze_defaults import RANDOM_STATE
-from squeze_defaults import RANDOM_FOREST_OPTIONS
+from squeze.squeze_common_functions import load_pkl, save_pkl
+from squeze.squeze_defaults import CUTS
+from squeze.squeze_defaults import CLASS_PREDICTED
+from squeze.squeze_defaults import RANDOM_STATE
+from squeze.squeze_defaults import RANDOM_FOREST_OPTIONS
 
 class Model(object):
     """ Create, train and/or execute the quasar model to find quasars
