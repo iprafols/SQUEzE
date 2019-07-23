@@ -42,7 +42,7 @@ class DecisionTree(object):
         self.__min_node_record = min_node_record
         
         # call method 'train' to create the tree
-        self.__root = None
+        self.__nodes = {}
 
     def train(self, dataset):
         """ Expand the tree using the given dataset as training set
@@ -53,8 +53,11 @@ class DecisionTree(object):
             The data the node is responsible for. Must be a structured array
             containing the column 'class'
             """
-        self.__root = DecisionTreeNode(dataset)
-        self.__root.split(self.__max_depth, self.__min_node_record)
+        unexpanded_nodes = [DecisionTreeNode(dataset, np.unique(dataset["class"]))]
+        while len(unexpanded_nodes) > 0:
+            node = unexpanded_nodes.pop()
+            unexpanded_nodes += node.split(self.__max_depth, self.__min_node_record)
+            self.__nodes["root{}".format(node.parent)] = node
 
     def print_tree(self, userprint=verboseprint):
         """ Prints the tree
@@ -64,7 +67,7 @@ class DecisionTree(object):
             userprint : function - Default: verboseprint
             Function to be used for printing
             """
-        self.__root.print_node(userprint=userprint)
+        self.__nodes["root"].print_node(userprint=userprint)
             
 class DecisionTreeNode(object):
     """
@@ -74,7 +77,7 @@ class DecisionTreeNode(object):
         PURPOSE: Create a decision tree node. This will be the constituents
         of a DecisionTree instance
         """
-    def __init__(self, dataset, parent_node=None, depth=0):
+    def __init__(self, dataset, initial_classes, parent_node="", depth=0):
         """ Initialize class instance
         
             Parameters
@@ -82,9 +85,14 @@ class DecisionTreeNode(object):
             dataset : np.ndarray
             The data the node is responsible for. Must be a structured array
             containing the column 'class'
+            
+            initial_classes : np.ndarray
+            An array with the possible classes. Must be of the same type as
+            dataset["class"] and must contain at least all the item in
+            dataset["class"].
 
-            parent_node : DecisionTreeNode
-            The parent of this node (None for root node)
+            parent_node : str - Default: ""
+            The name of the parent node ("" for root node)
             
             depth : int
             Tree depth of the node (or the number of nodes that separate
@@ -95,13 +103,10 @@ class DecisionTreeNode(object):
         self.__classes = np.unique(dataset["class"])
         
         # set node properties
-        self.__parent = parent_node
+        self.parent = parent_node
         self.__depth = depth
-        if self.__parent is None:
-            self.__initial_classes = self.__classes
-        else:
-            self.__initial_classes = self.__parent.get_classes()
-
+        self.__initial_classes = initial_classes
+        
         # call method 'split' to fill these variables
         # variables for non-terminal nodes
         self.__childs = None
@@ -249,7 +254,7 @@ class DecisionTreeNode(object):
             numerical (except for column 'class').
             """
         if self.__dataset is None:
-            return
+            return []
         if (self.__depth == max_depth or self.__dataset.size <= min_size
             or self.__classes.size <= 1):
             self.__terminal = True
@@ -259,20 +264,23 @@ class DecisionTreeNode(object):
                             for cls in self.__initial_classes]
             # normalize probabilities
             self.__probs = np.array(self.__probs, dtype=float)/self.__dataset.size
+            
+            # free memory and return
+            self.__dataset = None
+            return []
         else:
             split = self.__get_split()
             groups = split["groups"]
-            self.__childs = {child: DecisionTreeNode(dataset, parent_node=self,
+            self.__childs = {child: DecisionTreeNode(dataset, self.__initial_classes,
+                                                     parent_node="{}_{}".format(self.parent, child),
                                                      depth=self.__depth+1)
                              for child, dataset in groups.items()}
             self.__split_by = split["attr"]
             self.__split_value = split["value"]
-        
-            for node in list(self.__childs.values()):
-                node.split(max_depth, min_size)
 
-        self.__dataset = None
-
+            # free memory and return
+            self.__dataset = None
+            return list(self.__childs.values())
 
     def print_node(self, userprint=verboseprint):
         """ Prints the information of the node and its children
@@ -283,8 +291,8 @@ class DecisionTreeNode(object):
             Function to be used for printing
             """
         # at the beginning of the tree, print the classes
-        if self.__parent is None:
-            userprint("classes: {}".format(self.__classes))
+        if self.parent is "":
+            userprint("classes: {}".format(self.__initial_classes))
         
         # node is terminal, print probabilities
         if self.__terminal:
