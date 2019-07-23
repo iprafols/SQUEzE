@@ -45,7 +45,9 @@ class DecisionTree(object):
         self.__nodes = {}
 
     def train(self, dataset):
-        """ Expand the tree using the given dataset as training set
+        """ Expand the tree using the given dataset as training set.
+            Split the nodes recursively to develop the full tree
+            proceding in a depth-first strategy
             
             Parameters
             ----------
@@ -57,7 +59,7 @@ class DecisionTree(object):
         while len(unexpanded_nodes) > 0:
             node = unexpanded_nodes.pop()
             unexpanded_nodes += node.split(self.__max_depth, self.__min_node_record)
-            self.__nodes["root{}".format(node.parent)] = node
+            self.__nodes[node.name] = node
 
     def print_tree(self, userprint=verboseprint):
         """ Prints the tree
@@ -77,7 +79,7 @@ class DecisionTreeNode(object):
         PURPOSE: Create a decision tree node. This will be the constituents
         of a DecisionTree instance
         """
-    def __init__(self, dataset, initial_classes, parent_node="", depth=0):
+    def __init__(self, dataset, initial_classes, name="root", parent_node="", depth=0):
         """ Initialize class instance
         
             Parameters
@@ -91,6 +93,9 @@ class DecisionTreeNode(object):
             dataset["class"] and must contain at least all the item in
             dataset["class"].
 
+            name : str - Default: "root"
+            The name of the node
+            
             parent_node : str - Default: ""
             The name of the parent node ("" for root node)
             
@@ -104,6 +109,7 @@ class DecisionTreeNode(object):
         
         # set node properties
         self.parent = parent_node
+        self.name = name
         self.__depth = depth
         self.__initial_classes = initial_classes
         
@@ -233,11 +239,10 @@ class DecisionTreeNode(object):
 
     # Create child splits for a node or make terminal
     def split(self, max_depth, min_size):
-        """ Split the node recursively. Apply this function on the root node
-            to develop the full tree proceding in a depth-first strategy:
-            When applied to a non-terminal node, split the sample into three
-            nodes and expand each of them. When applied to a terminal node,
-            generate the prediction statistics associated to the node.
+        """ Split the node. When applied to a non-terminal node, split the
+            sample into three nodes and expand each of them. When applied to a
+            terminal node, generate the prediction statistics associated to
+            the node.
             
             A node is considered a terminal node if either of the following
             is met:
@@ -249,9 +254,17 @@ class DecisionTreeNode(object):
             
             Parameters
             ----------
-            max_depth : np.ndarray
-            The data to split. Must contain the column 'class'. Columns should be
-            numerical (except for column 'class').
+            max_depth : int
+            Maximum depth of the tree
+            
+            min_size : int
+            Nodes with more samples than min_size are succeptible to be
+            split
+            
+            Returns
+            -------
+            An empty list for terminal nodes and a list with the childs
+            otherwise
             """
         if self.__dataset is None:
             return []
@@ -272,7 +285,8 @@ class DecisionTreeNode(object):
             split = self.__get_split()
             groups = split["groups"]
             self.__childs = {child: DecisionTreeNode(dataset, self.__initial_classes,
-                                                     parent_node="{}_{}".format(self.parent, child),
+                                                     name="{}_{}".format(self.name, child),
+                                                     parent_node="{}".format(self.name),
                                                      depth=self.__depth+1)
                              for child, dataset in groups.items()}
             self.__split_by = split["attr"]
@@ -291,7 +305,7 @@ class DecisionTreeNode(object):
             Function to be used for printing
             """
         # at the beginning of the tree, print the classes
-        if self.parent is "":
+        if self.name is "":
             userprint("classes: {}".format(self.__initial_classes))
         
         # node is terminal, print probabilities
