@@ -52,6 +52,10 @@ class RandomForestClassifier(object):
         # create untrained trees
         self.__trees = [DecisionTree(max_depth, min_node_record) for item in range(num_estimators)]
 
+    def get_classes(self):
+        """ Return the classes of the initial dataset """
+        return self.__trees[0].get_classes()
+    
     def train(self, dataset):
         """ Train all the trees in the forest using bootstrap samples of the
             dataset
@@ -70,4 +74,37 @@ class RandomForestClassifier(object):
         for i in range(self.__num_estimators):
             selected_rows = np.random.randint(0, dataset.size, size=dataset.size)
             self.__trees[i].train(dataset[selected_rows])
+
+    def predict_proba(self, dataset):
+        """ Classify the data.
+            
+            Parameters
+            ----------
+            dataset : np.ndarray
+            The data to classify. It must be a structured array row containing the
+            columns used for training (except for the column 'class')
+            
+            Returns
+            -------
+            An array with the prediction for each row in the dataset
+            """
+        try:
+            classes = self.__trees[0].get_classes()
+        except AttributeError:
+            raise Error("Attempted prediction on untrained tree.")
+        
+        # compute probabilities for each of the trees
+        """aux = np.zeros((self.__num_estimators, dataset.size), dtype=float)
+        for index, tree in enumerate(self.__trees):
+            aux[index] = tree.predict_proba(dataset)
+        """
+        probs = np.array([tree.predict_proba(dataset) for tree in self.__trees])
+        
+        # assign the classes to each value
+        probabilities = np.nanmean(probs, axis=0)
+        dtype = [(str(cls), float) for cls in classes]
+        probabilities.dtype = dtype
+
+        return probabilities
+
 

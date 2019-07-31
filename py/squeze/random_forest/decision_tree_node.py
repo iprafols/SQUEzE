@@ -241,6 +241,30 @@ class DecisionTreeNode(object):
             self.__dataset = None
             return list(self.__childs.values())
 
+    def predict(self, row):
+        """ Classify a single row. The classification is made navigating the
+            trained tree
+            
+            Parameters
+            ----------
+            row : np.ndarray
+            A structured array row containing the columns used for training
+            
+            Returns
+            -------
+            If the node is a terminal node, a tuple with the classes and the
+            probabilities of each class. Otherwise, the next node to check
+            """
+        if self.__terminal == True:
+            return (self.__initial_classes, self.__probs)
+        else:
+            if np.isnan(row[self.__split_by]):
+                return (self.__childs["nan"].name,)
+            elif row[self.__split_by] <= self.__split_value:
+                return (self.__childs["leq"].name,)
+            else:
+                return (self.__childs["gt"].name,)
+
     def print_node(self, userprint=verboseprint):
         """ Prints the information of the node and its children
             
@@ -250,7 +274,7 @@ class DecisionTreeNode(object):
             Function to be used for printing
             """
         # at the beginning of the tree, print the classes
-        if self.name is "":
+        if self.name is "root":
             userprint("classes: {}".format(self.__initial_classes))
         
         # node is terminal, print probabilities
