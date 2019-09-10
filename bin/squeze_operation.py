@@ -11,13 +11,13 @@ __version__ = "0.1"
 
 import argparse
 
-from squeze_common_functions import load_pkl
-from squeze_common_functions import verboseprint, quietprint
-from squeze_error import Error
-from squeze_spectra import Spectra
-from squeze_candidates import Candidates
-from squeze_parsers import OPERATION_PARSER
-from squeze_defaults import CUTS
+from squeze.squeze_common_functions import load_pkl
+from squeze.squeze_common_functions import verboseprint, quietprint
+from squeze.squeze_error import Error
+from squeze.squeze_spectra import Spectra
+from squeze.squeze_candidates import Candidates
+from squeze.squeze_parsers import OPERATION_PARSER
+from squeze.squeze_defaults import CUTS
 
 def main():
     """ Run SQUEzE in operation mode """

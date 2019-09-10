@@ -34,13 +34,13 @@ import astropy.io.fits as fits
 
 
 
-from squeze_common_functions import save_pkl
-from squeze_common_functions import verboseprint, quietprint
-from squeze_error import Error
-from squeze_quasar_catalogue import QuasarCatalogue
-from squeze_boss_spectrum import BossSpectrum
-from squeze_spectra import Spectra
-from squeze_parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
+from squeze.squeze_common_functions import save_pkl
+from squeze.squeze_common_functions import verboseprint, quietprint
+from squeze.squeze_error import Error
+from squeze.squeze_quasar_catalogue import QuasarCatalogue
+from squeze.squeze_boss_spectrum import BossSpectrum
+from squeze.squeze_spectra import Spectra
+from squeze.squeze_parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
 
 def main():
     """ Load BOSS spectra using the BossSpectrum Class defined in
