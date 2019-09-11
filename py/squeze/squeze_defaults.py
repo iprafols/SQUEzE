@@ -89,11 +89,8 @@ PEAKFIND_SIG = 6
 """
 This variable sets the options to be passed to the random forest classifier
 """ # description of RANDOM_FOREST_OPTIONS ... pylint: disable=pointless-string-statement
-RANDOM_FOREST_OPTIONS = {"high": {"class_weight": "balanced_subsample",
-                                  "n_jobs": 3, "n_estimators": 1000},
-                         "low": {"class_weight": "balanced_subsample",
-                                  "n_jobs": 3, "n_estimators": 1000,
-                                  "max_depth": 10,},
+RANDOM_FOREST_OPTIONS = {"high": {"n_estimators": 1000, "max_depth": 10, "min_node_record"=2},
+                         "low": {"n_estimators": 1000, "max_depth": 10, "min_node_record"=2},
                         }
 
 """

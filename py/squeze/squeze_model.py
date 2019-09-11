@@ -11,14 +11,12 @@ __version__ = "0.1"
 import numpy as np
 import pandas as pd
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn import preprocessing
-
 from squeze.squeze_common_functions import load_pkl, save_pkl
 from squeze.squeze_defaults import CUTS
 from squeze.squeze_defaults import CLASS_PREDICTED
 from squeze.squeze_defaults import RANDOM_STATE
 from squeze.squeze_defaults import RANDOM_FOREST_OPTIONS
+from squeze.random_forest.random_forest_classifier import RandomForestClassifier
 
 class Model(object):
     """ Create, train and/or execute the quasar model to find quasars
