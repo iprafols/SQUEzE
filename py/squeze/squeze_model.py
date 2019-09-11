@@ -252,20 +252,20 @@ class Model(object):
             if self.__highlow_split:
                 # high-z split
                 data_frame_high = data_frame[data_frame["z_try"] >= 2.1]
-                data_vector = data_frame_high[self.__selected_cols[:-2]]
+                data_vector = data_frame_high[self.__selected_cols[:-2]].copy()
                 data_vector["class"] = data_frame_high.apply(self.__find_class, axis=1, args=(True,))
                 data_vector = data_vector.to_records()
                 self.__clf_high.fit(data_vector)
                 # low-z split
                 data_frame_low = data_frame[data_frame["z_try"] < 2.1]
-                data_vector = data_frame_low[self.__selected_cols[:-2]]
+                data_vector = data_frame_low[self.__selected_cols[:-2]].copy()
                 data_vector["class"] = data_frame_low.apply(self.__find_class, axis=1, args=(True,))
                 data_vector = data_vector.to_records()
                 self.__clf_low.fit(data_vector)
 
             else:
                 data_frame = data_frame[self.__selected_cols]
-                data_vector = data_frame[self.__selected_cols[:-2]]
+                data_vector = data_frame[self.__selected_cols[:-2]].copy()
                 data_vector["class"] = data_frame.apply(self.__find_class, axis=1, args=(True,))
                 data_vector = data_vector.to_records()
                 self.__clf.fit(data_vector)
