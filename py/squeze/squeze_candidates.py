@@ -20,7 +20,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-from squeze.squeze_common_functions import save_pkl, load_pkl, verboseprint
+from squeze.squeze_common_functions import verboseprint
 from squeze.squeze_error import Error
 from squeze.squeze_model import Model
 from squeze.squeze_peak_finder import PeakFinder
@@ -71,11 +71,11 @@ class Candidates(object):
             Running mode. "training" mode assumes that true redshifts are known
             and provide a series of functions to train the model.
 
-            name : string - Default: "SQUEzE_candidates.pkl"
+            name : string - Default: "SQUEzE_candidates.csv"
             Name of the candidates sample. The code will save an python-binary
-            with the information of the database in a pkl file with this name.
+            with the information of the database in a csv file with this name.
             If load is set to True, then the candidates sample will be loaded
-            from this file. Recommended extension is pkl.
+            from this file. Recommended extension is csv.
 
             weighting_mode : string - Default: "weights"
             Name of the weighting mode. Can be "weights" if ivar is to be used
@@ -701,7 +701,7 @@ class Candidates(object):
         # add columns to compute the class in training
         selected_cols += ['class_person', 'correct_redshift']
         
-        self.__model = Model("{}_model.pkl".format(self.__name[:self.__name.rfind(".")]),
+        self.__model = Model("{}_model.json".format(self.__name[:self.__name.rfind(".")]),
                              selected_cols, self.__get_settings(),
                              model_opt=self.__model_opt,
                              cuts=self.__cuts)

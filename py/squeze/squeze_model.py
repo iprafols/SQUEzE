@@ -14,7 +14,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import preprocessing
 
-from squeze.squeze_common_functions import load_pkl, save_pkl
+from squeze.squeze_common_functions import save_json
 from squeze.squeze_defaults import CUTS
 from squeze.squeze_defaults import CLASS_PREDICTED
 from squeze.squeze_defaults import RANDOM_STATE
@@ -159,7 +159,7 @@ class Model(object):
 
     def save_model(self):
         """ Save the model"""
-        save_pkl(self.__name, self)
+        save_json(self.__name, self)
 
     def compute_probability(self, data_frame):
         """ Compute the probability of a list of candidates to be quasars

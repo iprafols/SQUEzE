@@ -14,12 +14,6 @@ import json
 import pandas as pd
 import numpy as np
 
-def save_pkl(filename, user_object):
-    """ Saves object into filename. Encoding file as a python object """
-    save_file = open(filename, 'wb')
-    pickle.dump(user_object, save_file)
-    save_file.close()
-
 def save_json(filename, user_object):
     """ Saves object into filename. Encoding file as a json object.
         Complex object are saved using their __dict__ property"""
@@ -47,18 +41,6 @@ def save_json(filename, user_object):
 def save_pd(filename, user_object):
     """ Saves pandas data frame into csv."""
     user_object.to_csv(filename, index=False)
-
-def load_pkl(filename):
-    """ Loads object from filename. File must be encoded as a python object
-
-        Returns
-        -------
-        The loaded object.
-        """
-    load_file = open(filename, 'rb')
-    user_object = pickle.load(load_file)
-    load_file.close()
-    return user_object
 
 def load_json(filename):
     """ Loads object from filename. File must be encoded as a json object

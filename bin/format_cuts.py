@@ -37,7 +37,7 @@ def main():
                "ciii_ratio_SN", "mgii_ratio_SN"],
             ])
 
-    # save them as a pkl file to be used by SQUEzE
+    # save them as a json file to be used by SQUEzE
     save_json("cuts.json", cuts)
 
 if __name__ == '__main__':

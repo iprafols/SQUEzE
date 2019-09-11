@@ -13,11 +13,11 @@ from squeze.squeze_common_functions import verboseprint
 from squeze.squeze_candidates import Candidates
 
 def main():
-    """ This function pretrains SQUEzE using BOSS data and creates the pkl file
+    """ This function pretrains SQUEzE using BOSS data and creates the json file
         associated with the trained model"""
 
     verboseprint("training model")
-    candidates = Candidates(mode="training", name="../data/BOSS_train_64plates.pkl")
+    candidates = Candidates(mode="training", name="../data/BOSS_train_64plates.json")
     candidates.load_candidates("../data/BOSS_train_64plates.csv")
     candidates.train_model()
     

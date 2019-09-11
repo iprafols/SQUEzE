@@ -52,7 +52,7 @@ def main():
                  "red_start", "red_end"]
         )
 
-    # save them as a pkl file to be used by SQUEzE
+    # save them as a csv file to be used by SQUEzE
     save_pd("lines.csv", lines)
 
 if __name__ == '__main__':

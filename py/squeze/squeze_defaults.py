@@ -57,8 +57,8 @@ LINES = pd.DataFrame(
     ).set_index("line")
 
 """
-Name of the pkl and log file (without extension) where the
-cuts will be saved
+Name of the json and log file (without extension) where the
+variable TRY_LINES will be saved
 """ # description of TRY_LINE ... pylint: disable=pointless-string-statement
 TRY_LINES = ["lya", "civ", "ciii", "mgii", "hb", "ha"]
 
