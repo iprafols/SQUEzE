@@ -15,6 +15,7 @@ __version__ = "0.1"
 import numpy as np
 
 from squeze.squeze_common_functions import verboseprint
+from squeze.squeze_common_functions import load_array_from_json
 
 class DecisionTreeNode(object):
     """
@@ -50,7 +51,10 @@ class DecisionTreeNode(object):
             """
         # keep dataset
         self.__dataset = dataset
-        self.__classes = np.unique(dataset["class"])
+        if dataset is None:
+            self.__classes = None
+        else:
+            self.__classes = np.unique(dataset["class"])
         
         # set node properties
         self.parent = parent_node
@@ -291,3 +295,63 @@ class DecisionTreeNode(object):
             # now print the chids
             for node in list(self.__childs.values()):
                 node.print_node()
+
+    @classmethod
+    def from_json(cls, data):
+        """ This function deserializes a json string to correclty build the class.
+            It uses the deserialization function of class SimpleSpectrum to reconstruct
+            the instances of Spectrum. For this function to work, data should have been
+            serialized using the serialization method specified in `save_json` function
+            present on `squeze_common_functions.py` """
+
+        # create instance using the constructor
+        dataset = data["_DecisionTreeNode__dataset"]
+        initial_classes = load_array_from_json(data["_DecisionTreeNode__initial_classes"])
+        name = data["name"]
+        parent_node = data["parent"]
+        depth = data["_DecisionTreeNode__depth"]
+        cls_instance = cls(dataset, initial_classes, name=name, parent_node=parent_node,
+                           depth=depth)
+        cls_instance.set_classes(load_array_from_json(data["_DecisionTreeNode__classes"]))
+
+        # now update the instance to the current values
+        if data["_DecisionTreeNode__childs"] is None:
+            childs = None
+        else:
+            childs = {}
+            for key, value in data["_DecisionTreeNode__childs"].items():
+                childs[key] = DecisionTreeNode.from_json(value)
+        cls_instance.set_childs(childs)
+        cls_instance.set_split_by(data["_DecisionTreeNode__split_by"])
+        cls_instance.set_split_value(data["_DecisionTreeNode__split_value"])
+        cls_instance.set_terminal(data["_DecisionTreeNode__terminal"])
+        if data["_DecisionTreeNode__probs"] is None:
+            probs = None
+        else:
+            probs = load_array_from_json(data["_DecisionTreeNode__probs"])
+        cls_instance.set_probs(probs)
+        return cls_instance
+    
+    def set_classes(self, classes):
+        """ Set the variable __classes. Should only be called from the method from_json"""
+        self.__classes = classes
+
+    def set_childs(self, childs):
+        """ Set the variable __childs. Should only be called from the method from_json"""
+        self.__childs = childs
+
+    def set_split_by(self, split_by):
+        """ Set the variable __set_split_by. Should only be called from the method from_json"""
+        self.__split_by = split_by
+
+    def set_split_value(self, split_value):
+        """ Set the variable __split_value. Should only be called from the method from_json"""
+        self.__split_value = split_value
+
+    def set_terminal(self, terminal):
+        """ Set the variable __terminal. Should only be called from the method from_json"""
+        self.__terminal = terminal
+
+    def set_probs(self, probs):
+        """ Set the variable __probs. Should only be called from the method from_json"""
+        self.__probs = probs

@@ -108,3 +108,30 @@ class RandomForestClassifier(object):
         return probabilities
 
 
+    @classmethod
+    def from_json(cls, data):
+        """ This function deserializes a json string to correclty build the class.
+            It uses the deserialization function of class SimpleSpectrum to reconstruct
+            the instances of Spectrum. For this function to work, data should have been
+            serialized using the serialization method specified in `save_json` function
+            present on `squeze_common_functions.py` """
+
+        # create instance using the constructor
+        num_estimators = data["_RandomForestClassifier__num_estimators"]
+        max_depth = data["_RandomForestClassifier__max_depth"]
+        min_node_record = data["_RandomForestClassifier__min_node_record"]
+        random_state = data["_RandomForestClassifier__random_state"]
+        cls_instance = cls(num_estimators=num_estimators, max_depth=max_depth,
+                           min_node_record=min_node_record, random_state=random_state)
+
+        # now update the instance to the current values
+        trees = [DecisionTree.from_json(tree)
+                 for tree in data["_RandomForestClassifier__trees"]]
+        cls_instance.set_trees(trees)
+        
+        return cls_instance
+
+
+    def set_trees(self, trees):
+        """ Set the variable __trees. Should only be called from the method from_json"""
+        self.__trees = trees

@@ -71,6 +71,20 @@ def load_json(filename):
         user_object = json.load(json_file)
     return user_object
 
+def load_array_from_json(json_dict):
+    """ Formats a json deserialized dict into an array. Takes into account
+        if the array was a np.ndarray or a np.ma.core.MaskedArray
+        
+        Returns
+        -------
+        The formatted object
+        """
+    if "mask" in json_dict:
+        array = np.ma.array(json_dict["data"], mask=json_dict["mask"])
+    else:
+        array = np.array(json_dict["data"])
+    return array
+
 def load_pd(filename):
     """ Loads pandas DataFrame from filename. File must be a csv file
         

@@ -129,3 +129,29 @@ class DecisionTree(object):
             probabilities[index] = tuple(self.__predict(row)[1])
 
         return probabilities
+
+
+    @classmethod
+    def from_json(cls, data):
+        """ This function deserializes a json string to correclty build the class.
+            It uses the deserialization function of class SimpleSpectrum to reconstruct
+            the instances of Spectrum. For this function to work, data should have been
+            serialized using the serialization method specified in `save_json` function
+            present on `squeze_common_functions.py` """
+
+        # create instance using the constructor
+        max_depth = data["_DecisionTree__max_depth"]
+        min_node_record = data["_DecisionTree__min_node_record"]
+        cls_instance = cls(max_depth, min_node_record)
+
+        # now update the instance to the current values
+        nodes = {}
+        for key, value in data["_DecisionTree__nodes"].items():
+            nodes[key] = DecisionTreeNode.from_json(value)
+        cls_instance.set_nodes(nodes)
+        
+        return cls_instance
+
+    def set_nodes(self, nodes):
+        """ Set the variable __nodes. Should only be called from the method from_json"""
+        self.__nodes = nodes
