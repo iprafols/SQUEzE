@@ -20,20 +20,19 @@ from scipy import signal
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-from squeze_common_functions import save_pd, load_pd
-from squeze_common_functions import verboseprint
-from squeze_error import Error
-from squeze_model import Model
-from squeze_peak_finder import PeakFinder
-from squeze_defaults import CUTS
-from squeze_defaults import LINES
-from squeze_defaults import TRY_LINES
-from squeze_defaults import RANDOM_FOREST_OPTIONS
-from squeze_defaults import RANDOM_STATE
-from squeze_defaults import Z_PRECISION
-from squeze_defaults import PEAKFIND_WIDTH
-from squeze_defaults import PEAKFIND_SIG
-from squeze_spectrum import Spectrum
+from squeze.squeze_common_functions import save_pkl, load_pkl, verboseprint
+from squeze.squeze_error import Error
+from squeze.squeze_model import Model
+from squeze.squeze_peak_finder import PeakFinder
+from squeze.squeze_defaults import CUTS
+from squeze.squeze_defaults import LINES
+from squeze.squeze_defaults import TRY_LINES
+from squeze.squeze_defaults import RANDOM_FOREST_OPTIONS
+from squeze.squeze_defaults import RANDOM_STATE
+from squeze.squeze_defaults import Z_PRECISION
+from squeze.squeze_defaults import PEAKFIND_WIDTH
+from squeze.squeze_defaults import PEAKFIND_SIG
+from squeze.squeze_spectrum import Spectrum
 
 class Candidates(object):
     """ Create and manage the candidates catalogue

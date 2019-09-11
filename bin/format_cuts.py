@@ -9,7 +9,7 @@ __version__ = "0.1"
 
 import json
 
-from squeze_common_functions import save_json
+from squeze.squeze_common_functions import save_json
 
 def main():
     """

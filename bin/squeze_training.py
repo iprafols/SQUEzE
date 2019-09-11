@@ -11,21 +11,21 @@ __version__ = "0.1"
 
 import argparse
 
-from squeze_common_functions import load_json
-from squeze_common_functions import verboseprint, quietprint
-from squeze_error import Error
-from squeze_quasar_catalogue import QuasarCatalogue
-from squeze_spectra import Spectra
-from squeze_candidates import Candidates
-from squeze_defaults import CUTS
-from squeze_defaults import LINES
-from squeze_defaults import SVMS
-from squeze_defaults import RANDOM_STATES
-from squeze_defaults import TRY_LINES
-from squeze_defaults import Z_PRECISION
-from squeze_defaults import PEAKFIND_WIDTH
-from squeze_defaults import PEAKFIND_SIG
-from squeze_parsers import TRAINING_PARSER
+from squeze.squeze_common_functions import load_json
+from squeze.squeze_common_functions import verboseprint, quietprint
+from squeze.squeze_error import Error
+from squeze.squeze_quasar_catalogue import QuasarCatalogue
+from squeze.squeze_spectra import Spectra
+from squeze.squeze_candidates import Candidates
+from squeze.squeze_defaults import CUTS
+from squeze.squeze_defaults import LINES
+from squeze.squeze_defaults import SVMS
+from squeze.squeze_defaults import RANDOM_STATES
+from squeze.squeze_defaults import TRY_LINES
+from squeze.squeze_defaults import Z_PRECISION
+from squeze.squeze_defaults import PEAKFIND_WIDTH
+from squeze.squeze_defaults import PEAKFIND_SIG
+from squeze.squeze_parsers import TRAINING_PARSER
 
 
 def main():
