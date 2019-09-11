@@ -53,7 +53,7 @@ class Spectra(object):
             the instances of Spectrum. For this function to work, data should have been
             serialized using the serialization method specified in `save_json` function
             present on `squeze_common_functions.py` """
-        spectra_list = list(map(SimpleSpectrum.from_json, data["_Spectra__spectra_list"]))
+        spectra_list = list(map(SimpleSpectrum.from_json, data.get("_Spectra__spectra_list")))
         return cls(spectra_list)
 
 if __name__ == "__main__":

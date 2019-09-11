@@ -140,13 +140,13 @@ class DecisionTree(object):
             present on `squeze_common_functions.py` """
 
         # create instance using the constructor
-        max_depth = data["_DecisionTree__max_depth"]
-        min_node_record = data["_DecisionTree__min_node_record"]
+        max_depth = data.get("_DecisionTree__max_depth")
+        min_node_record = data.get("_DecisionTree__min_node_record")
         cls_instance = cls(max_depth, min_node_record)
 
         # now update the instance to the current values
         nodes = {}
-        for key, value in data["_DecisionTree__nodes"].items():
+        for key, value in data.get("_DecisionTree__nodes").items():
             nodes[key] = DecisionTreeNode.from_json(value)
         cls_instance.set_nodes(nodes)
         

@@ -117,16 +117,16 @@ class RandomForestClassifier(object):
             present on `squeze_common_functions.py` """
 
         # create instance using the constructor
-        num_estimators = data["_RandomForestClassifier__num_estimators"]
-        max_depth = data["_RandomForestClassifier__max_depth"]
-        min_node_record = data["_RandomForestClassifier__min_node_record"]
-        random_state = data["_RandomForestClassifier__random_state"]
+        num_estimators = data.get("_RandomForestClassifier__num_estimators")
+        max_depth = data.get("_RandomForestClassifier__max_depth")
+        min_node_record = data.get("_RandomForestClassifier__min_node_record")
+        random_state = data.get("_RandomForestClassifier__random_state")
         cls_instance = cls(num_estimators=num_estimators, max_depth=max_depth,
                            min_node_record=min_node_record, random_state=random_state)
 
         # now update the instance to the current values
         trees = [DecisionTree.from_json(tree)
-                 for tree in data["_RandomForestClassifier__trees"]]
+                 for tree in data.get("_RandomForestClassifier__trees")]
         cls_instance.set_trees(trees)
         
         return cls_instance

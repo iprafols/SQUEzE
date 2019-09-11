@@ -9,6 +9,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 from squeze.squeze_spectrum import Spectrum
+from squeze.squeze_common_functions import load_array_from_json
 
 class SimpleSpectrum(Spectrum):
     """
@@ -53,21 +54,9 @@ class SimpleSpectrum(Spectrum):
             `squeze_common_functions.py`. The current deserialisation includes the
             possibility to interpret the flux, ivar, and wave arrays as either
             normal (np.array) or masked (np.ma.array) arrays."""
-        if data.get("_flux").get("mask", None) is None:
-            flux = np.array(data.get("_flux").get("data"))
-        else:
-            flux = np.ma.array(data.get("_flux").get("data"),
-                               mask=data.get("_flux").get("mask"))
-        if data.get("_ivar").get("mask", None) is None:
-            ivar = np.array(data.get("_ivar").get("data"))
-        else:
-            ivar = np.ma.array(data.get("_ivar").get("data"),
-                               mask=data.get("_ivar").get("mask"))
-        if data.get("_wave").get("mask", None) is None:
-            wave = np.array(data.get("_wave").get("data"))
-        else:
-            wave = np.ma.array(data.get("_wave").get("data"),
-                               mask=data.get("_wave").get("mask"))
+        flux = load_array_from_json(data.get("_flux"))
+        ivar = load_array_from_json(data.get("_ivar"))
+        wave = load_array_from_json(data.get("_wave"))
         metadata = data.get("_metadata")
         
         return cls(flux, ivar, wave, metadata)

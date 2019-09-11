@@ -100,7 +100,7 @@ def main():
         for index, spectra_filename in enumerate(args.input_spectra):
             userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
                                                                len(args.input_spectra)))
-            spectra = load_json(spectra_filename)
+            spectra = Spectra.from_json(load_json(spectra_filename))
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
 

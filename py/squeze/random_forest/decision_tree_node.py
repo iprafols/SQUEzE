@@ -305,30 +305,30 @@ class DecisionTreeNode(object):
             present on `squeze_common_functions.py` """
 
         # create instance using the constructor
-        dataset = data["_DecisionTreeNode__dataset"]
-        initial_classes = load_array_from_json(data["_DecisionTreeNode__initial_classes"])
-        name = data["name"]
-        parent_node = data["parent"]
-        depth = data["_DecisionTreeNode__depth"]
+        dataset = data.get("_DecisionTreeNode__dataset")
+        initial_classes = load_array_from_json(data.get("_DecisionTreeNode__initial_classes"))
+        name = data.get("name")
+        parent_node = data.get("parent")
+        depth = data.get("_DecisionTreeNode__depth")
         cls_instance = cls(dataset, initial_classes, name=name, parent_node=parent_node,
                            depth=depth)
-        cls_instance.set_classes(load_array_from_json(data["_DecisionTreeNode__classes"]))
+        cls_instance.set_classes(load_array_from_json(data.get("_DecisionTreeNode__classes")))
 
         # now update the instance to the current values
-        if data["_DecisionTreeNode__childs"] is None:
+        if data.get("_DecisionTreeNode__childs") is None:
             childs = None
         else:
             childs = {}
-            for key, value in data["_DecisionTreeNode__childs"].items():
+            for key, value in data.get("_DecisionTreeNode__childs").items():
                 childs[key] = DecisionTreeNode.from_json(value)
         cls_instance.set_childs(childs)
-        cls_instance.set_split_by(data["_DecisionTreeNode__split_by"])
-        cls_instance.set_split_value(data["_DecisionTreeNode__split_value"])
-        cls_instance.set_terminal(data["_DecisionTreeNode__terminal"])
-        if data["_DecisionTreeNode__probs"] is None:
+        cls_instance.set_split_by(data.get("_DecisionTreeNode__split_by"))
+        cls_instance.set_split_value(data.get("_DecisionTreeNode__split_value"))
+        cls_instance.set_terminal(data.get("_DecisionTreeNode__terminal"))
+        if data.get("_DecisionTreeNode__probs") is None:
             probs = None
         else:
-            probs = load_array_from_json(data["_DecisionTreeNode__probs"])
+            probs = load_array_from_json(data.get("_DecisionTreeNode__probs"))
         cls_instance.set_probs(probs)
         return cls_instance
     

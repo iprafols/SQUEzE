@@ -79,10 +79,10 @@ def load_array_from_json(json_dict):
         -------
         The formatted object
         """
-    if "mask" in json_dict:
-        array = np.ma.array(json_dict["data"], mask=json_dict["mask"])
+    if json_dict.get("mask", None) is None:
+        array = np.array(json_dict.get("data"))
     else:
-        array = np.array(json_dict["data"])
+        array = np.ma.array(json_dict.get("data"), mask=json_dict.get("mask"))
     return array
 
 def load_pd(filename):
