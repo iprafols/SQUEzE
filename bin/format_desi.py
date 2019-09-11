@@ -29,11 +29,11 @@ import numpy as np
 
 from desispec.io import read_spectra
 
-from squeze_common_functions import save_pkl
-from squeze_common_functions import verboseprint, quietprint
-from squeze_error import Error
-from squeze_desi_spectrum import DesiSpectrum
-from squeze_spectra import Spectra
+from squeze.squeze_common_functions import save_pkl
+from squeze.squeze_common_functions import verboseprint, quietprint
+from squeze.squeze_error import Error
+from squeze.squeze_desi_spectrum import DesiSpectrum
+from squeze.squeze_spectra import Spectra
 
 def main():
     """ Load DESI spectra using the Spectra and DESISpectrum Classes

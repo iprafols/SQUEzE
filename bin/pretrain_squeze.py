@@ -9,9 +9,9 @@ __version__ = "0.1"
 
 import pandas as pd
 
-from squeze_common_functions import save_pkl
-from squeze_common_functions import verboseprint
-from squeze_candidates import Candidates
+from squeze.squeze_common_functions import save_pkl
+from squeze.squeze_common_functions import verboseprint
+from squeze.squeze_candidates import Candidates
 
 
 def main():

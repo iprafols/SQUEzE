@@ -19,8 +19,8 @@ from numpy.random import randn
 from scipy.signal import medfilt
 import astropy.io.fits as fits
 
-from squeze_error import Error
-from squeze_spectrum import Spectrum
+from squeze.squeze_error import Error
+from squeze.squeze_spectrum import Spectrum
 
 class BossSpectrum(Spectrum):
     """

@@ -9,8 +9,8 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 # "fill the blanks" example ... pylint: disable=fixme
 
-from squeze_error import Error
-from squeze_spectrum import Spectrum
+from squeze.squeze_error import Error
+from squeze.squeze_spectrum import Spectrum
 
 class MySpectrum(Spectrum):
     """

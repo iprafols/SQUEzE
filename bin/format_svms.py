@@ -11,7 +11,7 @@ __version__ = "0.1"
 
 import numpy as np
 
-from squeze_common_functions import save_pkl
+from squeze.squeze_common_functions import save_pkl
 
 def main():
     """

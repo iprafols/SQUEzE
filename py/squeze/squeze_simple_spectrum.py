@@ -8,7 +8,7 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-from squeze_spectrum import Spectrum
+from squeze.squeze_spectrum import Spectrum
 
 class SimpleSpectrum(Spectrum):
     """
