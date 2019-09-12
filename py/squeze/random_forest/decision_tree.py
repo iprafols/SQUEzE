@@ -96,7 +96,7 @@ class DecisionTree(object):
             userprint : function - Default: verboseprint
             Function to be used for printing
             """
-        self.__nodes["root"].print_node(userprint=userprint)
+        self.__nodes["root"].print_node(self.__nodes, userprint=userprint)
             
     def predict_proba(self, dataset, reset_names=False):
         """ Classify the data.
