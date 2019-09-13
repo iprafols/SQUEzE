@@ -56,7 +56,7 @@ class RandomForestClassifier(object):
         """ Return the classes of the initial dataset """
         return self.__trees[0].get_classes()
     
-    def fit(self, dataset):
+    def train(self, dataset):
         """ Train all the trees in the forest using bootstrap samples of the
             dataset
             
