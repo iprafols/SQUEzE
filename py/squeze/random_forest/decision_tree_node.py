@@ -259,6 +259,61 @@ class DecisionTreeNode(object):
                 
         return gini
 
+    def __fast_gini_index4(self, attr, values, ):
+        """ Compute the Gini index for a list of groups and a list of known
+            class values
+            
+            Parameters
+            ----------
+            groups : dict
+            A dictionary of groups to be evaluated. Keys are group names
+            and values are groups. Each group must contain a N+1 dimensional
+            np.array, for an entry with N variables plus the class it belogns
+            to (which has to be last).
+            
+            classes : np.ndarray
+            An array with the identifiers of each class. All the identifiers
+            should have the same type.
+            
+            Returns
+            -------
+            The Gini index of the split (0.0 for a perfect split)
+            """
+        # sum weighted Gini index for each group (leq, gt, nan)
+        # split dataset according to values
+        datasets = [self.__dataset["class"][np.where((self.__dataset[attr] <= values[0]))]]
+        datasets += [self.__dataset["class"][np.where((self.__dataset[attr] > values[i]) &
+                                                      (self.__dataset[attr] <= values[i+1]))]
+                     for i in range(values.size - 1)]
+        datasets += [self.__dataset["class"][np.where((self.__dataset[attr] > values[-1]))]]
+        dataset_nan = self.__dataset["class"][np.where(np.isnan(self.__dataset[attr]))]
+        sizes = np.array([dataset.size for dataset in datasets])
+        size_leqs = sizes[:-1].cumsum()
+        size_gts = sizes[:0:-1].cumsum()
+        size_nan = dataset_nan.size
+                    
+        # initialize scores
+        score_leqs = np.zeros_like(values)
+        score_gts = np.zeros_like(values)
+        score_nan = 0.0
+        ginis = np.zeros_like(values)
+        # score the group based on the score for each class
+        for cls in self.__classes:
+            if not size_nan == 0:
+                aux = np.count_nonzero(dataset_nan == cls) / size_nan
+                score_nan += aux * aux
+            counts = np.array([np.count_nonzero(dataset == cls) for dataset in datasets])
+            score_leqs = counts[:-1].cumsum()/size_leqs
+            score_gts = counts[:0:-1].cumsum()/size_gts
+    
+        # weight the group score by its relative size
+        ginis += (1.0 - score_nan) * size_nan
+        ginis += (1.0 - score_leqs) * size_leqs
+        ginis += (1.0 - score_gts) * size_gts
+        ginis /= float(self.__dataset.size)
+            
+        return ginis
+
     def __test_split(self, attr, value):
         """ Split the sample into three groups given an index of an
             attribute and a value. The first two groups will be filled with
@@ -315,7 +370,11 @@ class DecisionTreeNode(object):
             if (np.isnan(nanmin) or nanmin == nanmax):
                 continue
             values = np.arange(nanmin, nanmax, (nanmax-nanmin)/num_checks)
-            for value in values:
+            ginis = self.__fast_gini_index4(attr, values)
+            argmin = np.argmin(ginis)
+            if ginis[argmin] < best_score:
+                best_attr, best_value, best_score = attr, values[argmin], ginis[argmin]
+            """for value in values:
                 # The following is equivalent to running these two commands
                 # groups = self.__test_split(attr, value)
                 # gini = self.__gini_index(groups, self.__classes)
@@ -329,7 +388,7 @@ class DecisionTreeNode(object):
                 if best_score == 0.0:
                     break
             if best_score == 0.0:
-                break
+                break"""
         
         best_groups = self.__test_split(best_attr, best_value)
         return {'attr': best_attr, 'value': best_value, 'groups': best_groups}
