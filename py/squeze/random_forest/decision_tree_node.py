@@ -286,12 +286,13 @@ class DecisionTreeNode(object):
                                                       (self.__dataset[attr] <= values[i+1]))]
                      for i in range(values.size - 1)]
         datasets += [self.__dataset["class"][np.where((self.__dataset[attr] > values[-1]))]]
-        dataset_nan = self.__dataset["class"][np.where(np.isnan(self.__dataset[attr]))]
         sizes = np.array([dataset.size for dataset in datasets])
         size_leqs = sizes[:-1].cumsum()
-        size_gts = sizes[:0:-1].cumsum()
+        size_gts = sizes[:0:-1].cumsum()[::-1]
+
+        dataset_nan = self.__dataset["class"][np.where(np.isnan(self.__dataset[attr]))]
         size_nan = dataset_nan.size
-                    
+
         # initialize scores
         score_leqs = np.zeros_like(values)
         score_gts = np.zeros_like(values)
@@ -303,9 +304,11 @@ class DecisionTreeNode(object):
                 aux = np.count_nonzero(dataset_nan == cls) / size_nan
                 score_nan += aux * aux
             counts = np.array([np.count_nonzero(dataset == cls) for dataset in datasets])
-            score_leqs = counts[:-1].cumsum()/size_leqs
-            score_gts = counts[:0:-1].cumsum()/size_gts
-    
+            aux = counts[:-1].cumsum()/size_leqs
+            score_leqs += aux*aux
+            aux = counts[:0:-1].cumsum()[::-1]/size_gts
+            score_gts += aux*aux
+
         # weight the group score by its relative size
         ginis += (1.0 - score_nan) * size_nan
         ginis += (1.0 - score_leqs) * size_leqs
