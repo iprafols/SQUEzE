@@ -16,7 +16,7 @@ from squeze.squeze_defaults import CUTS
 from squeze.squeze_defaults import CLASS_PREDICTED
 from squeze.squeze_defaults import RANDOM_STATE
 from squeze.squeze_defaults import RANDOM_FOREST_OPTIONS
-from squeze.random_forest.random_forest_classifier import RandomForestClassifier
+from squeze.squeze_random_forest_classifier import RandomForestClassifier
 
 class Model(object):
     """ Create, train and/or execute the quasar model to find quasars
@@ -194,9 +194,8 @@ class Model(object):
         if self.__highlow_split:
             # high-z split
             # compute probabilities for each of the classes
-            data_frame_high = data_frame[data_frame["z_try"] >= 2.1]
-            data_vector = data_frame_high[self.__selected_cols[:-2]]
-            data_vector = data_vector.to_records()
+            data_frame_high = data_frame[data_frame["z_try"] >= 2.1].fillna(-9999.99)
+            data_vector = data_frame_high[self.__selected_cols[:-2]].values
             data_class_probs = self.__clf_high.predict_proba(data_vector)
 
             # save the probability for each of the classes
@@ -205,9 +204,8 @@ class Model(object):
 
             # low-z split
             # compute probabilities for each of the classes
-            data_frame_low = data_frame[data_frame["z_try"] < 2.1]
-            data_vector = data_frame_low[self.__selected_cols[:-2]]
-            data_vector = data_vector.to_records()
+            data_frame_low = data_frame[data_frame["z_try"] < 2.1].fillna(-9999.99)
+            data_vector = data_frame_low[self.__selected_cols[:-2]].values
             data_class_probs = self.__clf_low.predict_proba(data_vector)
                 
             # save the probability for each of the classes
@@ -218,8 +216,7 @@ class Model(object):
 
         else:
             # compute probabilities for each of the classes
-            data_vector = data_frame[self.__selected_cols[:-2]]
-            data_vector = data_vector.to_records()
+            data_vector = data_frame[self.__selected_cols[:-2]].fillna(-9999.99).values
             data_class_probs = self.__clf.predict_proba(data_vector)
 
             # save the probability for each of the classes
@@ -238,9 +235,9 @@ class Model(object):
         return data_frame
 
     def train(self, data_frame):
-        """ Create and train all the instances of SVMs specified in self.__svms
-            to estimate the probability of a candidate being a quasar
-            
+        """ Train all the instances of the classifiers to estimate the probability
+            of a candidate being a quasar
+
             Parameters
             ----------
             data_frame : pd.DataFrame
@@ -255,20 +252,20 @@ class Model(object):
                 data_vector = data_frame_high[self.__selected_cols[:-2]].copy()
                 data_vector["class"] = data_frame_high.apply(self.__find_class, axis=1, args=(True,))
                 data_vector = data_vector.to_records()
-                self.__clf_high.train(data_vector)
+                self.__clf_high.fit(data_vector)
                 # low-z split
                 data_frame_low = data_frame[data_frame["z_try"] < 2.1]
                 data_vector = data_frame_low[self.__selected_cols[:-2]].copy()
                 data_vector["class"] = data_frame_low.apply(self.__find_class, axis=1, args=(True,))
                 data_vector = data_vector.to_records()
-                self.__clf_low.train(data_vector)
+                self.__clf_low.fit(data_vector)
 
             else:
                 data_frame = data_frame[self.__selected_cols]
                 data_vector = data_frame[self.__selected_cols[:-2]].copy()
                 data_vector["class"] = data_frame.apply(self.__find_class, axis=1, args=(True,))
                 data_vector = data_vector.to_records()
-                self.__clf.train(data_vector)
+                self.__clf.fit(data_vector)
 
 if __name__ == '__main__':
     pass
