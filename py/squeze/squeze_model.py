@@ -64,10 +64,13 @@ class Model(object):
 
         # load models
         if self.__highlow_split:
-            self.__clf_high = RandomForestClassifier(random_state=self.__random_state, **self.__clf_options.get("high"))
-            self.__clf_low = RandomForestClassifier(random_state=self.__random_state, **self.__clf_options.get("low"))
+            self.__clf_options.get("high")["random_state"] = self.__random_state
+            self.__clf_options.get("low")["random_state"] = self.__random_state
+            self.__clf_high = RandomForestClassifier(**self.__clf_options.get("high"))
+            self.__clf_low = RandomForestClassifier(**self.__clf_options.get("low"))
         else:
-            self.__clf = RandomForestClassifier(random_state=self.__random_state, **self.__clf_options)
+            self.__clf_options["random_state"] = self.__random_state
+            self.__clf = RandomForestClassifier(**self.__clf_options)
         
 
     def __find_class(self, row, train):
