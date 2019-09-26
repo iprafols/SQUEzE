@@ -48,6 +48,7 @@ class RandomForestClassifier(object):
         self.__num_trees = 0
         self.__trees = []
         self.__num_categories = 0
+        self.classes_ = [] 
     
         # auxiliar variables to loop over trees
         self.__children_left = None
@@ -75,6 +76,7 @@ class RandomForestClassifier(object):
         # add persistence
         self.__num_trees = len(rf.estimators_)
         self.__num_categories = np.unique(y).size
+        self.classes_ = rf.classes_
         for dt in rf.estimators_:
             tree_sklearn = dt.tree_
             tree = {}
