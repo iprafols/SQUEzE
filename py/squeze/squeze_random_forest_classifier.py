@@ -34,7 +34,7 @@ class RandomForestClassifier(object):
         PURPOSE: Create a persistent RandomForestClassifier
         """
 
-    def __init__(self, args={}):
+    def __init__(self, **kwargs):
         """ Initialize class instance.
 
             Parameters
@@ -42,7 +42,7 @@ class RandomForestClassifier(object):
             args : dict -  Default: {}}
             Options to be passed to the RandomForestClassifier
             """
-        self.__args = args
+        self.__args = kwargs
     
         # initialize variables
         self.__num_trees = 0
