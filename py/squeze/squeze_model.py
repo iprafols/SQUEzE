@@ -11,14 +11,12 @@ __version__ = "0.1"
 import numpy as np
 import pandas as pd
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn import preprocessing
-
-from squeze.squeze_common_functions import save_json
+from squeze.squeze_common_functions import load_pkl, save_pkl
 from squeze.squeze_defaults import CUTS
 from squeze.squeze_defaults import CLASS_PREDICTED
 from squeze.squeze_defaults import RANDOM_STATE
 from squeze.squeze_defaults import RANDOM_FOREST_OPTIONS
+from squeze.squeze_random_forest_classifier import RandomForestClassifier
 
 class Model(object):
     """ Create, train and/or execute the quasar model to find quasars
@@ -65,10 +63,13 @@ class Model(object):
 
         # load models
         if self.__highlow_split:
-            self.__clf_high = RandomForestClassifier(random_state=self.__random_state, **self.__clf_options.get("high"))
-            self.__clf_low = RandomForestClassifier(random_state=self.__random_state, **self.__clf_options.get("low"))
+            self.__clf_options.get("high")["random_state"] = self.__random_state
+            self.__clf_options.get("low")["random_state"] = self.__random_state
+            self.__clf_high = RandomForestClassifier(**self.__clf_options.get("high"))
+            self.__clf_low = RandomForestClassifier(**self.__clf_options.get("low"))
         else:
-            self.__clf = RandomForestClassifier(random_state=self.__random_state, **self.__clf_options)
+            self.__clf_options["random_state"] = self.__random_state
+            self.__clf = RandomForestClassifier(**self.__clf_options)
         
 
     def __find_class(self, row, train):
@@ -214,9 +215,9 @@ class Model(object):
         return data_frame
 
     def train(self, data_frame):
-        """ Create and train all the instances of SVMs specified in self.__svms
-            to estimate the probability of a candidate being a quasar
-            
+        """ Train all the instances of the classifiers to estimate the probability
+            of a candidate being a quasar
+
             Parameters
             ----------
             data_frame : pd.DataFrame
@@ -281,8 +282,6 @@ class Model(object):
         """ Set the variable __clf. Should only be called from the method from_json"""
         self.__clf = clf
 
-                 
-                 
 if __name__ == '__main__':
     pass
 
