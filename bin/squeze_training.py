@@ -120,22 +120,5 @@ def main():
     userprint("Training model")
     candidates.train_model()
 
-    # check completeness
-    if args.check_statistics:
-        probs = args.check_probs if args.check_probs is not None else np.arange(0.9, 0.0, -0.05)
-        userprint("Check statistics")
-        data_frame = candidates.candidates()
-        userprint("\n---------------")
-        userprint("step 1")
-        candidates.find_completeness_purity(quasar_catalogue, data_frame)
-        for prob in probs:
-            userprint("\n---------------")
-            userprint("SVM proba > {}".format(prob))
-            candidates.find_completeness_purity(quasar_catalogue,
-                                                data_frame[(data_frame["prob"] > prob) &
-                                                           ~(data_frame["duplicated"]) &
-                                                           (data_frame["z_conf_person"] == 3)],
-                                                userprint=userprint)
-
 if __name__ == '__main__':
     main()
