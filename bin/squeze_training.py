@@ -19,7 +19,7 @@ from squeze.squeze_spectra import Spectra
 from squeze.squeze_candidates import Candidates
 from squeze.squeze_defaults import CUTS
 from squeze.squeze_defaults import LINES
-from squeze.squeze_defaults import SVMS
+from squeze.squeze_defaults import RANDOM_FOREST_OPTIONS
 from squeze.squeze_defaults import RANDOM_STATES
 from squeze.squeze_defaults import TRY_LINES
 from squeze.squeze_defaults import Z_PRECISION
