@@ -57,8 +57,8 @@ LINES = pd.DataFrame(
     ).set_index("line")
 
 """
-Name of the pkl and log file (without extension) where the
-cuts will be saved
+Name of the json and log file (without extension) where the
+variable TRY_LINES will be saved
 """ # description of TRY_LINE ... pylint: disable=pointless-string-statement
 TRY_LINES = ["lya", "civ", "ciii", "mgii", "hb", "ha"]
 
@@ -100,116 +100,6 @@ RANDOM_FOREST_OPTIONS = {"high": {"class_weight": "balanced_subsample",
 This variable sets the random states of the random forest instances
 """ # description of RANDOM_STATE ... pylint: disable=pointless-string-statement
 RANDOM_STATE = 2081487193
-
-"""
-This variable sets the lines that will be included in each of the SVM
-instances that will be used to determine the probability of the
-candidate being a quasar.
-
-DO NOT MODIFY this value. If another set of lines is to be used,
-please define it elsewhere and pass it as an argument when creating
-the candidates DataFrame (see README.md)
-
-Deprecated.
-""" # description of SVMS ... pylint: disable=pointless-string-statement
-SVMS = {1: np.array(['lyb_ratio_SN',
-                     'lya_ratio_SN',
-                     'siiv_ratio_SN',
-                     #'civ_ratio_SN',
-                     'civ_blue_ratio_SN',
-                     'civ_red_ratio_SN',
-                     'ciii_ratio_SN',
-                     'class_person', 'correct_redshift']),
-        #2: np.array(['lyb_ratio_SN',
-        #             'lya_ratio_SN',
-        #             'siiv_ratio_SN',
-        #             #'civ_ratio_SN',
-        #             'civ_blue_ratio_SN',
-        #             'civ_red_ratio_SN',
-        #             'ciii_ratio_SN',
-        #             'neiv_ratio_SN',
-        #             'mgii_ratio_SN',
-        #             'class_person', 'correct_redshift']),
-        3: np.array(['lya_ratio_SN',
-                     'siiv_ratio_SN',
-                     #'civ_ratio_SN',
-                     'civ_blue_ratio_SN',
-                     'civ_red_ratio_SN',
-                     'ciii_ratio_SN',
-                     'neiv_ratio_SN',
-                     'mgii_ratio_SN',
-                     'class_person', 'correct_redshift']),
-        4: np.array(['siiv_ratio_SN',
-                     #'civ_ratio_SN',
-                     'civ_blue_ratio_SN',
-                     'civ_red_ratio_SN',
-                     'ciii_ratio_SN',
-                     'neiv_ratio_SN',
-                     'mgii_ratio_SN',
-                     'class_person', 'correct_redshift']),
-        5: np.array(['siiv_ratio_SN',
-                     #'civ_ratio_SN',
-                     'civ_blue_ratio_SN',
-                     'civ_red_ratio_SN',
-                     'ciii_ratio_SN',
-                     'neiv_ratio_SN',
-                     'mgii_ratio_SN',
-                     'nev_ratio_SN',
-                     'oii_ratio_SN',
-                     'class_person', 'correct_redshift']),
-        6: np.array([#'civ_ratio_SN',
-                     'civ_blue_ratio_SN',
-                     'civ_red_ratio_SN',
-                     'ciii_ratio_SN',
-                     'neiv_ratio_SN',
-                     'mgii_ratio_SN',
-                     'nev_ratio_SN',
-                     'oii_ratio_SN',
-                     'class_person', 'correct_redshift']),
-        7: np.array(['ciii_ratio_SN',
-                     'neiv_ratio_SN',
-                     'mgii_ratio_SN',
-                     'nev_ratio_SN',
-                     'oii_ratio_SN',
-                     'class_person', 'correct_redshift']),
-        8: np.array(['ciii_ratio_SN',
-                     'neiv_ratio_SN',
-                     'mgii_ratio_SN',
-                     'nev_ratio_SN',
-                     'oii_ratio_SN',
-                     'hb_ratio_SN',
-                     'oiii_ratio_SN',
-                     'class_person', 'correct_redshift']),
-        9: np.array(['mgii_ratio_SN',
-                     'nev_ratio_SN',
-                     'oii_ratio_SN',
-                     'hb_ratio_SN',
-                     'oiii_ratio_SN',
-                     'class_person', 'correct_redshift']),
-        10: np.array(['mgii_ratio_SN',
-                      'nev_ratio_SN',
-                      'oii_ratio_SN',
-                      'hb_ratio_SN',
-                      'oiii_ratio_SN',
-                      'ha_ratio_SN',
-                      'class_person', 'correct_redshift']),
-       }
-
-"""
-This variable sets the random states of the SVM instances. Deprecated.
-""" # description of RANDOM_STATES ... pylint: disable=pointless-string-statement
-RANDOM_STATES = {1: 2081487193,
-                 2: 2302130440,
-                 3: 1566237261,
-                 4: 3197800101,
-                 5: 1478310587,
-                 6: 1493514726,
-                 7: 2145873089,
-                 8: 912267904,
-                 9: 689368146,
-                 10: 4091585312,
-                }
-
 
 """
 This variable contains the transcription from numerical predicted class to

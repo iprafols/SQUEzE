@@ -11,7 +11,7 @@ __version__ = "0.1"
 
 import argparse
 
-from squeze.squeze_common_functions import load_pkl
+from squeze.squeze_common_functions import load_json
 from squeze.squeze_common_functions import verboseprint, quietprint
 from squeze.squeze_error import Error
 from squeze.squeze_spectra import Spectra
@@ -31,7 +31,7 @@ def main():
 
     # load model
     userprint("Loading model")
-    model = load_pkl(args.model)
+    model = Model.from_json(load_json(args.model))
 
     # initialize candidates object
     userprint("Looking for candidates")
@@ -52,7 +52,7 @@ def main():
         for index, spectra_filename in enumerate(args.input_spectra):
             userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
                                                                len(args.input_spectra)))
-            spectra = load_pkl(spectra_filename)
+            spectra = Spectra.from_json(load_json(spectra_filename))
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
 

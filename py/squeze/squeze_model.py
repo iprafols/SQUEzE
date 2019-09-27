@@ -56,7 +56,6 @@ class Model(object):
         self.__clf_options = model_opt[0]
         self.__random_state = model_opt[1]
         self.__cuts = cuts
-        self.__percentiles = {}
         if "high" in self.__clf_options.keys() and "low" in self.__clf_options.keys():
             self.__highlow_split = True
         else:
@@ -155,35 +154,13 @@ class Model(object):
             prob = np.nan
         return prob
 
-    def __match_cuts(self, row, selected_cols):
-        """ Return True if the selected columns have all higher than the respective
-            values stored in self.__percentiles and False otherwise.
-            This function should be called using the DataFrame.apply function
-            qith axis=1.
-
-            Parameters
-            ----------
-            row : pd.Series
-            A row in the DataFrame.
-
-            selected_cols : list of string
-            Names of the columns to compare. Musts be keys of self.__percentiles
-            and be present in the DataFrame columns.
-
-            Returns
-            -------
-            True if the selected columns have all higher values than the respective
-            values stored in self.__percentiles and False otherwise
-            """
-        return all([row[col] >= self.__percentiles[col] for col in selected_cols])
-
     def get_settings(self):
         """ Access function for self.__settings """
         return self.__settings
 
     def save_model(self):
         """ Save the model"""
-        save_pkl(self.__name, self)
+        save_json(self.__name, self)
 
     def compute_probability(self, data_frame):
         """ Compute the probability of a list of candidates to be quasars
@@ -266,7 +243,45 @@ class Model(object):
                 data_vector = data_frame[self.__selected_cols[:-2]].values
                 data_class = data_frame.apply(self.__find_class, axis=1, args=(True,))
                 self.__clf.fit(data_vector, data_class)
-                
+
+    @classmethod
+    def from_json(cls, data):
+        """ This function deserializes a json string to correclty build the class.
+            It uses the deserialization function of class SimpleSpectrum to reconstruct
+            the instances of Spectrum. For this function to work, data should have been
+            serialized using the serialization method specified in `save_json` function
+            present on `squeze_common_functions.py` """
+        
+        # create instance using the constructor
+        name = data.get("_Model__name")
+        selected_cols = data.get("_Model__selected_cols")
+        settings = data.get("_Model__settings")
+        cuts = data.get("_Model__cuts")
+        model_opt = data.get("_Model__model_opt")
+        cls_instance = cls(name, selected_cols, settings, cuts=cuts,
+                           model_opt=model_opt)
+            
+        # now update the instance to the current values
+        if "high" in model_opt[0].keys() and "low" in model_opt[0].keys():
+            cls_instance.set_clf_high(RandomForestClassifier.from_json(data.get("_Model__clf_high")))
+            cls_instance.set_clf_low(RandomForestClassifier.from_json(data.get("_Model__clf_low")))
+        else:
+            cls_instance.set_clf(RandomForestClassifier.from_json(data.get("_Model__clf")))
+
+        return cls_instance
+
+    def set_clf_high(self, clf_high):
+        """ Set the variable __clf_high. Should only be called from the method from_json"""
+        self.__clf_high = clf_high
+
+    def set_clf_low(self, clf_low):
+        """ Set the variable __clf_low. Should only be called from the method from_json"""
+        self.__clf_low = clf_low
+
+    def set_clf(self, clf):
+        """ Set the variable __clf. Should only be called from the method from_json"""
+        self.__clf = clf
+
 if __name__ == '__main__':
     pass
 

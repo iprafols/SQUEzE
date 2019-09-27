@@ -9,22 +9,16 @@ __version__ = "0.1"
 
 import pandas as pd
 
-from squeze.squeze_common_functions import save_pkl
 from squeze.squeze_common_functions import verboseprint
 from squeze.squeze_candidates import Candidates
 
-
 def main():
-    """ This function pretrains SQUEzE using BOSS data and creates the pkl file
+    """ This function pretrains SQUEzE using BOSS data and creates the json file
         associated with the trained model"""
 
-    verboseprint("loading data")
-    df = pd.read_csv("../data/BOSS_train_64plates.csv")
-    save_pkl("../data/BOSS_train_64plates.pkl", df)
-
     verboseprint("training model")
-    candidates = Candidates(mode="training", name="../data/BOSS_train_64plates.pkl")
-    candidates.load_candidates("../data/BOSS_train_64plates.pkl")
+    candidates = Candidates(mode="training", name="../data/BOSS_train_64plates.json")
+    candidates.load_candidates("../data/BOSS_train_64plates.csv")
     candidates.train_model()
     
     verboseprint("done")

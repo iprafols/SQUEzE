@@ -18,7 +18,7 @@ class Spectra(object):
         CLASS: Spectra
         PURPOSE: Manage the spectra list
         """
-    def __init__(self):
+    def __init__(self, spectra_list=[]):
         """ Initialize class instance
 
             Parameters
@@ -26,7 +26,7 @@ class Spectra(object):
             spectra_list : list of Spectrum
             List of spectra
             """
-        self.__spectra_list = []
+        self.__spectra_list = spectra_list
 
     def append(self, spectrum):
         """ Add a spectrum to the list """
@@ -45,6 +45,16 @@ class Spectra(object):
     def spectrum(self, index):
         """ Return the nth spectrum of the list of spectra. """
         return self.__spectra_list[index]
+
+    @classmethod
+    def from_json(cls, data):
+        """ This function deserializes a json string to correclty build the class.
+            It uses the deserialization function of class SimpleSpectrum to reconstruct
+            the instances of Spectrum. For this function to work, data should have been
+            serialized using the serialization method specified in `save_json` function
+            present on `squeze_common_functions.py` """
+        spectra_list = list(map(SimpleSpectrum.from_json, data.get("_Spectra__spectra_list")))
+        return cls(spectra_list)
 
 if __name__ == "__main__":
     pass

@@ -9,14 +9,18 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 from squeze.squeze_spectrum import Spectrum
+from squeze.squeze_common_functions import load_array_from_json
 
 class SimpleSpectrum(Spectrum):
     """
         Manage the spectrum data
 
         CLASS: SimpleSpectrum
-        PURPOSE: Format a spectrum for SQUEzE to be able to run in
-        training mode
+        PURPOSE: The purpose of this class is twofold.
+        First it serves as tool to create instances of class Spectrum loaded from
+        JSON files. Second, it provides an example of the minimum requirements a
+        derived Spectrum class should have in order for them to run on SQUEzE
+        (for this second purpose, ignore the from_json method)
         """
     def __init__(self, flux, ivar, wave, metadata):
         """ Initialize class instance
@@ -41,6 +45,21 @@ class SimpleSpectrum(Spectrum):
         self._wave = wave
 
         self._metadata = metadata
+
+    @classmethod
+    def from_json(cls, data):
+        """ This function deserializes a json string to correclty build the class.
+            For this function to work, data should have been serialized using the
+            serialization method specified in `save_json` function present on
+            `squeze_common_functions.py`. The current deserialisation includes the
+            possibility to interpret the flux, ivar, and wave arrays as either
+            normal (np.array) or masked (np.ma.array) arrays."""
+        flux = load_array_from_json(data.get("_flux"))
+        ivar = load_array_from_json(data.get("_ivar"))
+        wave = load_array_from_json(data.get("_wave"))
+        metadata = data.get("_metadata")
+        
+        return cls(flux, ivar, wave, metadata)
 
 if __name__ == "__main__":
     pass

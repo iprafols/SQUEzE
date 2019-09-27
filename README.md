@@ -43,7 +43,7 @@ tar -xzvf BOSS_train_64plates.tar.gz
 cd ../bin
 python pretrain_squeze.py
 ```
-from the `bin/` folder. This will generate a model named `BOSS_train_64plates_model.pkl`
+from the `bin/` folder. This will generate a trained model named `BOSS_train_64plates_model.json`
 stored in the `data/` folder.
 
 
@@ -71,7 +71,7 @@ with a working example of how to format BOSS spectra.
 
 The `lines` variable sets the characteristics of the lines used by the code.
 For SQUEzE to use a value different from the default, it needs to be
-formatted as a pandas data frame and saved into a pkl file (python binary).
+formatted as a pandas data frame and saved into a csv file.
 The package provides the file `format_lines.py´ with the instructions to
 properly create this object. It is a modifyiable working example.
 
@@ -90,7 +90,7 @@ Show this help message and exit
 Do not print messages (default: False)
 
 --input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]               
-Name of the pkl file(s) containing the spectra that are to be analysed. If multiple files 
+Name of the json file(s) containing the spectra that are to be analysed. If multiple files 
 are given, then they must be passed as a white-spaced list. The spectra in each of the 
 files will be loaded into memory as a block, and candidates will be looked for before 
 loading the next set of spectra. (default: None)
@@ -100,12 +100,12 @@ Load candidates previously found. If --input- candidates is passed, then load fr
 Otherwise, load from --output-candidates. (default: False)
 
 --input-candidates INPUT_CANDIDATES                 
-Name of the pkl file from where candidates will be loaded. (default: None)
+Name of the csv file from where candidates will be loaded. (default: None)
 
 --output-candidates OUTPUT_CANDIDATES               
-Name of the pkl file where the candidates will be saved. In training mode, the model will 
+Name of the csv file where the candidates will be saved. In training mode, the model will 
 be saved using this name (without the extension) as base name and append the extension 
-_model.pkl to it (default: None)
+_model.json to it (default: None)
 
 --check-statistics                  
 Check the candidates' statistics at the end (default: False)
@@ -125,7 +125,7 @@ Width (in pixels) of the tipical peak (default: None)
 Minimum significance required to accept a peak (default: None)
 
 --qso-dataframe QSO_DATAFRAME               
-Name of the pkl file containing the quasar catalogue formatted into pandas dataframe. Must 
+Name of the json file containing the quasar catalogue formatted into pandas dataframe. Must 
 only contain information of quasars that will be loaded. Must be present if --qso-cat is not 
 passed. (default: None)
 
@@ -149,10 +149,10 @@ Maximum difference betwee the true redshift and the measured redshift for a cand
 considered a true detection. This option only works on cuts of type 'percentile'. (default: None)
 
 --lines LINES                        
-Name of the pkl file containing the lines ratios to be computed. (default: None)
+Name of the json file containing the lines ratios to be computed. (default: None)
 
 --cuts CUTS                          
-Name of the pkl file containing the hard-core cuts to be included in the model. (default: None)
+Name of the json file containing the hard-core cuts to be included in the model. (default: None)
 
 --try-lines [TRY_LINES [TRY_LINES ...]]               
 Name of the lines that will be associated to the peaks to estimate the redshift. (default: None)
@@ -178,7 +178,7 @@ Show this help message and exit
 Do not print messages (default: False)
 
 --input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]               
-Name of the pkl file(s) containing the spectra that are to be analysed. If multiple files are given, 
+Name of the json file(s) containing the spectra that are to be analysed. If multiple files are given, 
 then they must be passed as a white-spaced list. The spectra in each of the files will be loaded 
 into memory as a block, and candidates will be looked for before loading the next set of spectra.
 (default: None)
@@ -188,11 +188,11 @@ Load candidates previously found. If --input-candidates is passed, then load fro
 load from --output-candidates. (default: False) 
 
 --input-candidates INPUT_CANDIDATES                
-Name of the pkl file from where candidates will be loaded. (default: None)
+Name of the csv file from where candidates will be loaded. (default: None)
 
 --output-candidates OUTPUT_CANDIDATES               
-Name of the pkl file where the candidates will be saved. In training mode, the model will be saved 
-using this name (without the extension) as base name and append the extension _model.pkl to it 
+Name of the csv file where the candidates will be saved. In training mode, the model will be saved 
+using this name (without the extension) as base name and append the extension _model.json to it 
 (default: None)
 
 --check-statistics                  
@@ -207,7 +207,7 @@ these cuts in probabilities. Ignored if --check-statistics is not passed. If it 
 Save the final catalogue also as a fits file (default: False)
 
 --qso-dataframe QSO_DATAFRAME               
-Name of the pkl file containing the quasar catalogue formatted into pandas dataframe. Must only 
+Name of the json file containing the quasar catalogue formatted into pandas dataframe. Must only 
 contain information of quasars that will be loaded. Must be present if --qso-cat is not passed. 
 (default: None)
 
@@ -227,7 +227,7 @@ Name of the column that will be used as specid. Must be included in --qso-cols. 
 only if --qso-cat is passed (default: None)
 
 --model MODEL                        
-Name of the pkl file containing the model to be used in the computation of the probabilities of 
+Name of the josn file containing the model to be used in the computation of the probabilities of 
 candidates being quasars (default: None)
 
 ### Usage in operation mode
@@ -245,7 +245,7 @@ Show this help message and exit
 Do not print messages (default: False)
 
 --input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]               
-Name of the pkl file(s) containing the spectra that are to be analysed. If multiple files are given, then 
+Name of the json file(s) containing the spectra that are to be analysed. If multiple files are given, then 
 they must be passed as a white-spaced list. The spectra in each of the files will be loaded into memory 
 as a block, and candidates will be looked for before loading the next set of spectra. (default: None)
 
@@ -254,11 +254,11 @@ Load candidates previously found. If --input-candidates is passed, then load fro
 load from --output-candidates. (default: False)
 
 --input-candidates INPUT_CANDIDATES               
-Name of the pkl file from where candidates will be loaded. (default: None)
+Name of the csv file from where candidates will be loaded. (default: None)
 
 --output-candidates OUTPUT_CANDIDATES               
-Name of the pkl file where the candidates will be saved. In training mode, the model will be saved 
-using this name (without the extension) as base name and append the extension _model.pkl to it 
+Name of the csv file where the candidates will be saved. In training mode, the model will be saved 
+using this name (without the extension) as base name and append the extension _model.json to it 
 (default: None)
 
 --check-statistics                   
@@ -292,7 +292,7 @@ Show this help message and exit
 Do not print messages (default: False)
 
 --input-candidates INPUT_CANDIDATES [INPUT_CANDIDATES ...]               
-List of pkl files containing candidates objects to merge. (default: None)
+List of csv files containing candidates objects to merge. (default: None)
 
 --output-candidates OUTPUT_CANDIDATES               
-Name of the pkl file where the candidates will be saved. (default: None)
+Name of the csv file where the candidates will be saved. (default: None)

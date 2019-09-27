@@ -33,6 +33,7 @@ class Spectrum(object):
         Otherwise, the methods flux, ivar, wave, metadata, metadata_by_key,
         and metadata_names, must be overwritten
         """
+    
     def flux(self):
         """ Returns the flux as a numpy.ndarray.
             Must have the same size as ivar and wavelength."""
