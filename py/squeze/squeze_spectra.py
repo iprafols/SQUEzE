@@ -10,6 +10,7 @@ __version__ = "0.1"
 
 from squeze.squeze_error import Error
 from squeze.squeze_spectrum import Spectrum
+from squeze.squeze_simple_spectrum import SimpleSpectrums
 
 class Spectra(object):
     """
