@@ -33,10 +33,14 @@ def serialize(obj):
         TypeError upon unsuccesful serialization
         """
     if isinstance(obj, np.ndarray):
-        return {"np.ndarray": obj.tolist()}
+        return {"np.ndarray": {"data": obj.tolist(),
+                               "dtype": obj.dtype}}
     if isinstance(obj, np.ma.core.MaskedArray):
         return {"np.ma.core.MakedArray": {"data": obj.data.tolist(),
-                                          "maks": obj.mask.tolist()}}
+                                          "maks": obj.mask.tolist(),
+                                          "dtype": obj.dtype}}
+    if isinstance(obj, np.dtype):
+        return str(obj)
     if hasattr(obj, "__dict__"):
         return obj.__dict__
 
@@ -48,7 +52,9 @@ def serialize(obj):
     
 def deserialize(json_dict):
     if "np.ndarray" in json_dict:
-        return np.array(json_dict.get("np.ndarray"))
+        obj = json_dict.get("np.ndarray")
+        return np.array(obj.get("data"),
+                        dtype=obj.get("dtype"))
     if "np.ma.core.MakedArray" in json_dict:
         obj = json_dict.get("np.ma.core.MakedArray")
         return np.ma.array(obj.get("data"), mask=obj.get("mask"))
