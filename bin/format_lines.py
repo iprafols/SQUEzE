@@ -9,7 +9,7 @@ __version__ = "0.1"
 
 import pandas as pd
 
-from squeze.squeze_common_functions import save_pd
+from squeze.squeze_common_functions import save_json
 
 def main():
     """
@@ -50,10 +50,10 @@ def main():
         columns=["line", "wave", "start", "end",
                  "blue_start", "blue_end",
                  "red_start", "red_end"]
-        )
+        ).set_index("line")
 
     # save them as a csv file to be used by SQUEzE
-    save_pd("lines.csv", lines)
+    save_json("lines.csv", lines)
 
 if __name__ == '__main__':
     main()

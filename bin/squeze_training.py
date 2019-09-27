@@ -45,7 +45,7 @@ def main():
                 (args.qso_specid is not None)):
             parser.error("options --qso-cat, --qso-cols, and --qso-specid " \
                          "are incompatible with --qso-dataframe")
-        quasar_catalogue = load_pd(args.qso_dataframe)
+        quasar_catalogue = load_json(args.qso_dataframe)
         quasar_catalogue["loaded"] = True
     else:
         if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None):
@@ -57,7 +57,7 @@ def main():
 
     # load lines
     userprint("Loading lines")
-    lines = LINES if args.lines is None else load_pd(args.lines).set_index("line")
+    lines = LINES if args.lines is None else load_json(args.lines)
 
     # load try_line
     try_line = TRY_LINES if args.try_lines is None else args.try_lines
