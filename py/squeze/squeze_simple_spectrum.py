@@ -9,7 +9,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 from squeze.squeze_spectrum import Spectrum
-from squeze.squeze_common_functions import load_array_from_json
+from squeze.squeze_common_functions import deserialize
 
 class SimpleSpectrum(Spectrum):
     """
@@ -54,9 +54,9 @@ class SimpleSpectrum(Spectrum):
             `squeze_common_functions.py`. The current deserialisation includes the
             possibility to interpret the flux, ivar, and wave arrays as either
             normal (np.array) or masked (np.ma.array) arrays."""
-        flux = load_array_from_json(data.get("_flux"))
-        ivar = load_array_from_json(data.get("_ivar"))
-        wave = load_array_from_json(data.get("_wave"))
+        flux = deserialize(data.get("_flux"))
+        ivar = deserialize(data.get("_ivar"))
+        wave = deserialize(data.get("_wave"))
         metadata = data.get("_metadata")
         
         return cls(flux, ivar, wave, metadata)

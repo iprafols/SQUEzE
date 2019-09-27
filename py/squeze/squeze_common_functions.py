@@ -14,29 +14,51 @@ import json
 import pandas as pd
 import numpy as np
 
+def serialize(obj):
+    """ Serializes complex objects. If the object type is not considered
+        for this function, raise a TypeError (as per save_json documentation
+        requirements)
+        
+        Parameters
+        ----------
+        obj : object
+        Object to serialize
+        
+        Returns
+        -------
+        Serialized object
+        
+        Raises
+        ------
+        TypeError upon unsuccesful serialization
+        """
+    if isinstance(obj, np.ndarray):
+        return {"np.ndarray": obj.tolist()}
+    if isinstance(obj, np.ma.core.MaskedArray):
+        return {"np.ma.core.MakedArray": {"data": obj.data.tolist(),
+                                          "maks": obj.mask.tolist()}}
+    if hasattr(obj, "__dict__"):
+        return obj.__dict__
+
+    # raise error if the object serialization is not addressed by this class
+    obj_type = str(type(obj))
+    if obj_type.startswith("<class '"):
+        obj_type = obj_type[8:-2]
+    raise TypeError("Object of type {} is not JSON serializable".format(obj_type))
+    
+def deserialize(json_dict):
+    if "np.ndarray" in json_dict:
+        return np.array(json_dict.get("np.ndarray"))
+    if "np.ma.core.MakedArray" in json_dict:
+        obj = json_dict.get("np.ma.core.MakedArray")
+        return np.ma.array(obj.get("data"), mask=obj.get("mask"))
+
 def save_json(filename, user_object):
     """ Saves object into filename. Encoding file as a json object.
         Complex object are saved using their __dict__ property"""
-    def default(object):
-        if type(object) == np.ndarray:
-            object_dict = {}
-            object_dict["data"] = object.tolist()
-            return object_dict
-        elif type(object) == np.ma.core.MaskedArray:
-            object_dict = {}
-            object_dict["data"] = object.data.tolist()
-            object_dict["mask"] = object.mask.tolist()
-            return object_dict
-        elif hasattr(object, "__dict__"):
-            return object.__dict__
-        else:
-            obj_type = str(type(object))
-            if obj_type.startswith("<class '"):
-                obj_type = obj_type[8:-2]
-            raise TypeError("Object of type {} is not JSON serializable".format(obj_type))
     with open(filename, 'w') as outfile:
         json.dump(user_object, outfile, indent=4,
-                  default=lambda o: o.__dict__)
+                  default=serialize)
 
 def save_pd(filename, user_object):
     """ Saves pandas data frame into csv."""
@@ -52,20 +74,6 @@ def load_json(filename):
     with open(filename) as json_file:
         user_object = json.load(json_file)
     return user_object
-
-def load_array_from_json(json_dict):
-    """ Formats a json deserialized dict into an array. Takes into account
-        if the array was a np.ndarray or a np.ma.core.MaskedArray
-        
-        Returns
-        -------
-        The formatted object
-        """
-    if json_dict.get("mask", None) is None:
-        array = np.array(json_dict.get("data"))
-    else:
-        array = np.ma.array(json_dict.get("data"), mask=json_dict.get("mask"))
-    return array
 
 def load_pd(filename):
     """ Loads pandas DataFrame from filename. File must be a csv file

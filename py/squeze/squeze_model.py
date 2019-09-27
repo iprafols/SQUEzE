@@ -11,7 +11,7 @@ __version__ = "0.1"
 import numpy as np
 import pandas as pd
 
-from squeze.squeze_common_functions import load_pkl, save_pkl
+from squeze.squeze_common_functions import save_json
 from squeze.squeze_defaults import CUTS
 from squeze.squeze_defaults import CLASS_PREDICTED
 from squeze.squeze_defaults import RANDOM_STATE
