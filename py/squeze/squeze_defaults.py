@@ -92,8 +92,8 @@ This variable sets the options to be passed to the random forest classifier
 RANDOM_FOREST_OPTIONS = {"high": {"class_weight": "balanced_subsample",
                                   "n_jobs": 3, "n_estimators": 1000},
                          "low": {"class_weight": "balanced_subsample",
-                                  "n_jobs": 3, "n_estimators": 1000,
-                                  "max_depth": 10,},
+                                 "n_jobs": 3, "n_estimators": 1000,
+                                 "max_depth": 10,},
                         }
 
 """
