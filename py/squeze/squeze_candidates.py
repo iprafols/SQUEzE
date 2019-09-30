@@ -22,7 +22,7 @@ from matplotlib import gridspec
 
 
 from squeze.squeze_common_functions import verboseprint
-from squeze.squeze_common_functions import save_json
+from squeze.squeze_common_functions import save_json, load_json
 from squeze.squeze_error import Error
 from squeze.squeze_model import Model
 from squeze.squeze_peak_finder import PeakFinder
