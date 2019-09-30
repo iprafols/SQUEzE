@@ -13,6 +13,7 @@ import argparse
 import numpy as np
 
 from squeze.squeze_common_functions import load_json
+from squeze.squeze_common_functions import deserialize
 from squeze.squeze_common_functions import verboseprint, quietprint
 from squeze.squeze_error import Error
 from squeze.squeze_quasar_catalogue import QuasarCatalogue
@@ -40,7 +41,7 @@ def main():
                 (args.qso_specid is not None)):
             parser.error("options --qso-cat, --qso-cols, and --qso-specid " \
                          "are incompatible with --qso-dataframe")
-        quasar_catalogue = load_json(args.qso_dataframe)
+        quasar_catalogue = deserialize(load_json(args.qso_dataframe))
         quasar_catalogue["loaded"] = True
     else:
         if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None):
