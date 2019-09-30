@@ -16,6 +16,7 @@ from squeze.squeze_common_functions import load_json
 from squeze.squeze_common_functions import verboseprint, quietprint
 from squeze.squeze_error import Error
 from squeze.squeze_quasar_catalogue import QuasarCatalogue
+from squeze.squeze_model import Model
 from squeze.squeze_spectra import Spectra
 from squeze.squeze_candidates import Candidates
 from squeze.squeze_defaults import CUTS
