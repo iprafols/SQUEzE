@@ -328,7 +328,7 @@ class Candidates(object):
             for try_line in self.__try_lines:
                 # compute redshift
                 z_try = spectrum.wave()[peak_index]/self.__lines["wave"][try_line] - 1.0
-                if not z_try >= 0.0:
+                if z_try < 0.0:
                     continue
 
                 # compute peak ratio for the different lines

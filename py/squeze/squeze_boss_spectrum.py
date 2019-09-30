@@ -91,7 +91,7 @@ class BossSpectrum(Spectrum):
             self.__filter_wavelengths(forbidden_wavelenghts)
                 
         # store the wavelength, flux and inverse variance as masked arrays
-        self._wave = np.ma.array(self._wave, mask=self.__skymask)
+        #self._wave = np.ma.array(self._wave, mask=self.__skymask)
         self._flux = np.ma.array(spectrum_hdu[1].data["flux"].copy(),
                                  mask=self.__skymask)
         self._ivar = np.ma.array(spectrum_hdu[1].data["ivar"].copy(),
