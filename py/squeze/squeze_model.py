@@ -257,7 +257,7 @@ class Model(object):
         selected_cols = data.get("_Model__selected_cols")
         settings = data.get("_Model__settings")
         cuts = data.get("_Model__cuts")
-        model_opt = data.get("_Model__model_opt")
+        model_opt = [data.get("_Model__clf_options"), data.get("_Model__random_state")]
         cls_instance = cls(name, selected_cols, settings, cuts=cuts,
                            model_opt=model_opt)
             
