@@ -23,6 +23,7 @@ from matplotlib import gridspec
 
 from squeze.squeze_common_functions import verboseprint
 from squeze.squeze_common_functions import save_json, load_json
+from squeze.squeze_common_functions import deserialize
 from squeze.squeze_error import Error
 from squeze.squeze_model import Model
 from squeze.squeze_peak_finder import PeakFinder
@@ -551,9 +552,10 @@ class Candidates(object):
             If None, then load from self.__name
             """
         if filename is None:
-            self.__candidates = load_json(self.__name)
+            json_dict = load_json(self.__name)
         else:
-            self.__candidates = load_json(filename)
+            json_dict = load_json(filename)
+        self.__candidates = deserialize(json_dict)
 
     def merge(self, others_list):
         """
