@@ -572,7 +572,7 @@ class Candidates(object):
 
         for candidates_filename in others_list:
             # load candidates
-            other = load_json(candidates_filename)
+            other = deserialize(load_json(candidates_filename))
 
             # append to candidates list
             self.__candidates = self.__candidates.append(other, ignore_index=True)
