@@ -9,7 +9,6 @@ from __future__ import print_function
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-import pickle
 import json
 import pandas as pd
 import numpy as np
