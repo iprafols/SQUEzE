@@ -16,7 +16,6 @@ __version__ = "0.1"
 
 import numpy as np
 from numpy.random import randn
-from scipy.signal import medfilt
 import astropy.io.fits as fits
 
 from squeze.squeze_error import Error

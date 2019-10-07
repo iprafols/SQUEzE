@@ -15,8 +15,6 @@ import pandas as pd
 
 import astropy.io.fits as fits
 
-from scipy import signal
-
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
