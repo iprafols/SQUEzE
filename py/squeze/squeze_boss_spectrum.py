@@ -2,14 +2,8 @@
     SQUEzE
     ======
 
-    This file implements the class Spectrum, that is used to make sure that the
-    passed spectrum have the required properties for SQUEzE to be able to run
-    properly.
-    To run SQUEzE on a given dataset, first create a class to load the spectra.
-    This class should inherit from Spectrum. See a "fill the spots" example in
-    squeze_my_spectrum.py.
-    Alternatively, for simple cases, the SimpleSpectrum class defined in
-    squeze_simple_spectrum.py may be used.
+    This file implements the class BossSpectrum, a specialization of Spectrum
+    oriented to load spectra from BOSS
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"

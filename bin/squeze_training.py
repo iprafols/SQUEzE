@@ -3,8 +3,7 @@
     SQUEzE
     ======
 
-    This file allows the user to execute SQUEzE in training mode. See
-    the 'Usage' section in the README for detailed usage instructions.
+    This file allows the user to execute SQUEzE in training mode. 
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"

@@ -7,11 +7,8 @@ requirements:
 * argparse
 * numpy
 * pandas
-* scipy
-* sklearn
+* sklearn - only for training
 * astropy
-* tqdm
-* pickle
 
 ## Description
 
@@ -23,9 +20,10 @@ See Perez-Rafols et al. 2019 (https://arxiv.org/abs/1903.00023) for more details
 this paper if you are using SQUEzE in your analysis.
     
 SQUEzE can run in different modes:
-    1. training - Use a known sample to decide on which cuts to apply
-    2. operation - Apply cuts to unknown sample to build a catalogue
-    3. merge - Merge different candidates objects into a single candidate objects
+    1. training - Use a known sample to decide on model options
+    2. test - Use a known sample to assess model performance
+    3. operation - Apply cuts to unknown sample to build a catalogue
+    4. merge - Merge different candidates objects into a single candidate objects
 
 ## Installation
 
@@ -49,12 +47,13 @@ stored in the `data/` folder.
 
 ## Usage
 
-SQUEzE presents two modes of operation: training and operation. The training mode
-is used on a controlled sample where a truth table is available, and allows the code to
-learn the cuts required to achieve the target completeness. The operation mode is uesd
-on an uncontrolled sample to generate a quasar catalogue.
+SQUEzE presents four modes of operation: training, test, operation, and merge. The training
+and test modes are used on a controlled sample where a truth table is available, 
+and allows the code to learn or test performance of the model parameters. 
+The operation mode is used on an uncontrolled sample to generate a quasar catalogue.
+The merge mode is used to join different (and possibly parallel) runs on a different mode.
 
-### Formatting data (training and operation modes)
+### Formatting data (training, test, and operation modes)
 
 Before running SQUEzE data must be formatted so that the code can use it properly.
 This section explains both the optional and required pre-steps to format all data
@@ -81,87 +80,7 @@ run
 ```
 python squeze_training.py
 ```
-optional arguments:
-
--h, --help            
-Show this help message and exit
-
---quiet               
-Do not print messages (default: False)
-
---input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]               
-Name of the json file(s) containing the spectra that are to be analysed. If multiple files 
-are given, then they must be passed as a white-spaced list. The spectra in each of the 
-files will be loaded into memory as a block, and candidates will be looked for before 
-loading the next set of spectra. (default: None)
-
---load-candidates                    
-Load candidates previously found. If --input- candidates is passed, then load from there. 
-Otherwise, load from --output-candidates. (default: False)
-
---input-candidates INPUT_CANDIDATES                 
-Name of the csv file from where candidates will be loaded. (default: None)
-
---output-candidates OUTPUT_CANDIDATES               
-Name of the csv file where the candidates will be saved. In training mode, the model will 
-be saved using this name (without the extension) as base name and append the extension 
-_model.json to it (default: None)
-
---check-statistics                  
-Check the candidates' statistics at the end (default: False)
-
---check-probs CHECK_PROBS [CHECK_PROBS ...]               
-White-spaced list of the probabilities to check. The candidates' statistics will be computed 
-for these cuts in probabilities. Ignored if --check-statistics is not passed. If it is not passed 
-and --check-statistics is then np.arange(0.9, 0.0, -0.05) (default: None)
-
---save-fits                          
-Save the final catalogue also as a fits file (default: False)
-
---peakfind-width PEAKFIND_WIDTH               
-Width (in pixels) of the tipical peak (default: None)
-
---peakfind-sig PEAKFIND_SIG               
-Minimum significance required to accept a peak (default: None)
-
---qso-dataframe QSO_DATAFRAME               
-Name of the json file containing the quasar catalogue formatted into pandas dataframe. Must 
-only contain information of quasars that will be loaded. Must be present if --qso-cat is not 
-passed. (default: None)
-
---qso-cat QSO_CAT                    
-Name of the fits file containig the quasar catalogue. Must be present if --qso-dataframe is not 
-passed (default: None)
-
---qso-cols QSO_COLS [QSO_COLS ...]               
-White-spaced list of the data arrays (of the quasar catalogue) to be loaded. Must be present 
-only if --qso-cat is passed (default: None)
-
---qso-hdu QSO_HDU                    
-Number of the Header Data Unit in --qso-cat where the catalogue is stored. (default: 1)
-
---qso-specid QSO_SPECID               
-Name of the column that will be used as specid. Must be included in --qso-cols. Must be present 
-only if --qso-cat is passed (default: None)
-
---z-precision Z_PRECISION               
-Maximum difference betwee the true redshift and the measured redshift for a candidate to be 
-considered a true detection. This option only works on cuts of type 'percentile'. (default: None)
-
---lines LINES                        
-Name of the json file containing the lines ratios to be computed. (default: None)
-
---cuts CUTS                          
-Name of the json file containing the hard-core cuts to be included in the model. (default: None)
-
---try-lines [TRY_LINES [TRY_LINES ...]]               
-Name of the lines that will be associated to the peaks to estimate the redshift. (default: None)
-
---weighting-mode WEIGHTING_MODE               
-Selects the weighting mode when computing the line ratios. Can be 'weights' if ivar is to be 
-used as weights when computing the line ratios, 'flags' if ivar is to be used as flags when 
-computing the line ratios (pixels with 0 value will be ignored, the rest will be averaged without 
-weighting), or 'none' if weights are to be ignored. (default: weights)
+for an explanation on the optional arguments add `-h` to the previous line
 
 ### Usage in test mode
 
@@ -169,66 +88,7 @@ run
 ```
 python squeze_test.py
 ```
-optional arguments:
-
--h, --help            
-Show this help message and exit
-
---quiet               
-Do not print messages (default: False)
-
---input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]               
-Name of the json file(s) containing the spectra that are to be analysed. If multiple files are given, 
-then they must be passed as a white-spaced list. The spectra in each of the files will be loaded 
-into memory as a block, and candidates will be looked for before loading the next set of spectra.
-(default: None)
-
---load-candidates                    
-Load candidates previously found. If --input-candidates is passed, then load from there. Otherwise,
-load from --output-candidates. (default: False) 
-
---input-candidates INPUT_CANDIDATES                
-Name of the csv file from where candidates will be loaded. (default: None)
-
---output-candidates OUTPUT_CANDIDATES               
-Name of the csv file where the candidates will be saved. In training mode, the model will be saved 
-using this name (without the extension) as base name and append the extension _model.json to it 
-(default: None)
-
---check-statistics                  
-Check the candidates' statistics at the end (default: False)
-
---check-probs CHECK_PROBS [CHECK_PROBS ...]               
-White-spaced list of the probabilities to check. The candidates' statistics will be computed for 
-these cuts in probabilities. Ignored if --check-statistics is not passed. If it is not passed and 
---check-statistics is then np.arange(0.9, 0.0, -0.05) (default: None)
-
---save-fits           
-Save the final catalogue also as a fits file (default: False)
-
---qso-dataframe QSO_DATAFRAME               
-Name of the json file containing the quasar catalogue formatted into pandas dataframe. Must only 
-contain information of quasars that will be loaded. Must be present if --qso-cat is not passed. 
-(default: None)
-
---qso-cat QSO_CAT                    
-Name of the fits file containig the quasar catalogue. Must be present if --qso-dataframe is not 
-passed (default: None)
-
---qso-cols QSO_COLS [QSO_COLS ...]               
-White-spaced list of the data arrays (of the quasar catalogue) to be loaded. Must be present only 
-if --qso-cat is passed (default: None)
-
---qso-hdu QSO_HDU                    
-Number of the Header Data Unit in --qso-cat where the catalogue is stored. (default: 1)
-
---qso-specid QSO_SPECID               
-Name of the column that will be used as specid. Must be included in --qso-cols. Must be present 
-only if --qso-cat is passed (default: None)
-
---model MODEL                        
-Name of the josn file containing the model to be used in the computation of the probabilities of 
-candidates being quasars (default: None)
+for an explanation on the optional arguments add `-h` to the previous line
 
 ### Usage in operation mode
 
@@ -236,63 +96,12 @@ run
 ```
 python squeze_operation.py
 ```
-optional arguments:
+for an explanation on the optional arguments add `-h` to the previous line
 
--h, --help           
-Show this help message and exit
-
---quiet               
-Do not print messages (default: False)
-
---input-spectra INPUT_SPECTRA [INPUT_SPECTRA ...]               
-Name of the json file(s) containing the spectra that are to be analysed. If multiple files are given, then 
-they must be passed as a white-spaced list. The spectra in each of the files will be loaded into memory 
-as a block, and candidates will be looked for before loading the next set of spectra. (default: None)
-
---load-candidates                    
-Load candidates previously found. If --input-candidates is passed, then load from there. Otherwise,
-load from --output-candidates. (default: False)
-
---input-candidates INPUT_CANDIDATES               
-Name of the csv file from where candidates will be loaded. (default: None)
-
---output-candidates OUTPUT_CANDIDATES               
-Name of the csv file where the candidates will be saved. In training mode, the model will be saved 
-using this name (without the extension) as base name and append the extension _model.json to it 
-(default: None)
-
---check-statistics                   
-Check the candidates' statistics at the end (default:False)
-
---check-probs CHECK_PROBS [CHECK_PROBS ...]               
-White-spaced list of the probabilities to check. The candidates' statistics will be computed for 
-these cuts in probabilities. Ignored if --check-statistics is not passed. If it is not passed and 
---check-statistics is then np.arange(0.9, 0.0, -0.05) (default: None)
-
---save-fits                          
-Save the final catalogue also as a fits file (default: False)
-
---output-catalogue OUTPUT_CATALOGUE               
-Name of the fits file where the final catalogue will be stored. (default: None)
-
---prob-cut PROB_CUT                  
-Only objects with probability > PROB_CUT will be included in the catalogue (default: 0.1)
-
-### Usage in merging mode
+### Usage in merge mode
 
 run
 ```
 python squeze_merge_candidates.py
 ```
-optional arguments:
--h, --help                 
-Show this help message and exit
-
---quiet                     
-Do not print messages (default: False)
-
---input-candidates INPUT_CANDIDATES [INPUT_CANDIDATES ...]               
-List of csv files containing candidates objects to merge. (default: None)
-
---output-candidates OUTPUT_CANDIDATES               
-Name of the csv file where the candidates will be saved. (default: None)
+for an explanation on the optional arguments add `-h` to the previous line

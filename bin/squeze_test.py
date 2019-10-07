@@ -3,8 +3,7 @@
     SQUEzE
     ======
 
-    This file allows the user to execute SQUEzE in test mode. See
-    the 'Usage' section in the README for detailed usage instructions.
+    This file allows the user to execute SQUEzE in test mode. 
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
@@ -105,7 +104,7 @@ def main():
         candidates.find_completeness_purity(quasar_catalogue, data_frame)
         for prob in probs:
             userprint("\n---------------")
-            userprint("SVM proba > {}".format(prob))
+            userprint("proba > {}".format(prob))
             candidates.find_completeness_purity(quasar_catalogue,
                                                 data_frame[(data_frame["prob"] > prob) &
                                                            ~(data_frame["duplicated"]) &

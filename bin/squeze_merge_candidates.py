@@ -3,8 +3,7 @@
     ======
 
     This file allows the user to merge two or more SQUEzE candidate objects
-    into a single candidate object. See the 'Usage' section in the README for
-    detailed usage instructions.
+    into a single candidate object. 
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"

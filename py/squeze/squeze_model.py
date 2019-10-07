@@ -221,7 +221,7 @@ class Model(object):
             Parameters
             ----------
             data_frame : pd.DataFrame
-            The dataframe where the SVMs are trained
+            The dataframe with which the model is trained
             """
         # filter data_frame by excluding objects that meet the hard-core cuts
         for selected_cols in self.__cuts[1]:

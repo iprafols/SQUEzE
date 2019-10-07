@@ -3,6 +3,7 @@
     ======
 
     This file shows an example of how should the variable cuts be formatted.
+    DEPRECATED
     """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"

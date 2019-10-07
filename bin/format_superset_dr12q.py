@@ -1,11 +1,6 @@
 """
     SQUEzE - SupersetDR12Q
     ==============
-    This file is a modified version of format_spectra tailored to load
-    SuperesetDR12Q data
-
-    From format_spectra.py :
-
     This file shows an example of how should the spectra should be formatted.
     The example is based on loading BOSS data and some parts should probably
     be heavily modified for other surveys.
@@ -15,7 +10,7 @@
     of doing this. For users with object-oriented exeprience, it is recommended
     to create a new class YourSurveySpectrum that inherits from Spectrum. A
     simpler way (but a bit more restrictive) is to make use of the SimpleSpectrum
-    class provided in squeze_simple_spectrum.py. This example covers both options.
+    class provided in squeze_simple_spectrum.py.
 
     The complete set of spectra is to be loaded in the class Spectra defined
     in squeze_spectra.py.

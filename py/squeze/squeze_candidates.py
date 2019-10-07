@@ -3,8 +3,8 @@
     ======
 
     This file implements the class Candidates, that is used to generate the
-    list of quasar candidates, compute the cuts required for the cleaning
-    process, and construct the final catalogue
+    list of quasar candidates, trains or applies the model required for the
+    cleaning process, and construct the final catalogue
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
@@ -17,7 +17,6 @@ import astropy.io.fits as fits
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-
 
 from squeze.squeze_common_functions import verboseprint
 from squeze.squeze_common_functions import save_json, load_json
@@ -42,13 +41,11 @@ class Candidates(object):
         PURPOSE: Create and manage the candidates catalogue. This include
         creating the list of candidates from a set of Spectrum instances,
         computing cuts to maintain specific level of completeness,
-        applying specific cuts to the candidates list, and
+        training or appliying the model to clean the candidates list, and
         creating a final catalogue.
         """
-
     # pylint: disable=too-many-instance-attributes
     # 12 is reasonable in this case.
-
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.csv",
                  weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
