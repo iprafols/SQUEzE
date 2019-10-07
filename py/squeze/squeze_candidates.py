@@ -20,7 +20,10 @@ from scipy import signal
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-from squeze.squeze_common_functions import save_pkl, load_pkl, verboseprint
+
+from squeze.squeze_common_functions import verboseprint
+from squeze.squeze_common_functions import save_json, load_json
+from squeze.squeze_common_functions import deserialize
 from squeze.squeze_error import Error
 from squeze.squeze_model import Model
 from squeze.squeze_peak_finder import PeakFinder
@@ -49,7 +52,7 @@ class Candidates(object):
     # 12 is reasonable in this case.
 
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
-                 mode="operation", name="SQUEzE_candidates.pkl",
+                 mode="operation", name="SQUEzE_candidates.csv",
                  weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
                  model=(None, CUTS), model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
@@ -71,11 +74,11 @@ class Candidates(object):
             Running mode. "training" mode assumes that true redshifts are known
             and provide a series of functions to train the model.
 
-            name : string - Default: "SQUEzE_candidates.pkl"
+            name : string - Default: "SQUEzE_candidates.csv"
             Name of the candidates sample. The code will save an python-binary
-            with the information of the database in a pkl file with this name.
+            with the information of the database in a csv file with this name.
             If load is set to True, then the candidates sample will be loaded
-            from this file. Recommended extension is pkl.
+            from this file. Recommended extension is csv.
 
             weighting_mode : string - Default: "weights"
             Name of the weighting mode. Can be "weights" if ivar is to be used
@@ -383,7 +386,7 @@ class Candidates(object):
 
     def __save_candidates(self):
         """ Save the candidates DataFrame. """
-        save_pkl(self.__name, self.__candidates)
+        save_json(self.__name, self.__candidates)
 
     def candidates(self):
         """ Access the candidates DataFrame. """
@@ -549,9 +552,10 @@ class Candidates(object):
             If None, then load from self.__name
             """
         if filename is None:
-            self.__candidates = load_pkl(self.__name)
+            json_dict = load_json(self.__name)
         else:
-            self.__candidates = load_pkl(filename)
+            json_dict = load_json(filename)
+        self.__candidates = deserialize(json_dict)
 
     def merge(self, others_list):
         """
@@ -568,7 +572,7 @@ class Candidates(object):
 
         for candidates_filename in others_list:
             # load candidates
-            other = load_pkl(candidates_filename)
+            other = deserialize(load_json(candidates_filename))
 
             # append to candidates list
             self.__candidates = self.__candidates.append(other, ignore_index=True)
@@ -701,7 +705,7 @@ class Candidates(object):
         # add columns to compute the class in training
         selected_cols += ['class_person', 'correct_redshift']
         
-        self.__model = Model("{}_model.pkl".format(self.__name[:self.__name.rfind(".")]),
+        self.__model = Model("{}_model.json".format(self.__name[:self.__name.rfind(".")]),
                              selected_cols, self.__get_settings(),
                              model_opt=self.__model_opt,
                              cuts=self.__cuts)

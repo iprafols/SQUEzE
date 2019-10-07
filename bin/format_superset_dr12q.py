@@ -32,9 +32,7 @@ import numpy as np
 
 import astropy.io.fits as fits
 
-
-
-from squeze.squeze_common_functions import save_pkl
+from squeze.squeze_common_functions import save_json
 from squeze.squeze_common_functions import verboseprint, quietprint
 from squeze.squeze_error import Error
 from squeze.squeze_quasar_catalogue import QuasarCatalogue
@@ -60,8 +58,8 @@ def main():
                         help="""Name of the fits file containing the list of spectra
                             to be loaded""")
     parser.add_argument("--out", type=str, default="spectra", required=False,
-                        help="""Base name of the pkl files where the list of spectra
-                            will be saved. The sufix _plate####.pkl, where #### will be
+                        help="""Base name of the json files where the list of spectra
+                            will be saved. The sufix _plate####.json, where #### will be
                             replaced with the plate number, will be added to save the
                             spectra on the different plates.""")
     parser.add_argument("--input-folder", type=str, required=True,
@@ -137,7 +135,7 @@ def main():
     # load sky mask
     masklambda = np.genfromtxt(args.sky_mask)
 
-    # loop over plates, will save a pkl file for each plate
+    # loop over plates, will save a json file for each plate
     userprint("loading spectra in each of the plates")
     missing_files = []
     for plate in plate_list:
@@ -216,7 +214,7 @@ def main():
                 #print "missing file {}".format(spectrum_file)
 
         # save spectra in the current plate
-        save_pkl("{}_plate{:04d}.pkl".format(args.out, plate), spectra)
+        save_json("{}_plate{:04d}.json".format(args.out, plate), spectra)
 
     for item in missing_files:
         userprint(item)

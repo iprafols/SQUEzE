@@ -7,9 +7,9 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-import pandas as pd
+import json
 
-from squeze.squeze_common_functions import save_pkl
+from squeze.squeze_common_functions import save_json
 
 def main():
     """
@@ -37,8 +37,8 @@ def main():
                "ciii_ratio_SN", "mgii_ratio_SN"],
             ])
 
-    # save them as a pkl file to be used by SQUEzE
-    save_pkl("cuts.pkl", lines)
+    # save them as a json file to be used by SQUEzE
+    save_json("cuts.json", cuts)
 
 if __name__ == '__main__':
     main()

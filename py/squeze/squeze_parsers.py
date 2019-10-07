@@ -57,7 +57,7 @@ MODE_PARSER = argparse.ArgumentParser(add_help=False)
 
 MODE_PARSER.add_argument("--input-spectra", nargs='+', type=str, default=None,
                          required=False,
-                         help="""Name of the pkl file(s) containing the spectra
+                         help="""Name of the json file(s) containing the spectra
                              that are to be analysed. If multiple files are given,
                              then they must be passed as a white-spaced list.
                              The spectra in each of the files will be loaded into
@@ -70,14 +70,14 @@ MODE_PARSER.add_argument("--load-candidates", action="store_true",
                              Otherwise, load from --output-candidates.""")
 
 MODE_PARSER.add_argument("--input-candidates", type=str, default=None, required=False,
-                         help="""Name of the pkl file from where candidates will be
+                         help="""Name of the csv file from where candidates will be
                              loaded.""")
 
 MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
-                         help="""Name of the pkl file where the candidates will be saved.
+                         help="""Name of the csv file where the candidates will be saved.
                              In training mode, the model will be saved using this name
                              (without the extension) as base name and append the extension
-                             _model.pkl to it""")
+                             _model.json to it""")
 
 MODE_PARSER.add_argument("--save-fits", action="store_true",
                          help="""Save the final catalogue also as a fits file""")
@@ -95,7 +95,7 @@ This QUASAR_CATALOGUE_PARSER contains the common options used to load the quasar
 QUASAR_CATALOGUE_PARSER = argparse.ArgumentParser(add_help=False)
 
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-dataframe", type=str, default=None, required=False,
-                                     help="""Name of the pkl file containing the quasar catalogue
+                                     help="""Name of the csv file containing the quasar catalogue
                                          formatted into pandas dataframe. Must only contain information
                                          of quasars that will be loaded. Must be present if --qso-cat
                                          is not passed.""")
@@ -137,11 +137,11 @@ TRAINING_PARSER.add_argument("--z-precision", type=float, default=None, required
                                  type 'percentile'.""")
 
 TRAINING_PARSER.add_argument("--lines", type=str, default=None, required=False,
-                             help="""Name of the pkl file containing the lines ratios
+                             help="""Name of the json file containing the lines ratios
                                  to be computed.""")
 
 TRAINING_PARSER.add_argument("--cuts", type=str, default=None, required=False,
-                             help="""Name of the pkl file containing the hard-core
+                             help="""Name of the json file containing the hard-core
                                  cuts to be included in the model.""")
 
 TRAINING_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, required=False,
@@ -167,7 +167,7 @@ TEST_PARSER = argparse.ArgumentParser(add_help=False,
                                                QUASAR_CATALOGUE_PARSER])
 
 TEST_PARSER.add_argument("--model", required=True, type=str,
-                         help="""Name of the pkl file containing the model to be used
+                         help="""Name of the json file containing the model to be used
                              in the computation of the probabilities of candidates
                              being quasars""")
 
@@ -195,7 +195,7 @@ OPERATION_PARSER.add_argument("--prob-cut", default=0.1, type=float,
                                   in the catalogue""")
 
 OPERATION_PARSER.add_argument("--model", required=True, type=str,
-                              help="""Name of the pkl file containing the model to be used
+                              help="""Name of the json file containing the model to be used
                                   in the computation of the probabilities of candidates
                                   being quasars""")
 
@@ -206,11 +206,11 @@ MERGING_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER]
 
 MERGING_PARSER.add_argument("--input-candidates", nargs='+', default=None, required=True,
                             action=min_length(2),
-                            help="""List of pkl files containing candidates objects to
+                            help="""List of csv files containing candidates objects to
                                 merge.""")
 
 MERGING_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
-                            help="""Name of the pkl file where the candidates will be saved.""")
+                            help="""Name of the csv file where the candidates will be saved.""")
 
 
 if __name__ == '__main__':

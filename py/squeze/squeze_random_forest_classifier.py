@@ -19,7 +19,7 @@ import sys
 
 import numpy as np
 
-from squeze.squeze_common_functions import load_pkl, save_pkl
+from squeze.squeze_common_functions import deserialize
 
 class RandomForestClassifier(object):
     """ The purpose of this class is to create a RandomForestClassifier
@@ -56,6 +56,7 @@ class RandomForestClassifier(object):
         self.__feature = None
         self.__threshold = None
         self.__proba = None
+        self.__tree_proba = None
 
     def fit(self, X, y):
         """ Create and train models
@@ -117,6 +118,7 @@ class RandomForestClassifier(object):
 
     def __searchNodes(self, indexs, node_id=0):
         """ Recursively navigates in the tree and calculate the tree response
+            by updating the values stored in self.__proba
             
             Parameters
             ----------
@@ -171,6 +173,42 @@ class RandomForestClassifier(object):
         
         del self.__X
         return output
+        
+    @classmethod
+    def from_json(cls, data):
+        """ This function deserializes a json string to correclty build the class.
+            It uses the deserialization function of class SimpleSpectrum to reconstruct
+            the instances of Spectrum. For this function to work, data should have been
+            serialized using the serialization method specified in `save_json` function
+            present on `squeze_common_functions.py` """
+
+        # create instance using the constructor
+        cls_instance = cls(**data.get("_RandomForestClassifier__args"))
+        
+        # now update the instance to the current values
+        cls_instance.set_num_trees(data.get("_RandomForestClassifier__num_trees"))
+        cls_instance.set_num_categories(data.get("_RandomForestClassifier__num_categories"))
+        cls_instance.classes_ = deserialize(data.get("classes_"))
+        
+        trees = data.get("_RandomForestClassifier__trees")
+        for tree in trees:
+            for key, value in tree.items():
+                tree[key] = deserialize(value)
+        cls_instance.set_trees(trees)
+        
+        return cls_instance
+        
+    def set_num_trees(self, num_trees):
+        """ Set the variable __num_trees. Should only be called from the method from_json"""
+        self.__num_trees = num_trees
+        
+    def set_num_categories(self, num_categories):
+        """ Set the variable __num_categories. Should only be called from the method from_json"""
+        self.__num_categories = num_categories
+    
+    def set_trees(self, trees):
+        """ Set the variable __trees. Should only be called from the method from_json"""
+        self.__trees = trees
 
 if __name__ == '__main__':
     pass

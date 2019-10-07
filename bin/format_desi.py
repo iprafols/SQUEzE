@@ -29,7 +29,7 @@ import numpy as np
 
 from desispec.io import read_spectra
 
-from squeze.squeze_common_functions import save_pkl
+from squeze.squeze_common_functions import save_json
 from squeze.squeze_common_functions import verboseprint, quietprint
 from squeze.squeze_error import Error
 from squeze.squeze_desi_spectrum import DesiSpectrum
@@ -89,7 +89,7 @@ def main():
         squeze_spectra.append(spectrum)
 
     # save formated spectra
-    save_pkl(args.output_filename, squeze_spectra)
+    save_json(args.output_filename, squeze_spectra)
 
 if __name__ == '__main__':
     main()
