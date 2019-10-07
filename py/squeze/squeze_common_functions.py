@@ -90,7 +90,7 @@ def save_json(filename, user_object):
     """ Saves object into filename. Encoding file as a json object.
         Complex object are saved using their __dict__ property"""
     with open(filename, 'w') as outfile:
-        json.dump(user_object, outfile, indent=4,
+        json.dump(user_object, outfile, indent=0,
                   default=serialize)
 
 def load_json(filename):
