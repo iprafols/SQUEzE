@@ -116,7 +116,7 @@ class Spectrum(object):
             rebinned_ivar[index] = self._ivar[pos].sum()
         
         mask[np.where((np.isnan(rebinned_flux)) | (np.isnan(rebinned_ivar)))] = True
-        rebinned_wave = np.ma.array(rebinned_wave, mask=mask)
+        rebinned_wave = rebinned_wave
         rebinned_flux = np.ma.array(rebinned_flux, mask=mask)
         rebinned_ivar = np.ma.array(rebinned_ivar, mask=mask)
 
