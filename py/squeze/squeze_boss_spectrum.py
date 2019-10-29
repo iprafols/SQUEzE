@@ -116,12 +116,12 @@ class BossSpectrum(Spectrum):
     def __add_noise(self, noise_amount):
         """ Adds noise to the spectrum by adding a gaussian random number of width
             equal to the (noise_amount-1) times the given variance. Then increase the
-            variance by a factor of sqrt(noise_amount)
+            variance by a factor noise_amount
             """
-        var = 1./self._ivar
+        sigma = 1./np.sqrt(self._ivar)
         var[np.where(var == np.inf)] = 0.
-        self._ivar = self._ivar/np.sqrt(noise_amount)
-        self._flux = self._flux + (noise_amount - 1.)*var*randn(self._flux.size)
+        self._ivar = self._ivar/noise_amount
+        self._flux = self._flux + (noise_amount - 1.)*sigma*randn(self._flux.size)
 
     def __find_skymask(self, masklambda, margin):
         """ Compute the sky mask according to a set of wavelengths and a margin.
