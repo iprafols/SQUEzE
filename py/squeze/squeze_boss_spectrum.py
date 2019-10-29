@@ -119,7 +119,7 @@ class BossSpectrum(Spectrum):
             variance by a factor noise_amount
             """
         sigma = 1./np.sqrt(self._ivar)
-        var[np.where(var == np.inf)] = 0.
+        sigma[np.where(sigma == np.inf)] = 0.
         self._ivar = self._ivar/noise_amount
         self._flux = self._flux + (noise_amount - 1.)*sigma*randn(self._flux.size)
 
