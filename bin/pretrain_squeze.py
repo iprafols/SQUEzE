@@ -18,7 +18,7 @@ def main():
 
     verboseprint("training model")
     candidates = Candidates(mode="training", name="../data/BOSS_train_64plates.json")
-    candidates.load_candidates("../data/BOSS_train_64plates.csv")
+    candidates.load_candidates("../data/BOSS_train_64plates.json")
     candidates.train_model()
     
     verboseprint("done")
