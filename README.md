@@ -37,7 +37,7 @@ It is recommended to pretrain SQUEzE using the provided results from BOSS.
 To do so run 
 ```
 cd <path_to_SQUEzE>/SQUEzE/data
-tar -xzvf BOSS_train_64plates.tar.gz
+tar -xJf BOSS_train_64plates.tar.xz
 cd ../bin
 python pretrain_squeze.py
 ```
