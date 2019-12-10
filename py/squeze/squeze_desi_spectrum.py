@@ -34,7 +34,7 @@ class DesiSpectrum(Spectrum):
 
             wave : dict
             A dictionary with the wavalegth array.
-            Each key will contain an array with the fluxes in a given band. 
+            Each key will contain an array with the fluxes in a given band.
 
             ivar : dict
             A dictionary with the ivar arrays of the different reobservations.
@@ -45,7 +45,7 @@ class DesiSpectrum(Spectrum):
             Each key will contain an array with the mask in a given band.
 
             metadata : dict
-            A dictionary with the spectral properties to be added in the 
+            A dictionary with the spectral properties to be added in the
             catalogue. Must contain the key "specid".
             """
 
@@ -53,11 +53,11 @@ class DesiSpectrum(Spectrum):
         # but they will be np.ndarrays by the end of __init__
         self._flux = np.ma.array(flux, mask=mask)
         self._wave = wave
-        self._ivar = np.ma.array(ivar, maks=maks)
+        self._ivar = np.ma.array(ivar, mask=maks)
 
         # keep metadata
         self._metadata = metadata
-        
+
         # combine reobservations
         self.__combine_reobservations()
 
