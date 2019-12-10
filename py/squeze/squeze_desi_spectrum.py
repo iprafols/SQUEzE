@@ -53,7 +53,7 @@ class DesiSpectrum(Spectrum):
         # but they will be np.ndarrays by the end of __init__
         self._flux = np.ma.array(flux, mask=mask)
         self._wave = wave
-        self._ivar = np.ma.array(ivar, mask=maks)
+        self._ivar = np.ma.array(ivar, mask=mask)
 
         # keep metadata
         self._metadata = metadata
