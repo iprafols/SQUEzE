@@ -722,6 +722,9 @@ class Candidates(object):
         if data_frame is None:
             data_frame = self.__candidates
 
+        if filename is None:
+            filename = self.__name.replace("json", "fits")
+
         def convert_dtype(dtype):
              if dtype == "O":
                  return "15A"
