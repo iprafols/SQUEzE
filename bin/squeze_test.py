@@ -3,7 +3,7 @@
     SQUEzE
     ======
 
-    This file allows the user to execute SQUEzE in test mode. 
+    This file allows the user to execute SQUEzE in test mode.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
@@ -110,5 +110,13 @@ def main():
                                                            ~(data_frame["duplicated"]) &
                                                            (data_frame["z_conf_person"] == 3)],
                                                 userprint=userprint)
+
+    # save the catalogue
+    if args.save_fits:
+        found_catalogue = candidates.candidates()
+        found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
+                                          (found_catalogue["prob"] > args.prob_cut)]
+        candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
+
 if __name__ == '__main__':
     main()

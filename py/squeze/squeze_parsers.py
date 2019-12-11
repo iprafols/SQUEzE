@@ -182,6 +182,11 @@ TEST_PARSER.add_argument("--check-probs", nargs='+', default=None, required=Fals
                              is not passed. If it is not passed and --check-statistics
                              is then np.arange(0.9, 0.0, -0.05)""")
 
+TEST_PARSER.add_argument("--prob-cut", default=0.0, type=float,
+                         help="""Only objects with probability > PROB_CUT will
+                         be includedin the catalogue""")
+
+
 
 
 """
@@ -190,7 +195,7 @@ This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
 OPERATION_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER,
                                                                     MODE_PARSER])
 
-OPERATION_PARSER.add_argument("--prob-cut", default=0.1, type=float,
+OPERATION_PARSER.add_argument("--prob-cut", default=0.0, type=float,
                               help="""Only objects with probability > PROB_CUT will be included
                                   in the catalogue""")
 
