@@ -17,16 +17,16 @@ def serialize(obj):
     """ Serializes complex objects. If the object type is not considered
         for this function, raise a TypeError (as per save_json documentation
         requirements)
-        
+
         Parameters
         ----------
         obj : object
         Object to serialize
-        
+
         Returns
         -------
         Serialized object
-        
+
         Raises
         ------
         TypeError upon unsuccesful serialization
@@ -41,14 +41,19 @@ def serialize(obj):
     if isinstance(obj, np.ndarray):
         return {"np.ndarray": {"data": obj.tolist(),
                                "dtype": obj.dtype}}
+
+    # deal with numpy ints
+    if isinstance(obj, np.int64):
+        return int(obj)
+
     # deal with other numpy objects
     if isinstance(obj, np.dtype):
         return str(obj)
-    
+
     # deal with pandas objects
     if isinstance(obj, pd.DataFrame):
         return {"pd.DataFrame": obj.to_json()}
-    
+
     # deal with complex objects
     if hasattr(obj, "__dict__"):
         return obj.__dict__
@@ -58,18 +63,18 @@ def serialize(obj):
     if obj_type.startswith("<class '"):
         obj_type = obj_type[8:-2]
     raise TypeError("Object of type {} is not JSON serializable".format(obj_type))
-    
+
 def deserialize(json_dict):
     """ Deserializes json dictionary. The dictionary must contain only one item
         which has to be either an array or a pandas DataFrame. For serialization
         of more complex objects, prefer the class method from_json of the respective
         object
-        
+
         Parameters
         ----------
         json_dict : dict
         Object to deserialize
-        
+
         Returns
         -------
         The object
@@ -94,7 +99,7 @@ def save_json(filename, user_object):
 
 def load_json(filename):
     """ Loads object from filename. File must be encoded as a json object
-         
+
         Returns
         -------
         The loaded object
