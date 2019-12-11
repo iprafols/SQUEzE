@@ -99,7 +99,7 @@ def save_json(filename, user_object):
 
 def load_json(filename):
     """ Loads object from filename. File must be encoded as a json object
-
+         
         Returns
         -------
         The loaded object

@@ -124,9 +124,22 @@ def main():
 
     # load quasar catalogue
     userprint("loading quasar catalogue")
-    quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols, args.qso_specid, args.qso_hdu)
-    quasar_catalogue = quasar_catalogue.quasar_catalogue()
-    
+    if args.qso_dataframe is not None:
+        if ((args.qso_cat is not None) or (args.qso_cols is not None) or
+                (args.qso_specid is not None)):
+            parser.error("options --qso-cat, --qso-cols, and --qso-specid " \
+                         "are incompatible with --qso-dataframe")
+        quasar_catalogue = deserialize(load_json(args.qso_dataframe))
+        quasar_catalogue["loaded"] = True
+    else:
+        if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None):
+            parser.error("--qso-cat, --qso-cols and --qso-specid are " \
+                         "required if --qso-dataframe is not passed")
+        quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
+                                           args.qso_specid, args.qso_hdu).quasar_catalogue()
+        quasar_catalogue["loaded"] = False
+
+
     # load sky mask
     masklambda = np.genfromtxt(args.sky_mask)
 
@@ -134,7 +147,7 @@ def main():
     userprint("loading spectra in each of the plates")
     missing_files = []
     for plate in plate_list:
-        
+
         if not (args.single_plate == 0 or plate == args.single_plate):
             continue
 
@@ -192,8 +205,8 @@ def main():
             spectrum_file = "spec-{:04d}-{:05d}-{:04d}.fits".format(plate,
                                                                     entry["mjd"].astype(int),
                                                                     entry["fiberid"].astype(int))
-            
-            
+
+
             # add spectra to list
             try:
                 spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
