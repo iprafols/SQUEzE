@@ -46,6 +46,10 @@ def serialize(obj):
     if isinstance(obj, np.int64):
         return int(obj)
 
+    # deal with numpy ints
+    if isinstance(obj, np.bool_):
+        return bool(obj)
+
     # deal with other numpy objects
     if isinstance(obj, np.dtype):
         return str(obj)
@@ -99,7 +103,7 @@ def save_json(filename, user_object):
 
 def load_json(filename):
     """ Loads object from filename. File must be encoded as a json object
-         
+
         Returns
         -------
         The loaded object
