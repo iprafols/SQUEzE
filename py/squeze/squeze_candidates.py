@@ -47,7 +47,7 @@ class Candidates(object):
     # pylint: disable=too-many-instance-attributes
     # 12 is reasonable in this case.
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
-                 mode="operation", name="SQUEzE_candidates.csv",
+                 mode="operation", name="SQUEzE_candidates.json",
                  weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
                  model=(None, CUTS), model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
@@ -224,12 +224,12 @@ class Candidates(object):
             If the object is a star (class_person = 1), then return False.
             This function should be called using the .apply method of the candidates
             data frame with the option axis=1
-            
+
             Parameters
             ----------
             row : pd.Series
             A row in the candidates data frame
-            
+
             Returns
             -------
             True if a candidate is a true quasar and False otherwise
@@ -446,7 +446,7 @@ class Candidates(object):
             get_results : boolean - Default: False
             If True, return the computed purity, the completeness, and the total number
             of found quasars. Otherwise, return None.
-            
+
             userprint : function - Default: verboseprint
             Print function to use
 
@@ -699,7 +699,7 @@ class Candidates(object):
 
         # add columns to compute the class in training
         selected_cols += ['class_person', 'correct_redshift']
-        
+
         self.__model = Model("{}_model.json".format(self.__name[:self.__name.rfind(".")]),
                              selected_cols, self.__get_settings(),
                              model_opt=self.__model_opt,
@@ -727,7 +727,7 @@ class Candidates(object):
                  return "15A"
              else:
                  return dtype
-        
+
         hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
                                                          format=convert_dtype(dtype),
                                                          array=data_frame[col])
