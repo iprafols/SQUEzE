@@ -51,9 +51,14 @@ class DesiSpectrum(Spectrum):
 
         # variables to store the information initially they are dictionaries
         # but they will be np.ndarrays by the end of __init__
-        self._flux = flux
+        self._flux = {}
+        self._ivar = {}
         self._wave = wave
-        self._ivar = ivar
+
+        # first set arrays as masked arrays
+        for key in flux:
+            self._flux[key] = np.ma.array(flux.get(key), mask=mask.get(key))
+            self._ivar[key] = np.ma.array(ivar.get(key), mask=mask.get(key))
 
         # keep metadata
         self._metadata = metadata
@@ -63,10 +68,6 @@ class DesiSpectrum(Spectrum):
 
         # combine bands
         self.__combine_bands()
-
-        # convert to masked arrays
-        self._flux = np.ma.array(self._flux, mask=mask)
-        self._ivar = np.ma.array(self._ivar, mask=mask)
 
     def __combine_bands(self):
         """ Combine the different bands together"""
