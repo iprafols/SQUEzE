@@ -74,7 +74,7 @@ MODE_PARSER.add_argument("--input-candidates", type=str, default=None, required=
                              loaded.""")
 
 MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
-                         help="""Name of the csv file where the candidates will be saved.
+                         help="""Name of the json file where the candidates will be saved.
                              In training mode, the model will be saved using this name
                              (without the extension) as base name and append the extension
                              _model.json to it""")
