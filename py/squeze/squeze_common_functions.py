@@ -45,8 +45,14 @@ def serialize(obj):
     # deal with numpy ints
     if isinstance(obj, np.int64):
         return int(obj)
+    if isinstance(obj, np.int32):
+        return int(obj)
 
-    # deal with numpy ints
+    # deal with numpy floats
+    if isinstance(obj, np.float32):
+        return int(obj)
+
+    # deal with numpy bools
     if isinstance(obj, np.bool_):
         return bool(obj)
 

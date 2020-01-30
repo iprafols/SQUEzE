@@ -70,7 +70,7 @@ class Model(object):
         else:
             self.__clf_options["random_state"] = self.__random_state
             self.__clf = RandomForestClassifier(**self.__clf_options)
-        
+
 
     def __find_class(self, row, train):
         """ Find the class the instance belongs to. If train is set
@@ -170,7 +170,7 @@ class Model(object):
             data_frame : pd.DataFrame
             The dataframe where the probabilities will be predicted
             """
-        
+
         if self.__highlow_split:
             # high-z split
             # compute probabilities for each of the classes
@@ -187,7 +187,7 @@ class Model(object):
             data_frame_low = data_frame[data_frame["z_try"] < 2.1].fillna(-9999.99)
             data_vector = data_frame_low[self.__selected_cols[:-2]].values
             data_class_probs = self.__clf_low.predict_proba(data_vector)
-                
+
             # save the probability for each of the classes
             for index, class_label in enumerate(self.__clf_low.classes_):
                 data_frame_low["prob_class{:d}".format(int(class_label))] = data_class_probs[:,index]
@@ -251,7 +251,7 @@ class Model(object):
             the instances of Spectrum. For this function to work, data should have been
             serialized using the serialization method specified in `save_json` function
             present on `squeze_common_functions.py` """
-        
+
         # create instance using the constructor
         name = data.get("_Model__name")
         selected_cols = data.get("_Model__selected_cols")
@@ -260,7 +260,7 @@ class Model(object):
         model_opt = [data.get("_Model__clf_options"), data.get("_Model__random_state")]
         cls_instance = cls(name, selected_cols, settings, cuts=cuts,
                            model_opt=model_opt)
-            
+
         # now update the instance to the current values
         if "high" in model_opt[0].keys() and "low" in model_opt[0].keys():
             cls_instance.set_clf_high(RandomForestClassifier.from_json(data.get("_Model__clf_high")))
@@ -284,6 +284,3 @@ class Model(object):
 
 if __name__ == '__main__':
     pass
-
-
-
