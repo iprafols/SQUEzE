@@ -50,7 +50,7 @@ def serialize(obj):
 
     # deal with numpy floats
     if isinstance(obj, np.float32):
-        return int(obj)
+        return float(obj)
 
     # deal with numpy bools
     if isinstance(obj, np.bool_):
