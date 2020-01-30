@@ -23,7 +23,7 @@ class DesiSpectrum(Spectrum):
         PURPOSE: Load and format a DESI spectrum to be digested by
         SQUEzE
         """
-    def __init__(self, flux, wave, ivar, mask, metadata):
+    def __init__(self, flux, wave, ivar, mask, metadata, single_exp=False):
         """ Initialize class instance
 
             Parameters
@@ -47,6 +47,9 @@ class DesiSpectrum(Spectrum):
             metadata : dict
             A dictionary with the spectral properties to be added in the
             catalogue. Must contain the key "specid".
+
+            single_exp : bool
+            If True, loads only the first reobservation. Otherwise combine them.
             """
 
         # variables to store the information initially they are dictionaries
@@ -63,8 +66,12 @@ class DesiSpectrum(Spectrum):
         # keep metadata
         self._metadata = metadata
 
-        # combine reobservations
-        self.__combine_reobservations()
+        if single_exp:
+            # keep only the first reobservation
+            self.__select_first_reobservation()
+        else:
+            # combine reobservations
+            self.__combine_reobservations()
 
         # combine bands
         self.__combine_bands()
@@ -105,3 +112,10 @@ class DesiSpectrum(Spectrum):
             # update arrays
             self._flux[band] = flux
             self._ivar[band] = ivar
+
+    def __select_first_reobservation(self):
+        """ Discard all reobservations except for the first one"""
+        # loop over bands
+        for band in self._flux.keys():
+            self._flux[band] = self._flux[band][0,:]
+            self._ivar[band] = self._ivar[band][0,:]
