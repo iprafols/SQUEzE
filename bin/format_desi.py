@@ -48,7 +48,7 @@ def main():
                         help="""Name of the filename to be loaded to be loaded.""")
     parser.add_argument("--output-filename", type=str, required=True,
                         help="""Name of the output filename.""")
-    parser.add_argument("--single-exp", "store_true",
+    parser.add_argument("--single-exp", action="store_true",
                         help="""Load only the first reobservation for each spectrum""")
 
     args = parser.parse_args()
