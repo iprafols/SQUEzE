@@ -144,7 +144,7 @@ class Model(object):
             is taken as the other one. If both are unavailable, then return
             np.nan
             """
-        if "prob_class3" in columns and "prob_class3" in columns:
+        if "prob_class3" in columns and "prob_class30" in columns:
             prob = row["prob_class3"] + row["prob_class30"]
         elif "prob_class30" in columns:
             prob = row["prob_class30"]
