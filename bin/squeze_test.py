@@ -111,8 +111,8 @@ def main():
                                                            (data_frame["z_conf_person"] == 3)],
                                                 userprint=userprint)
 
-    # save the catalogue
-    if args.save_fits:
+    # save the catalogue as a fits file
+    if not args.no_save_fits:
         found_catalogue = candidates.candidates()
         found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
                                           (found_catalogue["prob"] > args.prob_cut)]

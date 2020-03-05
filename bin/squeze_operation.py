@@ -3,7 +3,7 @@
     SQUEzE
     ======
 
-    This file allows the user to execute SQUEzE in operation mode. 
+    This file allows the user to execute SQUEzE in operation mode.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
@@ -64,11 +64,12 @@ def main():
     userprint("Computing probabilities")
     candidates.classify_candidates()
 
-    # save the catalogue
-    found_catalogue = candidates.candidates()
-    found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
-                                      (found_catalogue["prob"] > args.prob_cut)]
-    candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
+    # save the catalogue as a fits file
+    if not args.no_save_fits:
+        found_catalogue = candidates.candidates()
+        found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
+                                          (found_catalogue["prob"] > args.prob_cut)]
+        candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
 if __name__ == '__main__':
     main()

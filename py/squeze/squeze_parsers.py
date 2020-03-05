@@ -34,8 +34,8 @@ PARENT_PARSER = argparse.ArgumentParser(add_help=False)
 PARENT_PARSER.add_argument("--quiet", action="store_true",
                            help="""Do not print messages""")
 
-PARENT_PARSER.add_argument("--save-fits", action="store_true",
-                           help="""Save the final catalogue also as a fits file""")
+PARENT_PARSER.add_argument("--no-save-fits", action="store_true",
+                           help="""Do not save the final catalogue also as a fits file""")
 
 PARENT_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
                            help="""Name of the fits file where the final catalogue will be

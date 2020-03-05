@@ -40,8 +40,8 @@ def main():
     userprint("Merging with the other candidate objects")
     candidates.merge(args.input_candidates[1:])
 
-    # save the catalogue
-    if args.save_fits:
+    # save the catalogue as a fits file
+    if not args.no_save_fits:
         found_catalogue = candidates.candidates()
         candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
