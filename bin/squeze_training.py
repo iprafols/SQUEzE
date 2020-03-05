@@ -3,7 +3,7 @@
     SQUEzE
     ======
 
-    This file allows the user to execute SQUEzE in training mode. 
+    This file allows the user to execute SQUEzE in training mode.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
@@ -119,6 +119,11 @@ def main():
     # train model
     userprint("Training model")
     candidates.train_model()
+
+    # save the catalogue
+    if args.save_fits:
+        found_catalogue = candidates.candidates()
+        candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
 if __name__ == '__main__':
     main()

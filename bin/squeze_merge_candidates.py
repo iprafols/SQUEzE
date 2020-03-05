@@ -3,7 +3,7 @@
     ======
 
     This file allows the user to merge two or more SQUEzE candidate objects
-    into a single candidate object. 
+    into a single candidate object.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
@@ -39,6 +39,11 @@ def main():
     # merge the other candidates objects
     userprint("Merging with the other candidate objects")
     candidates.merge(args.input_candidates[1:])
+
+    # save the catalogue
+    if args.save_fits:
+        found_catalogue = candidates.candidates()
+        candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
 if __name__ == '__main__':
     main()

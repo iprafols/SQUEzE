@@ -34,6 +34,15 @@ PARENT_PARSER = argparse.ArgumentParser(add_help=False)
 PARENT_PARSER.add_argument("--quiet", action="store_true",
                            help="""Do not print messages""")
 
+PARENT_PARSER.add_argument("--save-fits", action="store_true",
+                           help="""Save the final catalogue also as a fits file""")
+
+PARENT_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
+                           help="""Name of the fits file where the final catalogue will be
+                               stored. If not specified, the catalogue will be saved using
+                               --output-candidates as name base, Ignored if --save-fits is
+                               not passed""")
+
 
 """
 This PEAKFIND_PARSER contains the options passed to the peak finding algorithms
@@ -50,8 +59,8 @@ PEAKFIND_PARSER.add_argument("--peakfind-sig", type=float, default=None,
 
 
 """
-This MODE_PARSER contains the common options for the training and operation
-mode
+This MODE_PARSER contains the common options for the training, test,
+and operation modes
 """ # description of MODE_PARSER ... pylint: disable=pointless-string-statement
 MODE_PARSER = argparse.ArgumentParser(add_help=False)
 
@@ -78,16 +87,6 @@ MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required
                              In training mode, the model will be saved using this name
                              (without the extension) as base name and append the extension
                              _model.json to it""")
-
-MODE_PARSER.add_argument("--save-fits", action="store_true",
-                         help="""Save the final catalogue also as a fits file""")
-
-MODE_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
-                         help="""Name of the fits file where the final catalogue will be
-                             stored. If not specified, the catalogue will be saved using
-                             --output-candidates as name base, Ignored if --save-fits is
-                             not passed""")
-
 
 """
 This QUASAR_CATALOGUE_PARSER contains the common options used to load the quasar catalogue.
