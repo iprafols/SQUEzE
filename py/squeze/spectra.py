@@ -8,9 +8,9 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-from squeze.squeze_error import Error
-from squeze.squeze_spectrum import Spectrum
-from squeze.squeze_simple_spectrum import SimpleSpectrum
+from squeze.error import Error
+from squeze.spectrum import Spectrum
+from squeze.simple_spectrum import SimpleSpectrum
 
 class Spectra(object):
     """

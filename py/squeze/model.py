@@ -11,12 +11,12 @@ __version__ = "0.1"
 import numpy as np
 import pandas as pd
 
-from squeze.squeze_common_functions import save_json
-from squeze.squeze_defaults import CUTS
-from squeze.squeze_defaults import CLASS_PREDICTED
-from squeze.squeze_defaults import RANDOM_STATE
-from squeze.squeze_defaults import RANDOM_FOREST_OPTIONS
-from squeze.squeze_random_forest_classifier import RandomForestClassifier
+from squeze.common_functions import save_json
+from squeze.defaults import CUTS
+from squeze.defaults import CLASS_PREDICTED
+from squeze.defaults import RANDOM_STATE
+from squeze.defaults import RANDOM_FOREST_OPTIONS
+from squeze.random_forest_classifier import RandomForestClassifier
 
 class Model(object):
     """ Create, train and/or execute the quasar model to find quasars

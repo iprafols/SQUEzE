@@ -10,9 +10,9 @@ __version__ = "0.1"
 
 import argparse
 
-from squeze.squeze_common_functions import verboseprint, quietprint
-from squeze.squeze_candidates import Candidates
-from squeze.squeze_parsers import MERGING_PARSER
+from squeze.common_functions import verboseprint, quietprint
+from squeze.candidates import Candidates
+from squeze.parsers import MERGING_PARSER
 
 def main():
     """ Run SQUEzE in merging mode """

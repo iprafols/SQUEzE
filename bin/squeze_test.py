@@ -11,16 +11,16 @@ __version__ = "0.1"
 import argparse
 import numpy as np
 
-from squeze.squeze_common_functions import load_json
-from squeze.squeze_common_functions import deserialize
-from squeze.squeze_common_functions import verboseprint, quietprint
-from squeze.squeze_error import Error
-from squeze.squeze_quasar_catalogue import QuasarCatalogue
-from squeze.squeze_model import Model
-from squeze.squeze_spectra import Spectra
-from squeze.squeze_candidates import Candidates
-from squeze.squeze_defaults import CUTS
-from squeze.squeze_parsers import TEST_PARSER
+from squeze.common_functions import load_json
+from squeze.common_functions import deserialize
+from squeze.common_functions import verboseprint, quietprint
+from squeze.error import Error
+from squeze.quasar_catalogue import QuasarCatalogue
+from squeze.model import Model
+from squeze.spectra import Spectra
+from squeze.candidates import Candidates
+from squeze.defaults import CUTS
+from squeze.parsers import TEST_PARSER
 
 
 def main():

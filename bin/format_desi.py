@@ -15,7 +15,7 @@
     of doing this. For users with object-oriented exeprience, it is recommended
     to create a new class YourSurveySpectrum that inherits from Spectrum. A
     simpler way (but a bit more restrictive) is to make use of the SimpleSpectrum
-    class provided in squeze_simple_spectrum.py. 
+    class provided in squeze_simple_spectrum.py.
 
     The complete set of spectra is to be loaded in the class Spectra defined
     in squeze_spectra.py.
@@ -29,11 +29,11 @@ import numpy as np
 
 from desispec.io import read_spectra
 
-from squeze.squeze_common_functions import save_json
-from squeze.squeze_common_functions import verboseprint, quietprint
-from squeze.squeze_error import Error
-from squeze.squeze_desi_spectrum import DesiSpectrum
-from squeze.squeze_spectra import Spectra
+from squeze.common_functions import save_json
+from squeze.common_functions import verboseprint, quietprint
+from squeze.error import Error
+from squeze.desi_spectrum import DesiSpectrum
+from squeze.spectra import Spectra
 
 def main():
     """ Load DESI spectra using the Spectra and DESISpectrum Classes
@@ -48,24 +48,24 @@ def main():
                         help="""Name of the filename to be loaded to be loaded.""")
     parser.add_argument("--output-filename", type=str, required=True,
                         help="""Name of the output filename.""")
-    
+
     args = parser.parse_args()
 
     # read desi spectra
     desi_spectra = read_spectra(args.input_filename)
-    
+
     # initialize squeze Spectra class
     squeze_spectra = Spectra()
 
     # get targetids
     targetid = np.unique(desi_spectra.fibermap["TARGETID"])
-    
+
     # loop over targeid
     for targid in targetid:
 
         # select objects
         pos = np.where(desi_spectra.fibermap["TARGETID"] == targid)
-        
+
         # prepare metadata
         metadata = {"targetid": targid,
                     "specid": targid,
@@ -81,7 +81,7 @@ def main():
             wave[band] = desi_spectra.wave[band]
             ivar[band] = desi_spectra.ivar[band][pos]
             mask[band] = desi_spectra.mask[band][pos]
-        
+
         # format spectrum
         spectrum = DesiSpectrum(flux, wave, ivar, mask, metadata)
 

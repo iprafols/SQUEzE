@@ -18,21 +18,21 @@ import astropy.io.fits as fits
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-from squeze.squeze_common_functions import verboseprint
-from squeze.squeze_common_functions import save_json, load_json
-from squeze.squeze_common_functions import deserialize
-from squeze.squeze_error import Error
-from squeze.squeze_model import Model
-from squeze.squeze_peak_finder import PeakFinder
-from squeze.squeze_defaults import CUTS
-from squeze.squeze_defaults import LINES
-from squeze.squeze_defaults import TRY_LINES
-from squeze.squeze_defaults import RANDOM_FOREST_OPTIONS
-from squeze.squeze_defaults import RANDOM_STATE
-from squeze.squeze_defaults import Z_PRECISION
-from squeze.squeze_defaults import PEAKFIND_WIDTH
-from squeze.squeze_defaults import PEAKFIND_SIG
-from squeze.squeze_spectrum import Spectrum
+from squeze.common_functions import verboseprint
+from squeze.common_functions import save_json, load_json
+from squeze.common_functions import deserialize
+from squeze.error import Error
+from squeze.model import Model
+from squeze.peak_finder import PeakFinder
+from squeze.defaults import CUTS
+from squeze.defaults import LINES
+from squeze.defaults import TRY_LINES
+from squeze.defaults import RANDOM_FOREST_OPTIONS
+from squeze.defaults import RANDOM_STATE
+from squeze.defaults import Z_PRECISION
+from squeze.defaults import PEAKFIND_WIDTH
+from squeze.defaults import PEAKFIND_SIG
+from squeze.spectrum import Spectrum
 
 class Candidates(object):
     """ Create and manage the candidates catalogue

@@ -8,8 +8,8 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-from squeze.squeze_spectrum import Spectrum
-from squeze.squeze_common_functions import deserialize
+from squeze.spectrum import Spectrum
+from squeze.common_functions import deserialize
 
 class SimpleSpectrum(Spectrum):
     """
@@ -58,7 +58,7 @@ class SimpleSpectrum(Spectrum):
         ivar = deserialize(data.get("_ivar"))
         wave = deserialize(data.get("_wave"))
         metadata = data.get("_metadata")
-        
+
         return cls(flux, ivar, wave, metadata)
 
 if __name__ == "__main__":
