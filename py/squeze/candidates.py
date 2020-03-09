@@ -176,10 +176,16 @@ class Candidates(object):
                                 1.0/ivar[pix_red].sum())/4.0
         # compute ratios
         if compute_ratio:
-            ratio = 2.0*peak/(cont_red + cont_blue)
-            ratio2 = np.abs((cont_red - cont_blue)/(cont_red + cont_blue))
-            err_ratio = np.sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/np.abs(cont_red + cont_blue)
-            ratio_sn = (ratio - 1.0)/err_ratio
+            aux = (cont_red + cont_blue)
+            if aux == 0.0:
+                ratio = np.nan
+                ratio2 = np.nan
+                ratio_sn = np.nan
+            else:
+                ratio = 2.0*peak/aux
+                ratio2 = np.abs((cont_red - cont_blue)/aux
+                err_ratio = np.sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/np.abs(aux)
+                ratio_sn = (ratio - 1.0)/err_ratio
         else:
             ratio = np.nan
             ratio2 = np.nan
