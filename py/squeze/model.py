@@ -240,7 +240,7 @@ class Model(object):
             if data_frame_peaks.shape[0] == 0 and data_frame_nopeaks.shape[0] == 0:
                 data_frame = data_frame_peaks
             else:
-                data_frame = pd.concat([data_frame_peaks, data_frame_nopeaks)
+                data_frame = pd.concat([data_frame_peaks, data_frame_nopeaks])
 
         # predict class and find the probability of the candidate being a quasar
         data_frame["class_predicted"] = data_frame.apply(self.__find_class, axis=1,
