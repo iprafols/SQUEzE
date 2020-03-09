@@ -117,6 +117,11 @@ QUASAR_CATALOGUE_PARSER.add_argument("--qso-specid", type=str, default=None, req
                                          Must be included in --qso-cols. Must be present
                                          only if --qso-cat is passed""")
 
+QUASAR_CATALOGUE_PARSER.add_argument("--qso-ztrue", type=str, default=None, required=False,
+                                     help="""[REQUIRED] Name of the column that will be used as z_true.
+                                         Must be included in --qso-cols. Must be present
+                                         only if --qso-cat is passed""")
+
 
 
 
