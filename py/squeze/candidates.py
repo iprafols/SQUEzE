@@ -264,9 +264,14 @@ class Candidates(object):
             Returns True if a candidate is a quasar line and False otherwise.
             """
         is_line = False
+        # correct identification
         if row["is_correct"]:
             is_line = True
+        # not a quasar
         elif not np.isin(row["class_person"], [3, 30]):
+            pass
+        # not a peak
+        elif row["assumed_line"] == "none":
             pass
         else:
             for line in self.__lines.index:
