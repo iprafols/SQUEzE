@@ -183,7 +183,7 @@ class Candidates(object):
                 ratio_sn = np.nan
             else:
                 ratio = 2.0*peak/aux
-                ratio2 = np.abs((cont_red - cont_blue)/aux
+                ratio2 = np.abs((cont_red - cont_blue)/aux)
                 err_ratio = np.sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/np.abs(aux)
                 ratio_sn = (ratio - 1.0)/err_ratio
         else:
