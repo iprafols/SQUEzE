@@ -208,10 +208,10 @@ class Model(object):
             # non-peaks
             data_frame_nonpeaks = data_frame[data_frame["z_try"] == -1.0]
             if data_frame_nonpeaks.shape[0] > 0:
-                data_class_probs = np.zeros(data_frame_nonpeaks.shape[0], dtype=float) - 1.0
+                data_frame_nonpeaks = data_frame_nonpeaks.fillna(-9999.99)
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_nonpeaks["prob_class{:d}".format(int(class_label))] = data_class_probs
+                    data_frame_nonpeaks["prob_class{:d}".format(int(class_label))] = -1.0
 
             # join datasets
             if (data_frame_high.shape[0] == 0 and data_frame_low.shape[0] == 0 and
@@ -235,10 +235,10 @@ class Model(object):
             # non-peaks
             data_frame_nonpeaks = data_frame[data_frame["z_try"] == -1.0]
             if not data_frame_nonpeaks.shape[0] == 0:
-                data_class_probs = np.zeros(data_frame_nonpeaks.shape[0], dtype=float) - 1.0
+                data_frame_nonpeaks = data_frame_nonpeaks.fillna(-9999.99)
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_nonpeaks["prob_class{:d}".format(int(class_label))] = data_class_probs
+                    data_frame_nonpeaks["prob_class{:d}".format(int(class_label))] = -1.0
 
             # join datasets
             if data_frame_peaks.shape[0] == 0 and data_frame_nonpeaks.shape[0] == 0:
