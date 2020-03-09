@@ -91,6 +91,12 @@ def main():
                         help="""A list containing floats specifying ranges of wavelengths
                             that will be masked (both ends included). Odd (even) positions
                             will be lower (upper) limits of the ranges""")
+    parser.add_argument("--confident-only", action="store_true",
+                        help="""If passed, keep only spectra with z_conf_person == 3
+                        and with at least one of the following bits activated:
+                        bits 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 40, 41, 42, 43, 44
+                        of boss_target1 and bits 10, 11, 12, 13, 14, 15, 16, 17, 18, 20,
+                        22, 30, 31, 33, 34, 35, 40 of eboss_target0""")
 
     args = parser.parse_args()
     # parsing --forbidden-wavelengths
@@ -163,41 +169,42 @@ def main():
             z_conf_person = entry["z_conf_person"]
             boss_target1 = entry["boss_target1"].astype(int)
             eboss_target0 = entry["eboss_target0"].astype(int)
-            if (z_conf_person != 3):
-                continue
-            if not ((boss_target1 & 2**40 > 0) |
-                    (boss_target1 & 2**41 > 0) |
-                    (boss_target1 & 2**42 > 0) |
-                    (boss_target1 & 2**43 > 0) |
-                    (boss_target1 & 2**44 > 0) |
-                    (boss_target1 & 2**10 > 0) |
-                    (boss_target1 & 2**11 > 0) |
-                    (boss_target1 & 2**12 > 0) |
-                    (boss_target1 & 2**13 > 0) |
-                    (boss_target1 & 2**14 > 0) |
-                    (boss_target1 & 2**15 > 0) |
-                    (boss_target1 & 2**16 > 0) |
-                    (boss_target1 & 2**17 > 0) |
-                    (boss_target1 & 2**18 > 0) |
-                    (boss_target1 & 2**19 > 0) |
-                    (eboss_target0 & 2**10 > 0) |
-                    (eboss_target0 & 2**11 > 0) |
-                    (eboss_target0 & 2**12 > 0) |
-                    (eboss_target0 & 2**13 > 0) |
-                    (eboss_target0 & 2**14 > 0) |
-                    (eboss_target0 & 2**15 > 0) |
-                    (eboss_target0 & 2**16 > 0) |
-                    (eboss_target0 & 2**17 > 0) |
-                    (eboss_target0 & 2**18 > 0) |
-                    (eboss_target0 & 2**20 > 0) |
-                    (eboss_target0 & 2**22 > 0) |
-                    (eboss_target0 & 2**30 > 0) |
-                    (eboss_target0 & 2**31 > 0) |
-                    (eboss_target0 & 2**33 > 0) |
-                    (eboss_target0 & 2**34 > 0) |
-                    (eboss_target0 & 2**35 > 0) |
-                    (eboss_target0 & 2**40 > 0) ):
-                continue
+            if args.confident_only:
+                if (z_conf_person != 3):
+                    continue
+                if not ((boss_target1 & 2**40 > 0) |
+                        (boss_target1 & 2**41 > 0) |
+                        (boss_target1 & 2**42 > 0) |
+                        (boss_target1 & 2**43 > 0) |
+                        (boss_target1 & 2**44 > 0) |
+                        (boss_target1 & 2**10 > 0) |
+                        (boss_target1 & 2**11 > 0) |
+                        (boss_target1 & 2**12 > 0) |
+                        (boss_target1 & 2**13 > 0) |
+                        (boss_target1 & 2**14 > 0) |
+                        (boss_target1 & 2**15 > 0) |
+                        (boss_target1 & 2**16 > 0) |
+                        (boss_target1 & 2**17 > 0) |
+                        (boss_target1 & 2**18 > 0) |
+                        (boss_target1 & 2**19 > 0) |
+                        (eboss_target0 & 2**10 > 0) |
+                        (eboss_target0 & 2**11 > 0) |
+                        (eboss_target0 & 2**12 > 0) |
+                        (eboss_target0 & 2**13 > 0) |
+                        (eboss_target0 & 2**14 > 0) |
+                        (eboss_target0 & 2**15 > 0) |
+                        (eboss_target0 & 2**16 > 0) |
+                        (eboss_target0 & 2**17 > 0) |
+                        (eboss_target0 & 2**18 > 0) |
+                        (eboss_target0 & 2**20 > 0) |
+                        (eboss_target0 & 2**22 > 0) |
+                        (eboss_target0 & 2**30 > 0) |
+                        (eboss_target0 & 2**31 > 0) |
+                        (eboss_target0 & 2**33 > 0) |
+                        (eboss_target0 & 2**34 > 0) |
+                        (eboss_target0 & 2**35 > 0) |
+                        (eboss_target0 & 2**40 > 0) ):
+                    continue
             metadata = {}
             for column in quasar_catalogue.columns:
                 metadata[column] = entry[column]
