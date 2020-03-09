@@ -496,17 +496,17 @@ class Candidates(object):
         found_quasars_zge1 = 0
         found_quasars_zge2_1 = 0
         num_quasars = quasars_data_frame.shape[0]
-        num_quasars_zge1 = quasars_data_frame[quasars_data_frame["z_vi"] >= 1.0].shape[0]
-        num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["z_vi"] >= 2.1].shape[0]
+        num_quasars_zge1 = quasars_data_frame[quasars_data_frame["z_true"] >= 1.0].shape[0]
+        num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["z_true"] >= 2.1].shape[0]
         for index in np.arange(num_quasars):
             specid = quasars_data_frame.ix[quasars_data_frame.index[index]]["specid"]
             if data_frame[(data_frame["specid"] == specid) &
                           (data_frame["is_correct"])].shape[0] > 0:
                 found_quasars += 1
-                if quasars_data_frame.ix[quasars_data_frame.index[index]]["z_vi"] >= 2.1:
+                if quasars_data_frame.ix[quasars_data_frame.index[index]]["z_true"] >= 2.1:
                     found_quasars_zge2_1 += 1
                     found_quasars_zge1 += 1
-                elif quasars_data_frame.ix[quasars_data_frame.index[index]]["z_vi"] >= 1:
+                elif quasars_data_frame.ix[quasars_data_frame.index[index]]["z_true"] >= 1:
                     found_quasars_zge1 += 1
         if float(num_quasars) > 0.0:
             completeness = float(found_quasars)/float(num_quasars)
@@ -524,10 +524,10 @@ class Candidates(object):
 
         if float(data_frame.shape[0]) > 0.:
             purity = float(data_frame["is_correct"].sum())/float(data_frame.shape[0])
-            purity_zge1 = (float(data_frame[data_frame["z_try"] >= 1]["is_correct"].sum())/
-                           float(data_frame[data_frame["z_try"] >= 1].shape[0]))
-            purity_zge2_1 = (float(data_frame[data_frame["z_try"] >= 2.1]["is_correct"].sum())/
-                             float(data_frame[data_frame["z_try"] >= 2.1].shape[0]))
+            purity_zge1 = (float(data_frame[data_frame["z_true"] >= 1]["is_correct"].sum())/
+                           float(data_frame[data_frame["z_true"] >= 1].shape[0]))
+            purity_zge2_1 = (float(data_frame[data_frame["z_true"] >= 2.1]["is_correct"].sum())/
+                             float(data_frame[data_frame["z_true"] >= 2.1].shape[0]))
             line_purity = float(data_frame["is_line"].sum())/float(data_frame.shape[0])
             #purity_to_quasars = (float(data_frame[data_frame["specid"] > 0].shape[0])/
             #                     float(data_frame.shape[0]))
