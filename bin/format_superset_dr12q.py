@@ -208,7 +208,6 @@ def main():
             metadata = {}
             for column in quasar_catalogue.columns:
                 metadata[column] = entry[column]
-            metadata["z_true"] = entry["z_vi"]
             spectrum_file = "spec-{:04d}-{:05d}-{:04d}.fits".format(plate,
                                                                     entry["mjd"].astype(int),
                                                                     entry["fiberid"].astype(int))
