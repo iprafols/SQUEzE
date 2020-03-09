@@ -171,9 +171,18 @@ class Candidates(object):
             peak = np.average(flux[pix_peak])
             cont_red = np.average(flux[pix_red])
             cont_blue = np.average(flux[pix_blue])
-            peak_err_squared = 1.0/ivar[pix_peak].sum()
-            cont_err_squared = (1.0/ivar[pix_blue].sum() +
-                                1.0/ivar[pix_red].sum())/4.0
+            peak_ivar_sum = ivar[pix_peak].sum()
+            if peak_ivar_sum == 0.0:
+                peak_err_squared = np.nan
+            else:
+                peak_err_squared = 1.0/peak_ivar_sum
+            blue_ivar_sum = ivar[pix_blue].sum()
+            red_ivar_sum = ivar[pix_red].sum()
+            if blue_ivar_sum == 0.0 or red_ivar_sum == 0.0:
+                cont_err_squared = np.nan
+            else:
+                cont_err_squared = (1.0/blue_ivar_sum +
+                                    1.0/red_ivar_sum)/4.0
         # compute ratios
         if compute_ratio:
             aux = (cont_red + cont_blue)
