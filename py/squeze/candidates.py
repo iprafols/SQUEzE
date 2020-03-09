@@ -772,7 +772,7 @@ class Candidates(object):
                                                          array=data_frame[col])
                                              for col, dtype in zip(data_frame.columns,
                                                                    data_frame.dtypes)])
-        hdu.writeto(filename)
+        hdu.writeto(filename, overwrite=True)
 
 if __name__ == '__main__':
     pass
