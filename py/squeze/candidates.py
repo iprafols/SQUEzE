@@ -418,6 +418,10 @@ class Candidates(object):
         if self.__mode not in ["test", "operation"]:
             raise  Error("The function classify_candidates is available in the " +
                          "test mode only. Detected mode is {}".format(self.__mode))
+        if self.__candidates is None:
+            raise  Error("Attempting to run the function classify_candidates " +
+                         "but no candidates were found/loaded. Check your " +
+                         "formatter")
         self.__candidates = self.__model.compute_probability(self.__candidates)
         self.__save_candidates()
 
