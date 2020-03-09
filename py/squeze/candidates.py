@@ -317,33 +317,54 @@ class Candidates(object):
         # find peaks
         peak_indexs, significances = self.__peak_finder.find_peaks(spectrum)
 
-        # find peaks in the spectrum
+        # keep peaks in the spectrum
         candidates = []
-        for peak_index, significance in zip(peak_indexs, significances):
-            for try_line in self.__try_lines:
-                # compute redshift
-                z_try = spectrum.wave()[peak_index]/self.__lines["wave"][try_line] - 1.0
-                if z_try < 0.0:
-                    continue
+        # if there are no peaks, include the spectrum with redshift -1
+        # assumed_line='none', significance is set to np.nan
+        # and all the metrics set to np.nan
+        if peak_indexs.size == 0:
+            candidate_info = spectrum.metadata()
+            z_try = -1.0
+            significance = np.nan
+            try_line = 'none'
+            ratios = np.zeros(self.__lines.shape[0], dtype=float)
+            ratios_sn = np.zeros_like(ratios)
+            ratios2 = np.zeros_like(ratios)
+            for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
+                candidate_info.append(np.nan)
+                candidate_info.append(np.nan)
+                candidate_info.append(np.nan)
+            candidate_info.append(z_try)
+            candidate_info.append(significance)
+            candidate_info.append(try_line)
+            candidates.append(candidate_info)
+        # if there are peaks, compute the metrics and keep the info
+        else:
+            for peak_index, significance in zip(peak_indexs, significances):
+                for try_line in self.__try_lines:
+                    # compute redshift
+                    z_try = spectrum.wave()[peak_index]/self.__lines["wave"][try_line] - 1.0
+                    if z_try < 0.0:
+                        continue
 
-                # compute peak ratio for the different lines
-                ratios = np.zeros(self.__lines.shape[0], dtype=float)
-                ratios_sn = np.zeros_like(ratios)
-                ratios2 = np.zeros_like(ratios)
-                for i in range(self.__lines.shape[0]):
-                    ratios[i], ratios_sn[i], ratios2[i] = \
-                        self.__compute_line_ratio(spectrum, i, z_try)
+                    # compute peak ratio for the different lines
+                    ratios = np.zeros(self.__lines.shape[0], dtype=float)
+                    ratios_sn = np.zeros_like(ratios)
+                    ratios2 = np.zeros_like(ratios)
+                    for i in range(self.__lines.shape[0]):
+                        ratios[i], ratios_sn[i], ratios2[i] = \
+                            self.__compute_line_ratio(spectrum, i, z_try)
 
-                # add candidate to the list
-                candidate_info = spectrum.metadata()
-                for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
-                    candidate_info.append(ratio)
-                    candidate_info.append(ratio_sn)
-                    candidate_info.append(ratio2)
-                candidate_info.append(z_try)
-                candidate_info.append(significance)
-                candidate_info.append(try_line)
-                candidates.append(candidate_info)
+                    # add candidate to the list
+                    candidate_info = spectrum.metadata()
+                    for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
+                        candidate_info.append(ratio)
+                        candidate_info.append(ratio_sn)
+                        candidate_info.append(ratio2)
+                    candidate_info.append(z_try)
+                    candidate_info.append(significance)
+                    candidate_info.append(try_line)
+                    candidates.append(candidate_info)
 
         columns_candidates = spectrum.metadata_names()
         for i in range(self.__lines.shape[0]):
