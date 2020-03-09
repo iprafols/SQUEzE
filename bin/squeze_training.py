@@ -52,7 +52,8 @@ def main():
             parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
                          "required if --qso-dataframe is not passed")
         quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
-                                           args.qso_specid, args.qso_hdu).quasar_catalogue()
+                                           args.qso_specid, args.qso_ztrue,
+                                           args.qso_hdu).quasar_catalogue()
         quasar_catalogue["loaded"] = False
 
     # load lines
