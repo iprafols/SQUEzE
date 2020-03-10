@@ -83,8 +83,6 @@ def main():
                         help="""Margin used in the masking. Wavelengths separated to
                             wavelength given in the array by less than the margin
                             will be masked""")
-    parser.add_argument("--sequels", action="store_true",
-                        help="""Format SEQUELS plates instead of BOSS plates""")
     parser.add_argument("--single-plate", type=int, required=False, default=0,
                         help="""Loadd BOSS spectra only from this plate""")
     parser.add_argument("--forbidden-wavelengths", type=float, nargs='*',
