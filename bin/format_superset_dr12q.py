@@ -116,14 +116,7 @@ def main():
     # load plate list
     userprint("loading list of plates")
     plate_list_hdu = fits.open(args.plate_list)
-    if args.sequels:
-        plate_list = plate_list_hdu[1].data["plate"][
-            np.where((plate_list_hdu[1].data["programname"] == "sequels") &
-                     (plate_list_hdu[1].data["platequality"] == "good"))].copy()
-    else:
-        plate_list = plate_list_hdu[1].data["plate"][
-            np.where((plate_list_hdu[1].data["programname"] == "boss") &
-                     (plate_list_hdu[1].data["platequality"] == "good"))].copy()
+    plate_list = plate_list_hdu[1].data["plate"][np.where((plate_list_hdu[1].data["platequality"] == "good"))].copy()
     plate_list = np.unique(plate_list.astype(int))
     del plate_list_hdu[1].data
     plate_list_hdu.close()
