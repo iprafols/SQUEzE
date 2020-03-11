@@ -137,6 +137,11 @@ def main():
                                            args.qso_hdu).quasar_catalogue()
         quasar_catalogue["loaded"] = False
 
+    # make sure that quasar catalogue contains a column called class_person
+    if "class_person" not in quasar_catalogue.columns:
+        raise  Error("Quasar catalogue does not contain the column 'class_person'" +
+                     "Please add it using --qso-cols or on the dataframe if you load" +
+                     "it using --qso-dataframe")
 
     # load sky mask
     masklambda = np.genfromtxt(args.sky_mask)
