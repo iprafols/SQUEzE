@@ -103,8 +103,11 @@ QUASAR_CATALOGUE_PARSER.add_argument("--qso-cat", type=str, default=None, requir
                                          catalogue. Must be present if --qso-dataframe is not
                                          passed""")
 
-QUASAR_CATALOGUE_PARSER.add_argument("--qso-cols", nargs='+', default=None, required=False,
-                                     help="""[REQUIRED] White-spaced list of the data arrays
+QUASAR_CATALOGUE_PARSER.add_argument("--qso-cols", nargs='+', required=False,
+                                     default=["ra", "dec", "thing_id", "plate", "mjd", "fiberid",
+                                              "z_vi", "class_person", "z_conf_person", "boss_target1",
+                                              "ancillary_target1", "ancillary_target2", "eboss_target0"],
+                                     help="""White-spaced list of the data arrays
                                          (of the quasar catalogue) to be loaded. Must be present
                                          only if --qso-cat is passed""")
 
