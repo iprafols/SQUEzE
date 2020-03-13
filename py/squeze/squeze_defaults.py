@@ -90,7 +90,8 @@ PEAKFIND_SIG = 6
 This variable sets the options to be passed to the random forest classifier
 """ # description of RANDOM_FOREST_OPTIONS ... pylint: disable=pointless-string-statement
 RANDOM_FOREST_OPTIONS = {"high": {"class_weight": "balanced_subsample",
-                                  "n_jobs": 3, "n_estimators": 1000},
+                                  "n_jobs": 3, "n_estimators": 1000,
+                                  "max_depth": 10,},
                          "low": {"class_weight": "balanced_subsample",
                                  "n_jobs": 3, "n_estimators": 1000,
                                  "max_depth": 10,},
@@ -138,8 +139,8 @@ CUTS = (0.8, [["lyb_ratio_SN", "lya_ratio_SN", "siiv_ratio_SN", "civ_ratio_SN",
               ["lya_ratio_SN", "siiv_ratio_SN", "civ_ratio_SN",
                "ciii_ratio_SN", "mgii_ratio_SN"],
               ])
-               
 
-    
+
+
 if __name__ == '__main__':
     pass
