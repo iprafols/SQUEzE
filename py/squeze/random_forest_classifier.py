@@ -10,7 +10,7 @@
     It is not an ideal solution but given the time contraints
     it is the fastest way to implement a persistent
     classifer. Future versions of the code should contemplate
-    fully deploying our own RandomForestClassifier 
+    fully deploying our own RandomForestClassifier
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
@@ -19,7 +19,7 @@ import sys
 
 import numpy as np
 
-from squeze.squeze_common_functions import deserialize
+from squeze.common_functions import deserialize
 
 class RandomForestClassifier(object):
     """ The purpose of this class is to create a RandomForestClassifier
@@ -43,13 +43,13 @@ class RandomForestClassifier(object):
             Options to be passed to the RandomForestClassifier
             """
         self.__args = kwargs
-    
+
         # initialize variables
         self.__num_trees = 0
         self.__trees = []
         self.__num_categories = 0
-        self.classes_ = [] 
-    
+        self.classes_ = []
+
         # auxiliar variables to loop over trees
         self.__children_left = None
         self.__children_right = None
@@ -60,17 +60,17 @@ class RandomForestClassifier(object):
 
     def fit(self, X, y):
         """ Create and train models
-            
+
             Parameters
             ----------
             Refer to sklearn.ensemble.RandomForestClassifier.fit
             """
         # load sklearn modules to train the model
         from sklearn.ensemble import RandomForestClassifier as rf_sklearn
-        
+
         # create a RandomForestClassifier
         rf = rf_sklearn(**self.__args)
-        
+
         # train model
         rf.fit(X, y)
 
@@ -81,7 +81,7 @@ class RandomForestClassifier(object):
         for dt in rf.estimators_:
             tree_sklearn = dt.tree_
             tree = {}
-            
+
             tree["children_left"] = tree_sklearn.children_left
             tree["children_right"] = tree_sklearn.children_right
             tree["feature"] = tree_sklearn.feature
@@ -91,35 +91,35 @@ class RandomForestClassifier(object):
             for i, p in enumerate(proba):
                 proba[i] = p/p.sum()
             tree["proba"] = proba
-            
+
             self.__trees.append(tree)
-        
+
         # discard the sklearn model
         del rf
 
     def __loadTreeFromForest(self, tree_index):
         """ Loads one tree from the forest file and checks that
             the recursion limit is enough
-            
+
             Parameters
             ----------
             tree_index : int
             Index of the location of the desired tree in self.__trees
-            
+
             """
         self.__children_left = self.__trees[tree_index].get("children_left")
         self.__children_right = self.__trees[tree_index].get("children_right")
         self.__feature = self.__trees[tree_index].get("feature")
         self.__threshold = self.__trees[tree_index].get("threshold")
         self.__tree_proba = self.__trees[tree_index].get("proba")
-    
+
         if len(self.__children_left) > sys.getrecursionlimit():
             sys.setrecursionlimit(int(len(self.__children_left)*1.2))
 
     def __searchNodes(self, indexs, node_id=0):
         """ Recursively navigates in the tree and calculate the tree response
             by updating the values stored in self.__proba
-            
+
             Parameters
             ----------
             indexs :
@@ -127,7 +127,7 @@ class RandomForestClassifier(object):
             """
         # find left child
         left_child_id = self.__children_left[node_id]
-        
+
         # chek if we are on a leave load probabilities and return
         if left_child_id == -1:
             for i in indexs:
@@ -140,7 +140,7 @@ class RandomForestClassifier(object):
         # find split characteristics
         feature = self.__feature[node_id]
         threshold = self.__threshold[node_id]
-        
+
         # split samples
         left_cond = (self.__X[indexs, feature] <= threshold)
         left_child_indexs = indexs[left_cond]
@@ -149,12 +149,12 @@ class RandomForestClassifier(object):
         # navigate the tree
         self.__searchNodes(left_child_indexs, node_id=left_child_id)
         self.__searchNodes(right_child_indexs, node_id=right_child_id)
-        
+
         return
-    
+
     def predict_proba(self, X):
         """ Predict class probabilities for X
-            
+
             Parameters
             ----------
             Refer to sklearn.ensemble.RandomForestClassifier.predic_proba
@@ -170,10 +170,10 @@ class RandomForestClassifier(object):
             output += self.__proba
 
         output /= self.__num_trees
-        
+
         del self.__X
         return output
-        
+
     @classmethod
     def from_json(cls, data):
         """ This function deserializes a json string to correclty build the class.
@@ -184,34 +184,31 @@ class RandomForestClassifier(object):
 
         # create instance using the constructor
         cls_instance = cls(**data.get("_RandomForestClassifier__args"))
-        
+
         # now update the instance to the current values
         cls_instance.set_num_trees(data.get("_RandomForestClassifier__num_trees"))
         cls_instance.set_num_categories(data.get("_RandomForestClassifier__num_categories"))
         cls_instance.classes_ = deserialize(data.get("classes_"))
-        
+
         trees = data.get("_RandomForestClassifier__trees")
         for tree in trees:
             for key, value in tree.items():
                 tree[key] = deserialize(value)
         cls_instance.set_trees(trees)
-        
+
         return cls_instance
-        
+
     def set_num_trees(self, num_trees):
         """ Set the variable __num_trees. Should only be called from the method from_json"""
         self.__num_trees = num_trees
-        
+
     def set_num_categories(self, num_categories):
         """ Set the variable __num_categories. Should only be called from the method from_json"""
         self.__num_categories = num_categories
-    
+
     def set_trees(self, trees):
         """ Set the variable __trees. Should only be called from the method from_json"""
         self.__trees = trees
 
 if __name__ == '__main__':
     pass
-
-
-

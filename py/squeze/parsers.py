@@ -34,6 +34,15 @@ PARENT_PARSER = argparse.ArgumentParser(add_help=False)
 PARENT_PARSER.add_argument("--quiet", action="store_true",
                            help="""Do not print messages""")
 
+PARENT_PARSER.add_argument("--no-save-fits", action="store_true",
+                           help="""Do not save the final catalogue also as a fits file""")
+
+PARENT_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
+                           help="""Name of the fits file where the final catalogue will be
+                               stored. If not specified, the catalogue will be saved using
+                               --output-candidates as name base, Ignored if --save-fits is
+                               not passed""")
+
 
 """
 This PEAKFIND_PARSER contains the options passed to the peak finding algorithms
@@ -50,8 +59,8 @@ PEAKFIND_PARSER.add_argument("--peakfind-sig", type=float, default=None,
 
 
 """
-This MODE_PARSER contains the common options for the training and operation
-mode
+This MODE_PARSER contains the common options for the training, test,
+and operation modes
 """ # description of MODE_PARSER ... pylint: disable=pointless-string-statement
 MODE_PARSER = argparse.ArgumentParser(add_help=False)
 
@@ -79,42 +88,40 @@ MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required
                              (without the extension) as base name and append the extension
                              _model.json to it""")
 
-MODE_PARSER.add_argument("--save-fits", action="store_true",
-                         help="""Save the final catalogue also as a fits file""")
-
-MODE_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
-                         help="""Name of the fits file where the final catalogue will be
-                             stored. If not specified, the catalogue will be saved using
-                             --output-candidates as name base, Ignored if --save-fits is
-                             not passed""")
-
-
 """
 This QUASAR_CATALOGUE_PARSER contains the common options used to load the quasar catalogue.
 """ # description of QUASAR_CATALOGUE_PARSER ... pylint: disable=pointless-string-statement
 QUASAR_CATALOGUE_PARSER = argparse.ArgumentParser(add_help=False)
 
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-dataframe", type=str, default=None, required=False,
-                                     help="""Name of the csv file containing the quasar catalogue
+                                     help="""[REQUIRED] Name of the csv file containing the quasar catalogue
                                          formatted into pandas dataframe. Must only contain information
                                          of quasars that will be loaded. Must be present if --qso-cat
                                          is not passed.""")
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-cat", type=str, default=None, required=False,
-                                     help="""Name of the fits file containig the quasar
+                                     help="""[REQUIRED] Name of the fits file containig the quasar
                                          catalogue. Must be present if --qso-dataframe is not
                                          passed""")
 
-QUASAR_CATALOGUE_PARSER.add_argument("--qso-cols", nargs='+', default=None, required=False,
+QUASAR_CATALOGUE_PARSER.add_argument("--qso-cols", nargs='+', required=False,
+                                     default=["ra", "dec", "thing_id", "plate", "mjd", "fiberid",
+                                              "z_vi", "class_person", "z_conf_person", "boss_target1",
+                                              "ancillary_target1", "ancillary_target2", "eboss_target0"],
                                      help="""White-spaced list of the data arrays
                                          (of the quasar catalogue) to be loaded. Must be present
                                          only if --qso-cat is passed""")
 
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-hdu", type=int, default=1, required=False,
-                                     help="""Number of the Header Data Unit in --qso-cat
+                                     help="""[REQUIRED] Number of the Header Data Unit in --qso-cat
                                          where the catalogue is stored.""")
 
 QUASAR_CATALOGUE_PARSER.add_argument("--qso-specid", type=str, default=None, required=False,
-                                     help="""Name of the column that will be used as specid.
+                                     help="""[REQUIRED] Name of the column that will be used as specid.
+                                         Must be included in --qso-cols. Must be present
+                                         only if --qso-cat is passed""")
+
+QUASAR_CATALOGUE_PARSER.add_argument("--qso-ztrue", type=str, default=None, required=False,
+                                     help="""[REQUIRED] Name of the column that will be used as z_true.
                                          Must be included in --qso-cols. Must be present
                                          only if --qso-cat is passed""")
 
@@ -167,7 +174,7 @@ TEST_PARSER = argparse.ArgumentParser(add_help=False,
                                                QUASAR_CATALOGUE_PARSER])
 
 TEST_PARSER.add_argument("--model", required=True, type=str,
-                         help="""Name of the json file containing the model to be used
+                         help="""[REQUIRED] Name of the json file containing the model to be used
                              in the computation of the probabilities of candidates
                              being quasars""")
 
@@ -200,7 +207,7 @@ OPERATION_PARSER.add_argument("--prob-cut", default=0.0, type=float,
                                   in the catalogue""")
 
 OPERATION_PARSER.add_argument("--model", required=True, type=str,
-                              help="""Name of the json file containing the model to be used
+                              help="""[REQUIRED] Name of the json file containing the model to be used
                                   in the computation of the probabilities of candidates
                                   being quasars""")
 
@@ -211,11 +218,11 @@ MERGING_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER]
 
 MERGING_PARSER.add_argument("--input-candidates", nargs='+', default=None, required=True,
                             action=min_length(2),
-                            help="""List of csv files containing candidates objects to
+                            help="""[REQUIRED] List of json files containing candidates objects to
                                 merge.""")
 
 MERGING_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
-                            help="""Name of the csv file where the candidates will be saved.""")
+                            help="""Name of the json file where the candidates will be saved.""")
 
 
 if __name__ == '__main__':

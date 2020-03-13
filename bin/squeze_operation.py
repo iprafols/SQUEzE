@@ -3,21 +3,21 @@
     SQUEzE
     ======
 
-    This file allows the user to execute SQUEzE in operation mode. 
+    This file allows the user to execute SQUEzE in operation mode.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
 
-from squeze.squeze_common_functions import load_json
-from squeze.squeze_common_functions import verboseprint, quietprint
-from squeze.squeze_error import Error
-from squeze.squeze_model import Model
-from squeze.squeze_spectra import Spectra
-from squeze.squeze_candidates import Candidates
-from squeze.squeze_parsers import OPERATION_PARSER
-from squeze.squeze_defaults import CUTS
+from squeze.common_functions import load_json
+from squeze.common_functions import verboseprint, quietprint
+from squeze.error import Error
+from squeze.model import Model
+from squeze.spectra import Spectra
+from squeze.candidates import Candidates
+from squeze.parsers import OPERATION_PARSER
+from squeze.defaults import CUTS
 
 def main():
     """ Run SQUEzE in operation mode """
@@ -64,11 +64,12 @@ def main():
     userprint("Computing probabilities")
     candidates.classify_candidates()
 
-    # save the catalogue
-    found_catalogue = candidates.candidates()
-    found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
-                                      (found_catalogue["prob"] > args.prob_cut)]
-    candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
+    # save the catalogue as a fits file
+    if not args.no_save_fits:
+        found_catalogue = candidates.candidates()
+        found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
+                                          (found_catalogue["prob"] > args.prob_cut)]
+        candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
 if __name__ == '__main__':
     main()

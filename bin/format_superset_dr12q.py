@@ -27,13 +27,13 @@ import numpy as np
 
 import astropy.io.fits as fits
 
-from squeze.squeze_common_functions import save_json
-from squeze.squeze_common_functions import verboseprint, quietprint
-from squeze.squeze_error import Error
-from squeze.squeze_quasar_catalogue import QuasarCatalogue
-from squeze.squeze_boss_spectrum import BossSpectrum
-from squeze.squeze_spectra import Spectra
-from squeze.squeze_parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
+from squeze.common_functions import save_json
+from squeze.common_functions import verboseprint, quietprint
+from squeze.error import Error
+from squeze.quasar_catalogue import QuasarCatalogue
+from squeze.boss_spectrum import BossSpectrum
+from squeze.spectra import Spectra
+from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
 
 def main():
     """ Load BOSS spectra using the BossSpectrum Class defined in
@@ -83,14 +83,18 @@ def main():
                         help="""Margin used in the masking. Wavelengths separated to
                             wavelength given in the array by less than the margin
                             will be masked""")
-    parser.add_argument("--sequels", action="store_true",
-                        help="""Format SEQUELS plates instead of BOSS plates""")
     parser.add_argument("--single-plate", type=int, required=False, default=0,
                         help="""Loadd BOSS spectra only from this plate""")
     parser.add_argument("--forbidden-wavelengths", type=float, nargs='*',
                         help="""A list containing floats specifying ranges of wavelengths
                             that will be masked (both ends included). Odd (even) positions
                             will be lower (upper) limits of the ranges""")
+    parser.add_argument("--confident-only", action="store_true",
+                        help="""If passed, keep only spectra with z_conf_person == 3
+                        and with at least one of the following bits activated:
+                        bits 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 40, 41, 42, 43, 44
+                        of boss_target1 and bits 10, 11, 12, 13, 14, 15, 16, 17, 18, 20,
+                        22, 30, 31, 33, 34, 35, 40 of eboss_target0""")
 
     args = parser.parse_args()
     # parsing --forbidden-wavelengths
@@ -110,14 +114,7 @@ def main():
     # load plate list
     userprint("loading list of plates")
     plate_list_hdu = fits.open(args.plate_list)
-    if args.sequels:
-        plate_list = plate_list_hdu[1].data["plate"][
-            np.where((plate_list_hdu[1].data["programname"] == "sequels") &
-                     (plate_list_hdu[1].data["platequality"] == "good"))].copy()
-    else:
-        plate_list = plate_list_hdu[1].data["plate"][
-            np.where((plate_list_hdu[1].data["programname"] == "boss") &
-                     (plate_list_hdu[1].data["platequality"] == "good"))].copy()
+    plate_list = plate_list_hdu[1].data["plate"][np.where((plate_list_hdu[1].data["platequality"] == "good"))].copy()
     plate_list = np.unique(plate_list.astype(int))
     del plate_list_hdu[1].data
     plate_list_hdu.close()
@@ -126,19 +123,25 @@ def main():
     userprint("loading quasar catalogue")
     if args.qso_dataframe is not None:
         if ((args.qso_cat is not None) or (args.qso_cols is not None) or
-                (args.qso_specid is not None)):
-            parser.error("options --qso-cat, --qso-cols, and --qso-specid " \
+                (args.qso_specid is not None) or (args.qso_ztrue is not None)):
+            parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
                          "are incompatible with --qso-dataframe")
         quasar_catalogue = deserialize(load_json(args.qso_dataframe))
         quasar_catalogue["loaded"] = True
     else:
-        if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None):
-            parser.error("--qso-cat, --qso-cols and --qso-specid are " \
+        if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
+            parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
                          "required if --qso-dataframe is not passed")
         quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
-                                           args.qso_specid, args.qso_hdu).quasar_catalogue()
+                                           args.qso_specid, args.qso_ztrue,
+                                           args.qso_hdu).quasar_catalogue()
         quasar_catalogue["loaded"] = False
 
+    # make sure that quasar catalogue contains a column called class_person
+    if "class_person" not in quasar_catalogue.columns:
+        raise  Error("Quasar catalogue does not contain the column 'class_person'" +
+                     "Please add it using --qso-cols or on the dataframe if you load" +
+                     "it using --qso-dataframe")
 
     # load sky mask
     masklambda = np.genfromtxt(args.sky_mask)
@@ -163,45 +166,45 @@ def main():
             z_conf_person = entry["z_conf_person"]
             boss_target1 = entry["boss_target1"].astype(int)
             eboss_target0 = entry["eboss_target0"].astype(int)
-            if (z_conf_person != 3):
-                continue
-            if not ((boss_target1 & 2**40 > 0) |
-                    (boss_target1 & 2**41 > 0) |
-                    (boss_target1 & 2**42 > 0) |
-                    (boss_target1 & 2**43 > 0) |
-                    (boss_target1 & 2**44 > 0) |
-                    (boss_target1 & 2**10 > 0) |
-                    (boss_target1 & 2**11 > 0) |
-                    (boss_target1 & 2**12 > 0) |
-                    (boss_target1 & 2**13 > 0) |
-                    (boss_target1 & 2**14 > 0) |
-                    (boss_target1 & 2**15 > 0) |
-                    (boss_target1 & 2**16 > 0) |
-                    (boss_target1 & 2**17 > 0) |
-                    (boss_target1 & 2**18 > 0) |
-                    (boss_target1 & 2**19 > 0) |
-                    (eboss_target0 & 2**10 > 0) |
-                    (eboss_target0 & 2**11 > 0) |
-                    (eboss_target0 & 2**12 > 0) |
-                    (eboss_target0 & 2**13 > 0) |
-                    (eboss_target0 & 2**14 > 0) |
-                    (eboss_target0 & 2**15 > 0) |
-                    (eboss_target0 & 2**16 > 0) |
-                    (eboss_target0 & 2**17 > 0) |
-                    (eboss_target0 & 2**18 > 0) |
-                    (eboss_target0 & 2**20 > 0) |
-                    (eboss_target0 & 2**22 > 0) |
-                    (eboss_target0 & 2**30 > 0) |
-                    (eboss_target0 & 2**31 > 0) |
-                    (eboss_target0 & 2**33 > 0) |
-                    (eboss_target0 & 2**34 > 0) |
-                    (eboss_target0 & 2**35 > 0) |
-                    (eboss_target0 & 2**40 > 0) ):
-                continue
+            if args.confident_only:
+                if (z_conf_person != 3):
+                    continue
+                if not ((boss_target1 & 2**40 > 0) |
+                        (boss_target1 & 2**41 > 0) |
+                        (boss_target1 & 2**42 > 0) |
+                        (boss_target1 & 2**43 > 0) |
+                        (boss_target1 & 2**44 > 0) |
+                        (boss_target1 & 2**10 > 0) |
+                        (boss_target1 & 2**11 > 0) |
+                        (boss_target1 & 2**12 > 0) |
+                        (boss_target1 & 2**13 > 0) |
+                        (boss_target1 & 2**14 > 0) |
+                        (boss_target1 & 2**15 > 0) |
+                        (boss_target1 & 2**16 > 0) |
+                        (boss_target1 & 2**17 > 0) |
+                        (boss_target1 & 2**18 > 0) |
+                        (boss_target1 & 2**19 > 0) |
+                        (eboss_target0 & 2**10 > 0) |
+                        (eboss_target0 & 2**11 > 0) |
+                        (eboss_target0 & 2**12 > 0) |
+                        (eboss_target0 & 2**13 > 0) |
+                        (eboss_target0 & 2**14 > 0) |
+                        (eboss_target0 & 2**15 > 0) |
+                        (eboss_target0 & 2**16 > 0) |
+                        (eboss_target0 & 2**17 > 0) |
+                        (eboss_target0 & 2**18 > 0) |
+                        (eboss_target0 & 2**20 > 0) |
+                        (eboss_target0 & 2**22 > 0) |
+                        (eboss_target0 & 2**30 > 0) |
+                        (eboss_target0 & 2**31 > 0) |
+                        (eboss_target0 & 2**33 > 0) |
+                        (eboss_target0 & 2**34 > 0) |
+                        (eboss_target0 & 2**35 > 0) |
+                        (eboss_target0 & 2**40 > 0) ):
+                    continue
             metadata = {}
             for column in quasar_catalogue.columns:
                 metadata[column] = entry[column]
-            metadata["z_true"] = entry["z_vi"]
             spectrum_file = "spec-{:04d}-{:05d}-{:04d}.fits".format(plate,
                                                                     entry["mjd"].astype(int),
                                                                     entry["fiberid"].astype(int))

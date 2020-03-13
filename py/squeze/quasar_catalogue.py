@@ -19,7 +19,7 @@ class QuasarCatalogue(object):
         CLASS: QuasarCatalogue
         PURPOSE: Load the quasar catalogue and format it accordingly
         """
-    def __init__(self, filename, columns, specid_column, hdu):
+    def __init__(self, filename, columns, specid_column, ztrue_column, hdu):
         """
             Initialize instance
 
@@ -34,6 +34,9 @@ class QuasarCatalogue(object):
             specid_column : str
             Name of the data array to act as specid
 
+            ztrue_column : str
+            Name of the data array to act as z_true
+
             hdu : int
             Number of the Header Data Unit to load
             """
@@ -41,8 +44,10 @@ class QuasarCatalogue(object):
         catalogue_hdu = fits.open(filename)
         data = [catalogue_hdu[hdu].data[col].copy() for col in columns]
         data.append(catalogue_hdu[hdu].data[specid_column].copy())
+        data.append(catalogue_hdu[hdu].data[ztrue_column].copy())
         columns = [col for col in columns]
         columns.append("specid")
+        columns.append("z_true")
         self.__quasar_catalogue = pd.DataFrame(zip(*data), columns=columns)
         del catalogue_hdu[hdu].data
         catalogue_hdu.close()
