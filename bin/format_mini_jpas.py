@@ -29,11 +29,11 @@ import numpy as np
 
 import astropy.io.fits as fits
 
-from squeze.squeze_common_functions import save_json
-from squeze.squeze_common_functions import verboseprint, quietprint
-from squeze.squeze_error import Error
-from squeze.squeze_simple_spectrum import SimpleSpectrum
-from squeze.squeze_spectra import Spectra
+from squeze.common_functions import save_json
+from squeze.common_functions import verboseprint, quietprint
+from squeze.error import Error
+from squeze.simple_spectrum import SimpleSpectrum
+from squeze.spectra import Spectra
 
 def main():
     """ Load DESI spectra using the Spectra and DESISpectrum Classes

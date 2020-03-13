@@ -3,16 +3,16 @@
     ======
 
     This file allows the user to merge two or more SQUEzE candidate objects
-    into a single candidate object. 
+    into a single candidate object.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
 
-from squeze.squeze_common_functions import verboseprint, quietprint
-from squeze.squeze_candidates import Candidates
-from squeze.squeze_parsers import MERGING_PARSER
+from squeze.common_functions import verboseprint, quietprint
+from squeze.candidates import Candidates
+from squeze.parsers import MERGING_PARSER
 
 def main():
     """ Run SQUEzE in merging mode """
@@ -39,6 +39,11 @@ def main():
     # merge the other candidates objects
     userprint("Merging with the other candidate objects")
     candidates.merge(args.input_candidates[1:])
+
+    # save the catalogue as a fits file
+    if not args.no_save_fits:
+        found_catalogue = candidates.candidates()
+        candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
 if __name__ == '__main__':
     main()

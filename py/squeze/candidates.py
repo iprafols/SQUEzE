@@ -18,21 +18,21 @@ import astropy.io.fits as fits
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-from squeze.squeze_common_functions import verboseprint
-from squeze.squeze_common_functions import save_json, load_json
-from squeze.squeze_common_functions import deserialize
-from squeze.squeze_error import Error
-from squeze.squeze_model import Model
-from squeze.squeze_peak_finder import PeakFinder
-from squeze.squeze_defaults import CUTS
-from squeze.squeze_defaults import LINES
-from squeze.squeze_defaults import TRY_LINES
-from squeze.squeze_defaults import RANDOM_FOREST_OPTIONS
-from squeze.squeze_defaults import RANDOM_STATE
-from squeze.squeze_defaults import Z_PRECISION
-from squeze.squeze_defaults import PEAKFIND_WIDTH
-from squeze.squeze_defaults import PEAKFIND_SIG
-from squeze.squeze_spectrum import Spectrum
+from squeze.common_functions import verboseprint
+from squeze.common_functions import save_json, load_json
+from squeze.common_functions import deserialize
+from squeze.error import Error
+from squeze.model import Model
+from squeze.peak_finder import PeakFinder
+from squeze.defaults import CUTS
+from squeze.defaults import LINES
+from squeze.defaults import TRY_LINES
+from squeze.defaults import RANDOM_FOREST_OPTIONS
+from squeze.defaults import RANDOM_STATE
+from squeze.defaults import Z_PRECISION
+from squeze.defaults import PEAKFIND_WIDTH
+from squeze.defaults import PEAKFIND_SIG
+from squeze.spectrum import Spectrum
 
 class Candidates(object):
     """ Create and manage the candidates catalogue
@@ -171,14 +171,26 @@ class Candidates(object):
             peak = np.average(flux[pix_peak])
             cont_red = np.average(flux[pix_red])
             cont_blue = np.average(flux[pix_blue])
-            peak_err_squared = 1.0/ivar[pix_peak].sum()
-            cont_err_squared = (1.0/ivar[pix_blue].sum() +
-                                1.0/ivar[pix_red].sum())/4.0
+            cont_red_and_blue = cont_red + cont_blue
+            if cont_red_and_blue == 0.0:
+                compute_ratio = False
+            peak_ivar_sum = ivar[pix_peak].sum()
+            if peak_ivar_sum == 0.0:
+                peak_err_squared = np.nan
+            else:
+                peak_err_squared = 1.0/peak_ivar_sum
+            blue_ivar_sum = ivar[pix_blue].sum()
+            red_ivar_sum = ivar[pix_red].sum()
+            if blue_ivar_sum == 0.0 or red_ivar_sum == 0.0:
+                cont_err_squared = np.nan
+            else:
+                cont_err_squared = (1.0/blue_ivar_sum +
+                                    1.0/red_ivar_sum)/4.0
         # compute ratios
         if compute_ratio:
-            ratio = 2.0*peak/(cont_red + cont_blue)
-            ratio2 = np.abs((cont_red - cont_blue)/(cont_red + cont_blue))
-            err_ratio = np.sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/np.abs(cont_red + cont_blue)
+            ratio = 2.0*peak/cont_red_and_blue
+            ratio2 = np.abs((cont_red - cont_blue)/cont_red_and_blue)
+            err_ratio = np.sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/np.abs(cont_red_and_blue)
             ratio_sn = (ratio - 1.0)/err_ratio
         else:
             ratio = np.nan
@@ -258,9 +270,14 @@ class Candidates(object):
             Returns True if a candidate is a quasar line and False otherwise.
             """
         is_line = False
+        # correct identification
         if row["is_correct"]:
             is_line = True
+        # not a quasar
         elif not np.isin(row["class_person"], [3, 30]):
+            pass
+        # not a peak
+        elif row["assumed_line"] == "none":
             pass
         else:
             for line in self.__lines.index:
@@ -317,33 +334,54 @@ class Candidates(object):
         # find peaks
         peak_indexs, significances = self.__peak_finder.find_peaks(spectrum)
 
-        # find peaks in the spectrum
+        # keep peaks in the spectrum
         candidates = []
-        for peak_index, significance in zip(peak_indexs, significances):
-            for try_line in self.__try_lines:
-                # compute redshift
-                z_try = spectrum.wave()[peak_index]/self.__lines["wave"][try_line] - 1.0
-                if z_try < 0.0:
-                    continue
+        # if there are no peaks, include the spectrum with redshift -1
+        # assumed_line='none', significance is set to np.nan
+        # and all the metrics set to np.nan
+        if peak_indexs.size == 0:
+            candidate_info = spectrum.metadata()
+            z_try = -1.0
+            significance = np.nan
+            try_line = 'none'
+            ratios = np.zeros(self.__lines.shape[0], dtype=float)
+            ratios_sn = np.zeros_like(ratios)
+            ratios2 = np.zeros_like(ratios)
+            for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
+                candidate_info.append(np.nan)
+                candidate_info.append(np.nan)
+                candidate_info.append(np.nan)
+            candidate_info.append(z_try)
+            candidate_info.append(significance)
+            candidate_info.append(try_line)
+            candidates.append(candidate_info)
+        # if there are peaks, compute the metrics and keep the info
+        else:
+            for peak_index, significance in zip(peak_indexs, significances):
+                for try_line in self.__try_lines:
+                    # compute redshift
+                    z_try = spectrum.wave()[peak_index]/self.__lines["wave"][try_line] - 1.0
+                    if z_try < 0.0:
+                        continue
 
-                # compute peak ratio for the different lines
-                ratios = np.zeros(self.__lines.shape[0], dtype=float)
-                ratios_sn = np.zeros_like(ratios)
-                ratios2 = np.zeros_like(ratios)
-                for i in range(self.__lines.shape[0]):
-                    ratios[i], ratios_sn[i], ratios2[i] = \
-                        self.__compute_line_ratio(spectrum, i, z_try)
+                    # compute peak ratio for the different lines
+                    ratios = np.zeros(self.__lines.shape[0], dtype=float)
+                    ratios_sn = np.zeros_like(ratios)
+                    ratios2 = np.zeros_like(ratios)
+                    for i in range(self.__lines.shape[0]):
+                        ratios[i], ratios_sn[i], ratios2[i] = \
+                            self.__compute_line_ratio(spectrum, i, z_try)
 
-                # add candidate to the list
-                candidate_info = spectrum.metadata()
-                for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
-                    candidate_info.append(ratio)
-                    candidate_info.append(ratio_sn)
-                    candidate_info.append(ratio2)
-                candidate_info.append(z_try)
-                candidate_info.append(significance)
-                candidate_info.append(try_line)
-                candidates.append(candidate_info)
+                    # add candidate to the list
+                    candidate_info = spectrum.metadata()
+                    for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
+                        candidate_info.append(ratio)
+                        candidate_info.append(ratio_sn)
+                        candidate_info.append(ratio2)
+                    candidate_info.append(z_try)
+                    candidate_info.append(significance)
+                    candidate_info.append(try_line)
+                    candidates.append(candidate_info)
 
         columns_candidates = spectrum.metadata_names()
         for i in range(self.__lines.shape[0]):
@@ -397,6 +435,10 @@ class Candidates(object):
         if self.__mode not in ["test", "operation"]:
             raise  Error("The function classify_candidates is available in the " +
                          "test mode only. Detected mode is {}".format(self.__mode))
+        if self.__candidates is None:
+            raise  Error("Attempting to run the function classify_candidates " +
+                         "but no candidates were found/loaded. Check your " +
+                         "formatter")
         self.__candidates = self.__model.compute_probability(self.__candidates)
         self.__save_candidates()
 
@@ -475,17 +517,17 @@ class Candidates(object):
         found_quasars_zge1 = 0
         found_quasars_zge2_1 = 0
         num_quasars = quasars_data_frame.shape[0]
-        num_quasars_zge1 = quasars_data_frame[quasars_data_frame["z_vi"] >= 1.0].shape[0]
-        num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["z_vi"] >= 2.1].shape[0]
+        num_quasars_zge1 = quasars_data_frame[quasars_data_frame["z_true"] >= 1.0].shape[0]
+        num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["z_true"] >= 2.1].shape[0]
         for index in np.arange(num_quasars):
             specid = quasars_data_frame.ix[quasars_data_frame.index[index]]["specid"]
             if data_frame[(data_frame["specid"] == specid) &
                           (data_frame["is_correct"])].shape[0] > 0:
                 found_quasars += 1
-                if quasars_data_frame.ix[quasars_data_frame.index[index]]["z_vi"] >= 2.1:
+                if quasars_data_frame.ix[quasars_data_frame.index[index]]["z_true"] >= 2.1:
                     found_quasars_zge2_1 += 1
                     found_quasars_zge1 += 1
-                elif quasars_data_frame.ix[quasars_data_frame.index[index]]["z_vi"] >= 1:
+                elif quasars_data_frame.ix[quasars_data_frame.index[index]]["z_true"] >= 1:
                     found_quasars_zge1 += 1
         if float(num_quasars) > 0.0:
             completeness = float(found_quasars)/float(num_quasars)
@@ -503,10 +545,10 @@ class Candidates(object):
 
         if float(data_frame.shape[0]) > 0.:
             purity = float(data_frame["is_correct"].sum())/float(data_frame.shape[0])
-            purity_zge1 = (float(data_frame[data_frame["z_try"] >= 1]["is_correct"].sum())/
-                           float(data_frame[data_frame["z_try"] >= 1].shape[0]))
-            purity_zge2_1 = (float(data_frame[data_frame["z_try"] >= 2.1]["is_correct"].sum())/
-                             float(data_frame[data_frame["z_try"] >= 2.1].shape[0]))
+            purity_zge1 = (float(data_frame[data_frame["z_true"] >= 1]["is_correct"].sum())/
+                           float(data_frame[data_frame["z_true"] >= 1].shape[0]))
+            purity_zge2_1 = (float(data_frame[data_frame["z_true"] >= 2.1]["is_correct"].sum())/
+                             float(data_frame[data_frame["z_true"] >= 2.1].shape[0]))
             line_purity = float(data_frame["is_line"].sum())/float(data_frame.shape[0])
             #purity_to_quasars = (float(data_frame[data_frame["specid"] > 0].shape[0])/
             #                     float(data_frame.shape[0]))
@@ -736,7 +778,7 @@ class Candidates(object):
                                                          array=data_frame[col])
                                              for col, dtype in zip(data_frame.columns,
                                                                    data_frame.dtypes)])
-        hdu.writeto(filename)
+        hdu.writeto(filename, overwrite=True)
 
 if __name__ == '__main__':
     pass

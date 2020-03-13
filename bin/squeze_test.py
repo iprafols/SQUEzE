@@ -11,16 +11,16 @@ __version__ = "0.1"
 import argparse
 import numpy as np
 
-from squeze.squeze_common_functions import load_json
-from squeze.squeze_common_functions import deserialize
-from squeze.squeze_common_functions import verboseprint, quietprint
-from squeze.squeze_error import Error
-from squeze.squeze_quasar_catalogue import QuasarCatalogue
-from squeze.squeze_model import Model
-from squeze.squeze_spectra import Spectra
-from squeze.squeze_candidates import Candidates
-from squeze.squeze_defaults import CUTS
-from squeze.squeze_parsers import TEST_PARSER
+from squeze.common_functions import load_json
+from squeze.common_functions import deserialize
+from squeze.common_functions import verboseprint, quietprint
+from squeze.error import Error
+from squeze.quasar_catalogue import QuasarCatalogue
+from squeze.model import Model
+from squeze.spectra import Spectra
+from squeze.candidates import Candidates
+from squeze.defaults import CUTS
+from squeze.parsers import TEST_PARSER
 
 
 def main():
@@ -37,17 +37,18 @@ def main():
     userprint("Loading quasar catalogue")
     if args.qso_dataframe is not None:
         if ((args.qso_cat is not None) or (args.qso_cols is not None) or
-                (args.qso_specid is not None)):
-            parser.error("options --qso-cat, --qso-cols, and --qso-specid " \
+                (args.qso_specid is not None) or (args.qso_ztrue is not None)):
+            parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
                          "are incompatible with --qso-dataframe")
         quasar_catalogue = deserialize(load_json(args.qso_dataframe))
         quasar_catalogue["loaded"] = True
     else:
-        if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None):
-            parser.error("--qso-cat, --qso-cols and --qso-specid are " \
+        if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
+            parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
                          "required if --qso-dataframe is not passed")
         quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
-                                           args.qso_specid, args.qso_hdu).quasar_catalogue()
+                                           args.qso_specid, args.qso_ztrue,
+                                           args.qso_hdu).quasar_catalogue()
         quasar_catalogue["loaded"] = False
 
     # load model
@@ -111,8 +112,8 @@ def main():
                                                            (data_frame["z_conf_person"] == 3)],
                                                 userprint=userprint)
 
-    # save the catalogue
-    if args.save_fits:
+    # save the catalogue as a fits file
+    if not args.no_save_fits:
         found_catalogue = candidates.candidates()
         found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
                                           (found_catalogue["prob"] > args.prob_cut)]
