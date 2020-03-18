@@ -613,11 +613,16 @@ class Candidates(object):
         for index, candidates_filename in enumerate(others_list):
             userprint("Merging... {} of {}".format(index, len(others_list)))
 
-            # load candidates
-            other = deserialize(load_json(candidates_filename))
+            try:
+                # load candidates
+                other = deserialize(load_json(candidates_filename))
 
-            # append to candidates list
-            self.__candidates = self.__candidates.append(other, ignore_index=True)
+                # append to candidates list
+                self.__candidates = self.__candidates.append(other, ignore_index=True)
+
+            except TypeError:
+                userprint("Error occured when loading file {}.".format(file))
+                userprint("Ignoring file")
 
         self.__save_candidates()
 
