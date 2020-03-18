@@ -621,7 +621,7 @@ class Candidates(object):
                 self.__candidates = self.__candidates.append(other, ignore_index=True)
 
             except TypeError:
-                userprint("Error occured when loading file {}.".format(file))
+                userprint("Error occured when loading file {}.".format(candidates_filename))
                 userprint("Ignoring file")
 
         self.__save_candidates()
