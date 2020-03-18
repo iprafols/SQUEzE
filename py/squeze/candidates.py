@@ -607,7 +607,9 @@ class Candidates(object):
             raise  Error("The function merge is available in the " +
                          "merge mode only. Detected mode is {}".format(self.__mode))
 
-        for candidates_filename in others_list:
+        for index, candidates_filename in enumerate(others_list):
+            userprint("Merging... {} of {}".format(index, len(others_list)))
+
             # load candidates
             other = deserialize(load_json(candidates_filename))
 
