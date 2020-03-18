@@ -594,14 +594,17 @@ class Candidates(object):
             json_dict = load_json(filename)
         self.__candidates = deserialize(json_dict)
 
-    def merge(self, others_list):
+    def merge(self, others_list, userprint=verboseprint):
         """
             Merge self.__candidates with another candidates object
 
             Parameters
             ----------
-            other : pd.DataFrame
+            others_list : pd.DataFrame
             The other candidates object to merge
+
+            userprint : function - Default: verboseprint
+            Print function to use
             """
         if self.__mode != "merge":
             raise  Error("The function merge is available in the " +
