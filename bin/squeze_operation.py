@@ -71,5 +71,7 @@ def main():
                                           (found_catalogue["prob"] > args.prob_cut)]
         candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
+    userprint("Done")
+    
 if __name__ == '__main__':
     main()

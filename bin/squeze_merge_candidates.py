@@ -45,5 +45,7 @@ def main():
         found_catalogue = candidates.candidates()
         candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
+    userprint("Done")
+    
 if __name__ == '__main__':
     main()
