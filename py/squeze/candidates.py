@@ -154,12 +154,12 @@ class Candidates(object):
         ivar = spectrum.ivar()
 
         # compute intervals
-        pix_peak = np.where((wave >= (1.0+z_try)*self.__lines.ix[index]["start"])
-                            & (wave <= (1.0+z_try)*self.__lines.ix[index]["end"]))[0]
-        pix_blue = np.where((wave >= (1.0+z_try)*self.__lines.ix[index]["blue_start"])
-                            & (wave <= (1.0+z_try)*self.__lines.ix[index]["blue_end"]))[0]
-        pix_red = np.where((wave >= (1.0+z_try)*self.__lines.ix[index]["red_start"])
-                           & (wave <= (1.0+z_try)*self.__lines.ix[index]["red_end"]))[0]
+        pix_peak = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["start"])
+                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["end"]))[0]
+        pix_blue = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["blue_start"])
+                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["blue_end"]))[0]
+        pix_red = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["red_start"])
+                           & (wave <= (1.0+z_try)*self.__lines.iloc[index]["red_end"]))[0]
 
         # compute peak and continuum values
         compute_ratio = True
@@ -385,9 +385,9 @@ class Candidates(object):
 
         columns_candidates = spectrum.metadata_names()
         for i in range(self.__lines.shape[0]):
-            columns_candidates.append("{}_ratio".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_ratio_SN".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_ratio2".format(self.__lines.ix[i].name))
+            columns_candidates.append("{}_ratio".format(self.__lines.iloc[i].name))
+            columns_candidates.append("{}_ratio_SN".format(self.__lines.iloc[i].name))
+            columns_candidates.append("{}_ratio2".format(self.__lines.iloc[i].name))
         columns_candidates.append("z_try")
         columns_candidates.append("peak_significance")
         columns_candidates.append("assumed_line")
@@ -520,14 +520,14 @@ class Candidates(object):
         num_quasars_zge1 = quasars_data_frame[quasars_data_frame["z_true"] >= 1.0].shape[0]
         num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["z_true"] >= 2.1].shape[0]
         for index in np.arange(num_quasars):
-            specid = quasars_data_frame.ix[quasars_data_frame.index[index]]["specid"]
+            specid = quasars_data_frame.iloc[quasars_data_frame.index[index]]["specid"]
             if data_frame[(data_frame["specid"] == specid) &
                           (data_frame["is_correct"])].shape[0] > 0:
                 found_quasars += 1
-                if quasars_data_frame.ix[quasars_data_frame.index[index]]["z_true"] >= 2.1:
+                if quasars_data_frame.iloc[quasars_data_frame.index[index]]["z_true"] >= 2.1:
                     found_quasars_zge2_1 += 1
                     found_quasars_zge1 += 1
-                elif quasars_data_frame.ix[quasars_data_frame.index[index]]["z_true"] >= 1:
+                elif quasars_data_frame.iloc[quasars_data_frame.index[index]]["z_true"] >= 1:
                     found_quasars_zge1 += 1
         if float(num_quasars) > 0.0:
             completeness = float(found_quasars)/float(num_quasars)
