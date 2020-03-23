@@ -783,13 +783,13 @@ class Candidates(object):
         self.__model.train(self.__candidates)
         self.__model.save_model()
 
-    def to_fits(self, filename, data_frame=None):
+    def to_fits(self, filename=None, data_frame=None):
         """Save the DataFrame as a fits file. String columns with length greater than 15
             characters might be truncated
 
             Parameters
             ----------
-            filename : str
+            filename : str 
             Name of the fits file the dataframe is going to be saved to
 
             data_frame : pd.DataFrame - Default: self.__candidates
