@@ -420,7 +420,7 @@ class Candidates(object):
         self.__peakfind_width = settings.get("peakfind_width")
         self.__peakfind_sig = settings.get("peakfind_sig")
 
-    def __save_candidates(self):
+    def save_candidates(self):
         """ Save the candidates DataFrame. """
         save_json(self.__name, self.__candidates)
 
@@ -460,7 +460,7 @@ class Candidates(object):
                          "but no candidates were found/loaded. Check your " +
                          "formatter")
         self.__candidates = self.__model.compute_probability(self.__candidates)
-        self.__save_candidates()
+        self.save_candidates()
 
     def find_candidates(self, spectra):
         """ Find candidates for a given set of spectra, then integrate them in the
@@ -486,7 +486,7 @@ class Candidates(object):
                 self.__candidates = self.__candidates.append(candidates_df, ignore_index=True)
 
         # save the new version of the catalogue
-        self.__save_candidates()
+        self.save_candidates()
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None,
                                  get_results=False, userprint=verboseprint):
@@ -614,7 +614,7 @@ class Candidates(object):
             json_dict = load_json(filename)
         self.__candidates = deserialize(json_dict)
 
-    def merge(self, others_list, userprint=verboseprint):
+    def merge(self, others_list, userprint=verboseprint, save=True):
         """
             Merge self.__candidates with another candidates object
 
@@ -625,6 +625,9 @@ class Candidates(object):
 
             userprint : function - Default: verboseprint
             Print function to use
+
+            save : bool - Defaut: True
+            If True, save candidates before exiting
             """
         if self.__mode != "merge":
             raise  Error("The function merge is available in the " +
@@ -644,7 +647,8 @@ class Candidates(object):
                 userprint("Error occured when loading file {}.".format(candidates_filename))
                 userprint("Ignoring file")
 
-        self.__save_candidates()
+        if save:
+            self.save_candidates()
 
     def plot_histograms(self, plot_col, normed=True):
         """
