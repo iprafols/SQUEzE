@@ -73,7 +73,7 @@ class Candidates(object):
             Name of the candidates sample. The code will save an python-binary
             with the information of the database in a csv file with this name.
             If load is set to True, then the candidates sample will be loaded
-            from this file. Recommended extension is csv.
+            from this file. Recommended extension is json.
 
             weighting_mode : string - Default: "weights"
             Name of the weighting mode. Can be "weights" if ivar is to be used
