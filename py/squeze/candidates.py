@@ -101,7 +101,10 @@ class Candidates(object):
             of the classifiers. In training mode, they're passed to the model
             instance before training. Otherwise it's ignored.
             """
-        self.__mode = mode
+        if mode in ["training", "test", "operation", "merge"]:
+            self.__mode = mode
+        else:
+            raise Error("Invalid mode")
         self.__name = name
 
         self.__candidates = None # initialize empty catalogue
@@ -428,6 +431,23 @@ class Candidates(object):
     def lines(self):
         """ Access the lines DataFrame. """
         return self.__lines
+
+    def set_mode(self, mode):
+        """ Allow user to change the running mode
+
+        Parameters
+        ----------
+        mode : "training", "test", "operation", or "merge" - Default: "operation"
+        Running mode. "training" mode assumes that true redshifts are known
+        and provide a series of functions to train the model.
+        """
+        if mode in ["training", "test", "operation", "merge"]:
+            self.__mode = mode
+        else:
+            raise Error("Invalid mode")
+
+        return
+
 
     def classify_candidates(self):
         """ Create a model instance and train it. Save the resulting model"""
