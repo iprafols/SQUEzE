@@ -215,10 +215,10 @@ class Model(object):
 
             # join datasets
             if (data_frame_high.shape[0] == 0 and data_frame_low.shape[0] == 0 and
-                data_frame_nonpeaks.shape[0]) == 0:
+                data_frame_nonpeaks.shape[0] == 0):
                 data_frame = data_frame_high
             else:
-                data_frame = pd.concat([data_frame_high, data_frame_low, data_frame_nonpeaks])
+                data_frame = pd.concat([data_frame_high, data_frame_low, data_frame_nonpeaks], sort=False)
 
         else:
             # peaks
@@ -241,10 +241,10 @@ class Model(object):
                     data_frame_nonpeaks["prob_class{:d}".format(int(class_label))] = -1.0
 
             # join datasets
-            if data_frame_peaks.shape[0] == 0 and data_frame_nonpeaks.shape[0] == 0:
+            if (data_frame_peaks.shape[0] == 0 and data_frame_nonpeaks.shape[0] == 0):
                 data_frame = data_frame_peaks
             else:
-                data_frame = pd.concat([data_frame_peaks, data_frame_nonpeaks])
+                data_frame = pd.concat([data_frame_peaks, data_frame_nonpeaks], sort=False)
 
         # predict class and find the probability of the candidate being a quasar
         data_frame["class_predicted"] = data_frame.apply(self.__find_class, axis=1,
