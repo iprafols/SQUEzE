@@ -789,7 +789,7 @@ class Candidates(object):
 
             Parameters
             ----------
-            filename : str 
+            filename : str
             Name of the fits file the dataframe is going to be saved to
 
             data_frame : pd.DataFrame - Default: self.__candidates
@@ -799,7 +799,7 @@ class Candidates(object):
             data_frame = self.__candidates
 
         if filename is None:
-            filename = self.__name.replace("json", "fits")
+            filename = self.__name.replace("json", "fits.gz")
 
         def convert_dtype(dtype):
              if dtype == "O":
