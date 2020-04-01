@@ -102,11 +102,11 @@ def main():
         data_frame = candidates.candidates()
         userprint("\n---------------")
         userprint("step 1")
-        candidates.find_completeness_purity(quasar_catalogue, data_frame)
+        candidates.find_completeness_purity(quasar_catalogue.reset_index(), data_frame)
         for prob in probs:
             userprint("\n---------------")
             userprint("proba > {}".format(prob))
-            candidates.find_completeness_purity(quasar_catalogue,
+            candidates.find_completeness_purity(quasar_catalogue.reset_index(),
                                                 data_frame[(data_frame["prob"] > prob) &
                                                            ~(data_frame["duplicated"]) &
                                                            (data_frame["z_conf_person"] == 3)],
