@@ -64,7 +64,8 @@ class Candidates(object):
             of Delta_z is lower or equal than z_precision. Ignored if mode is
             "operation". This will be overloaded if model is not None.
 
-            mode : "training", "test", "operation", or "merge" - Default: "operation"
+            mode : "training", "test", "operation", "candidates", or "merge"
+            - Default: "operation"
             Running mode. "training" mode assumes that true redshifts are known
             and provide a series of functions to train the model.
 
@@ -96,7 +97,7 @@ class Candidates(object):
             of the classifiers. In training mode, they're passed to the model
             instance before training. Otherwise it's ignored.
             """
-        if mode in ["training", "test", "operation", "merge"]:
+        if mode in ["training", "test", "operation", "candidates", "merge"]:
             self.__mode = mode
         else:
             raise Error("Invalid mode")
