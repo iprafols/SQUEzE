@@ -147,10 +147,6 @@ TRAINING_PARSER.add_argument("--lines", type=str, default=None, required=False,
                              help="""Name of the json file containing the lines ratios
                                  to be computed.""")
 
-TRAINING_PARSER.add_argument("--cuts", type=str, default=None, required=False,
-                             help="""Name of the json file containing the hard-core
-                                 cuts to be included in the model.""")
-
 TRAINING_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, required=False,
                              help="""Name of the lines that will be associated to the peaks
                              to estimate the redshift.""")

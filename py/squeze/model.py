@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 
 from squeze.common_functions import save_json
-from squeze.defaults import CUTS
 from squeze.defaults import CLASS_PREDICTED
 from squeze.defaults import RANDOM_STATE
 from squeze.defaults import RANDOM_FOREST_OPTIONS
@@ -26,7 +25,7 @@ class Model(object):
         quasars
         """
 
-    def __init__(self, name, selected_cols, settings, cuts=CUTS,
+    def __init__(self, name, selected_cols, settings,
                  model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
 
@@ -35,27 +34,30 @@ class Model(object):
             name : string
             Name of the model
 
+            selected_cols : list
+            List of the columns to be considered for training
+
             settings : dict
-            A dictionary with the settings used to construct the list of
-            Candidates. It should be the return of the function get_settings
-            of the Candidates object
+            A dictionary containing the settings used to find the
+            candidates
 
             random_state : int - Default: RANDOM_STATE
             Integer to set the sandom states of the classifier
 
-            clf_options : dict -  Default: RANDOM_FOREST_OPTIONS
-            A dictionary with the settings to be passed to the random forest
-            constructor. If high-low split of the training is desired, the
-            dictionary must contain the entries "high" and "low", and the
+            model_opt : tuple -  Default: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
+            A tuple. First item should be a dictionary with the options to be
+            passed to the random forest. If two random forests are to be trained
+            for high (>2.1) and low redshift candidates separately, then the
+            dictionary must only contain the keys 'high'and 'low, and the
             corresponding values must be dictionaries with the options for each
-            of the classifiers
+            of the classifiers. The second element of the tuple is the random
+            state that will be used to initialize the forest.
             """
         self.__name = name
         self.__settings = settings
         self.__selected_cols = selected_cols
         self.__clf_options = model_opt[0]
         self.__random_state = model_opt[1]
-        self.__cuts = cuts
         if "high" in self.__clf_options.keys() and "low" in self.__clf_options.keys():
             self.__highlow_split = True
         else:
@@ -215,10 +217,10 @@ class Model(object):
 
             # join datasets
             if (data_frame_high.shape[0] == 0 and data_frame_low.shape[0] == 0 and
-                data_frame_nonpeaks.shape[0]) == 0:
+                data_frame_nonpeaks.shape[0] == 0):
                 data_frame = data_frame_high
             else:
-                data_frame = pd.concat([data_frame_high, data_frame_low, data_frame_nonpeaks])
+                data_frame = pd.concat([data_frame_high, data_frame_low, data_frame_nonpeaks], sort=False)
 
         else:
             # peaks
@@ -241,10 +243,10 @@ class Model(object):
                     data_frame_nonpeaks["prob_class{:d}".format(int(class_label))] = -1.0
 
             # join datasets
-            if data_frame_peaks.shape[0] == 0 and data_frame_nonpeaks.shape[0] == 0:
+            if (data_frame_peaks.shape[0] == 0 and data_frame_nonpeaks.shape[0] == 0):
                 data_frame = data_frame_peaks
             else:
-                data_frame = pd.concat([data_frame_peaks, data_frame_nonpeaks])
+                data_frame = pd.concat([data_frame_peaks, data_frame_nonpeaks], sort=False)
 
         # predict class and find the probability of the candidate being a quasar
         data_frame["class_predicted"] = data_frame.apply(self.__find_class, axis=1,
@@ -266,26 +268,24 @@ class Model(object):
             data_frame : pd.DataFrame
             The dataframe with which the model is trained
             """
-        # filter data_frame by excluding objects that meet the hard-core cuts
-        for selected_cols in self.__cuts[1]:
-            # train classifier
-            if self.__highlow_split:
-                # high-z split
-                data_frame_high = data_frame[data_frame["z_try"] >= 2.1].fillna(-9999.99)
-                data_vector = data_frame_high[self.__selected_cols[:-2]].values
-                data_class = data_frame_high.apply(self.__find_class, axis=1, args=(True,))
-                self.__clf_high.fit(data_vector, data_class)
-                # low-z split
-                data_frame_low = data_frame[(data_frame["z_try"] < 2.1) & (data_frame["z_try"] >= 0.0)].fillna(-9999.99)
-                data_vector = data_frame_low[self.__selected_cols[:-2]].values
-                data_class = data_frame_low.apply(self.__find_class, axis=1, args=(True,))
-                self.__clf_low.fit(data_vector, data_class)
+        # train classifier
+        if self.__highlow_split:
+            # high-z split
+            data_frame_high = data_frame[data_frame["z_try"] >= 2.1].fillna(-9999.99)
+            data_vector = data_frame_high[self.__selected_cols[:-2]].values
+            data_class = data_frame_high.apply(self.__find_class, axis=1, args=(True,))
+            self.__clf_high.fit(data_vector, data_class)
+            # low-z split
+            data_frame_low = data_frame[(data_frame["z_try"] < 2.1) & (data_frame["z_try"] >= 0.0)].fillna(-9999.99)
+            data_vector = data_frame_low[self.__selected_cols[:-2]].values
+            data_class = data_frame_low.apply(self.__find_class, axis=1, args=(True,))
+            self.__clf_low.fit(data_vector, data_class)
 
-            else:
-                data_frame = data_frame[(data_frame["z_try"] >= 0.0)][self.__selected_cols].fillna(-9999.99)
-                data_vector = data_frame[self.__selected_cols[:-2]].values
-                data_class = data_frame.apply(self.__find_class, axis=1, args=(True,))
-                self.__clf.fit(data_vector, data_class)
+        else:
+            data_frame = data_frame[(data_frame["z_try"] >= 0.0)][self.__selected_cols].fillna(-9999.99)
+            data_vector = data_frame[self.__selected_cols[:-2]].values
+            data_class = data_frame.apply(self.__find_class, axis=1, args=(True,))
+            self.__clf.fit(data_vector, data_class)
 
     @classmethod
     def from_json(cls, data):
@@ -299,9 +299,8 @@ class Model(object):
         name = data.get("_Model__name")
         selected_cols = data.get("_Model__selected_cols")
         settings = data.get("_Model__settings")
-        cuts = data.get("_Model__cuts")
         model_opt = [data.get("_Model__clf_options"), data.get("_Model__random_state")]
-        cls_instance = cls(name, selected_cols, settings, cuts=cuts,
+        cls_instance = cls(name, selected_cols, settings,
                            model_opt=model_opt)
 
         # now update the instance to the current values

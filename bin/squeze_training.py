@@ -17,7 +17,6 @@ from squeze.error import Error
 from squeze.quasar_catalogue import QuasarCatalogue
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
-from squeze.defaults import CUTS
 from squeze.defaults import LINES
 from squeze.defaults import RANDOM_FOREST_OPTIONS
 from squeze.defaults import RANDOM_STATE
@@ -41,14 +40,14 @@ def main():
     # load quasar catalogue
     userprint("Loading quasar catalogue")
     if args.qso_dataframe is not None:
-        if ((args.qso_cat is not None) or (args.qso_cols is not None) or
-                (args.qso_specid is not None) or (args.qso_ztrue is not None)):
+        if ((args.qso_cat is not None) or (args.qso_specid is not None)
+            or (args.qso_ztrue is not None)):
             parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
                          "are incompatible with --qso-dataframe")
         quasar_catalogue = deserialize(load_json(args.qso_dataframe))
         quasar_catalogue["loaded"] = True
     else:
-        if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
+        if (args.qso_cat is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
             parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
                          "required if --qso-dataframe is not passed")
         quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
@@ -70,9 +69,6 @@ def main():
     peakfind_width = PEAKFIND_WIDTH if args.peakfind_width is None else args.peakfind_width
     peakfind_sig = PEAKFIND_SIG if args.peakfind_sig is None else args.peakfind_sig
 
-    # load cut options
-    cuts = CUTS if args.cuts is None else load_json(args.cuts)
-
     # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
@@ -80,14 +76,14 @@ def main():
                                 z_precision=z_precision, mode="training",
                                 weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_sig),
-                                model=(None, cuts))
+                                model=None)
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 name=args.output_candidates,
                                 weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_sig),
-                                model=(None, cuts))
+                                model=None)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
@@ -126,5 +122,6 @@ def main():
         found_catalogue = candidates.candidates()
         candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
+    userprint("Done")
 if __name__ == '__main__':
     main()

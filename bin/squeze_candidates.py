@@ -3,30 +3,33 @@
     SQUEzE
     ======
 
-    This file allows the user to execute SQUEzE in test mode.
+    This file allows the user to execute SQUEzE in training mode.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
-import numpy as np
 
 from squeze.common_functions import load_json
 from squeze.common_functions import deserialize
 from squeze.common_functions import verboseprint, quietprint
 from squeze.error import Error
 from squeze.quasar_catalogue import QuasarCatalogue
-from squeze.model import Model
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
-from squeze.parsers import TEST_PARSER
+from squeze.defaults import LINES
+from squeze.defaults import TRY_LINES
+from squeze.defaults import Z_PRECISION
+from squeze.defaults import PEAKFIND_WIDTH
+from squeze.defaults import PEAKFIND_SIG
+from squeze.parsers import CANDIDATES_PARSER
 
 
 def main():
-    """ Run SQUEzE in test mode """
+    """ Run SQUEzE in candidates mode """
     # load options
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                     parents=[TEST_PARSER])
+                                     parents=[CANDIDATES_PARSER])
     args = parser.parse_args()
 
     # manage verbosity
@@ -36,7 +39,7 @@ def main():
     userprint("Loading quasar catalogue")
     if args.qso_dataframe is not None:
         if ((args.qso_cat is not None) or (args.qso_specid is not None)
-                or (args.qso_ztrue is not None)):
+            or (args.qso_ztrue is not None)):
             parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
                          "are incompatible with --qso-dataframe")
         quasar_catalogue = deserialize(load_json(args.qso_dataframe))
@@ -50,17 +53,35 @@ def main():
                                            args.qso_hdu).quasar_catalogue()
         quasar_catalogue["loaded"] = False
 
-    # load model
-    userprint("Loading model")
-    model = Model.from_json(load_json(args.model))
+    # load lines
+    userprint("Loading lines")
+    lines = LINES if args.lines is None else load_json(args.lines)
+
+    # load try_line
+    try_line = TRY_LINES if args.try_lines is None else args.try_lines
+
+    # load redshift precision
+    z_precision = Z_PRECISION if args.z_precision is None else args.z_precision
+
+    # load peakfinder options
+    peakfind_width = PEAKFIND_WIDTH if args.peakfind_width is None else args.peakfind_width
+    peakfind_sig = PEAKFIND_SIG if args.peakfind_sig is None else args.peakfind_sig
 
     # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
-        candidates = Candidates(mode="test", model=model)
+        candidates = Candidates(lines_settings=(lines, try_line),
+                                z_precision=z_precision, mode="candidates",
+                                weighting_mode=args.weighting_mode,
+                                peakfind=(peakfind_width, peakfind_sig),
+                                model=None)
     else:
-        candidates = Candidates(mode="test", name=args.output_candidates,
-                                model=model)
+        candidates = Candidates(lines_settings=(lines, try_line),
+                                z_precision=z_precision, mode="candidates",
+                                name=args.output_candidates,
+                                weighting_mode=args.weighting_mode,
+                                peakfind=(peakfind_width, peakfind_sig),
+                                model=None)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
@@ -90,35 +111,11 @@ def main():
             userprint("Looking for candidates")
             candidates.find_candidates(spectra.spectra_list())
 
-    # compute probabilities
-    userprint("Computing probabilities")
-    candidates.classify_candidates()
-
-    # check completeness
-    if args.check_statistics:
-        probs = args.check_probs if args.check_probs is not None else np.arange(0.9, 0.0, -0.05)
-        userprint("Check statistics")
-        data_frame = candidates.candidates()
-        userprint("\n---------------")
-        userprint("step 1")
-        candidates.find_completeness_purity(quasar_catalogue.reset_index(), data_frame)
-        for prob in probs:
-            userprint("\n---------------")
-            userprint("proba > {}".format(prob))
-            candidates.find_completeness_purity(quasar_catalogue.reset_index(),
-                                                data_frame[(data_frame["prob"] > prob) &
-                                                           ~(data_frame["duplicated"]) &
-                                                           (data_frame["z_conf_person"] == 3)],
-                                                userprint=userprint)
-
     # save the catalogue as a fits file
     if not args.no_save_fits:
         found_catalogue = candidates.candidates()
-        found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
-                                          (found_catalogue["prob"] > args.prob_cut)]
         candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
     userprint("Done")
-
 if __name__ == '__main__':
     main()
