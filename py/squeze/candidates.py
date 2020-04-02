@@ -115,7 +115,7 @@ class Candidates(object):
         self.__peakfind_sig = peakfind[1]
 
         # model
-        if model[0] is None:
+        if model is None:
             self.__model = None
         else:
             self.__model = model
