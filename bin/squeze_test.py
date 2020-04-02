@@ -19,7 +19,6 @@ from squeze.quasar_catalogue import QuasarCatalogue
 from squeze.model import Model
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
-from squeze.defaults import CUTS
 from squeze.parsers import TEST_PARSER
 
 
@@ -58,10 +57,10 @@ def main():
     # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
-        candidates = Candidates(mode="test", model=(model, CUTS))
+        candidates = Candidates(mode="test", model=model)
     else:
         candidates = Candidates(mode="test", name=args.output_candidates,
-                                model=(model, CUTS))
+                                model=model)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:

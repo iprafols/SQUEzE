@@ -24,7 +24,6 @@ from squeze.common_functions import deserialize
 from squeze.error import Error
 from squeze.model import Model
 from squeze.peak_finder import PeakFinder
-from squeze.defaults import CUTS
 from squeze.defaults import LINES
 from squeze.defaults import TRY_LINES
 from squeze.defaults import RANDOM_FOREST_OPTIONS
@@ -49,7 +48,7 @@ class Candidates(object):
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.json",
                  weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
-                 model=(None, CUTS), model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
+                 model=None, model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
 
             Parameters
@@ -82,16 +81,12 @@ class Candidates(object):
             will be ignored, the rest will be averaged without weighting), or
             "none" if weights are to be ignored.
 
-            model : (Model or None, tuple)  - Default: (None, CUTS)
-            First item is the instance of the Model class defined in
-            squeze_model or None. In test and operation mode, it is supposed
+            model : Model or None  - Default: None
+            Instance of the Model class defined in squeze_model or None.
+            In test and operation mode, it is supposed
             to be the quasar model to construct the catalogue. In training mode,
             it is supposed to be None initially, and the model will be trained
             and given as an output of the code.
-            Second item are the hard-code cuts. In training mode they will be
-            added to the model and trained using contaminants. These cuts will
-            fix the probability of some of the candidates to 1. In testing and
-            operation mode this will be ignored.
 
             model_opt : (dict, int) - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
             The first dictionary sets the options to be passed to the random forest
@@ -122,9 +117,8 @@ class Candidates(object):
         # model
         if model[0] is None:
             self.__model = None
-            self.__cuts = model[1]
         else:
-            self.__model = model[0]
+            self.__model = model
             self.__load_model_settings()
         self.__model_opt = model_opt
 
@@ -778,8 +772,7 @@ class Candidates(object):
 
         self.__model = Model("{}_model.json".format(self.__name[:self.__name.rfind(".")]),
                              selected_cols, self.__get_settings(),
-                             model_opt=self.__model_opt,
-                             cuts=self.__cuts)
+                             model_opt=self.__model_opt)
         self.__model.train(self.__candidates)
         self.__model.save_model()
 
