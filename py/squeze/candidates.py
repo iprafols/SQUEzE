@@ -623,7 +623,7 @@ class Candidates(object):
         if filename is None:
             filename = self.__name
 
-        dat = Table.read(filename, format='fits')
+        data = Table.read(filename, format='fits')
         self.__candidates = data.to_pandas()
         del dat
 
@@ -651,7 +651,7 @@ class Candidates(object):
 
             try:
                 # load candidates
-                dat = Table.read(filename, format='fits')
+                data = Table.read(filename, format='fits')
                 self.__candidates = data.to_pandas()
                 del dat
 
