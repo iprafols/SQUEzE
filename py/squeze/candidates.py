@@ -106,7 +106,7 @@ class Candidates(object):
             self.__name = name
         else:
             raise Error("Candidates name should have .fits or .fits.gz extensions.\
-                Given name was {}".format(self.__name))
+                Given name was {}".format(name))
 
         self.__candidates = None # initialize empty catalogue
 
