@@ -625,7 +625,7 @@ class Candidates(object):
 
         data = Table.read(filename, format='fits')
         self.__candidates = data.to_pandas()
-        del dat
+        del data
 
     def merge(self, others_list, userprint=verboseprint, save=True):
         """
@@ -653,7 +653,7 @@ class Candidates(object):
                 # load candidates
                 data = Table.read(filename, format='fits')
                 self.__candidates = data.to_pandas()
-                del dat
+                del data
 
                 # append to candidates list
                 self.__candidates = self.__candidates.append(other, ignore_index=True)
