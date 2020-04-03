@@ -102,11 +102,12 @@ class Candidates(object):
         else:
             raise Error("Invalid mode")
 
-        if name.endswith(".fit.gz") or name.endswith(".fits"):
+        if name.endswith(".fits.gz") or name.endswith(".fits"):
             self.__name = name
         else:
-            raise Error("Candidates name should have .fits or .fits.gz extensions.\
-                Given name was {}".format(name))
+            message = "Candidates name should have .fits or .fits.gz extensions."
+            message += "Given name was {}".format(name)
+            raise Error(message)
 
         self.__candidates = None # initialize empty catalogue
 
