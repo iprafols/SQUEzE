@@ -178,8 +178,7 @@ OPERATION_PARSER.add_argument("--output-catalogue", default=None, required=False
 This TEST_PARSER contains the common options used to run SQUEzE in training mode
 """ # description of TRAINING_PARSER ... pylint: disable=pointless-string-statement
 TEST_PARSER = argparse.ArgumentParser(add_help=False,
-                                      parents=[PARENT_PARSER,
-                                               OPERATION_PARSER,
+                                      parents=[OPERATION_PARSER,
                                                QUASAR_CATALOGUE_PARSER])
 
 TEST_PARSER.add_argument("--check-statistics", action="store_true",
