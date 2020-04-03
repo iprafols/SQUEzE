@@ -179,7 +179,6 @@ This TEST_PARSER contains the common options used to run SQUEzE in training mode
 """ # description of TRAINING_PARSER ... pylint: disable=pointless-string-statement
 TEST_PARSER = argparse.ArgumentParser(add_help=False,
                                       parents=[PARENT_PARSER,
-                                               MODE_PARSER,
                                                OPERATION_PARSER,
                                                QUASAR_CATALOGUE_PARSER])
 
