@@ -797,29 +797,36 @@ class Candidates(object):
         self.__model.train(self.__candidates)
         self.__model.save_model()
 
-    def to_fits(self, filename=None, data_frame=None):
-        """Save the DataFrame as a fits file. String columns with length greater than 15
+    def save_catalogue(self, filename, prob_cut):
+        """ Save the final catalogue as a fits file. Only non-duplicated
+            candidates with probability greater or equal to prob_cut will
+            be included in this catalogue.
+            String columns with length greater than 15
             characters might be truncated
 
             Parameters
             ----------
-            filename : str
-            Name of the fits file the dataframe is going to be saved to
+            filename : str or None
+            Name of the fits file the final catalogue is going to be saved to.
+            If it is None, then we will use self.__candidates with '_catalogue'
+            appended to it before the extension.
 
-            data_frame : pd.DataFrame - Default: self.__candidates
-            DataFrame to save
+            prob_cut : float
+            Probability cut to be applied to the candidates. Only candidates
+            with greater probability will be saved
         """
-        if data_frame is None:
-            data_frame = self.__candidates
-
         if filename is None:
-            filename = self.__name.replace("json", "fits.gz")
+            filename = self.__name.replace(".fits", "_catalogue.fits")
 
         def convert_dtype(dtype):
              if dtype == "O":
                  return "15A"
              else:
                  return dtype
+
+        # filter data DataFrame
+        data_frame = self.__candidates[(~self.__candidates["duplicated"]) &
+                                       (self.__candidates["prob"] >= prob_cut)]
 
         hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
                                                          format=convert_dtype(dtype),
