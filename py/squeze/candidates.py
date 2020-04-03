@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 import astropy.io.fits as fits
+from astropy.table import Table
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -619,10 +620,11 @@ class Candidates(object):
             If None, then load from self.__name
             """
         if filename is None:
-            json_dict = load_json(self.__name)
-        else:
-            json_dict = load_json(filename)
-        self.__candidates = deserialize(json_dict)
+            filename = self.__name
+
+        dat = Table.read(filename, format='fits')
+        self.__candidates = data.to_pandas()
+        del dat
 
     def merge(self, others_list, userprint=verboseprint, save=True):
         """
@@ -648,7 +650,9 @@ class Candidates(object):
 
             try:
                 # load candidates
-                other = deserialize(load_json(candidates_filename))
+                dat = Table.read(filename, format='fits')
+                self.__candidates = data.to_pandas()
+                del dat
 
                 # append to candidates list
                 self.__candidates = self.__candidates.append(other, ignore_index=True)
