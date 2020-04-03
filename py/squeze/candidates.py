@@ -651,7 +651,7 @@ class Candidates(object):
 
             try:
                 # load candidates
-                data = Table.read(filename, format='fits')
+                data = Table.read(candidates_filename, format='fits')
                 self.__candidates = data.to_pandas()
                 del data
 
