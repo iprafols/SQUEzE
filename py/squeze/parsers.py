@@ -34,16 +34,6 @@ PARENT_PARSER = argparse.ArgumentParser(add_help=False)
 PARENT_PARSER.add_argument("--quiet", action="store_true",
                            help="""Do not print messages""")
 
-PARENT_PARSER.add_argument("--no-save-fits", action="store_true",
-                           help="""Do not save the final catalogue also as a fits file""")
-
-PARENT_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
-                           help="""Name of the fits file where the final catalogue will be
-                               stored. If not specified, the catalogue will be saved using
-                               --output-candidates as name base, Ignored if --save-fits is
-                               not passed""")
-
-
 """
 This PEAKFIND_PARSER contains the options passed to the peak finding algorithms
 """ # description of PEAKFIND_PARSER ... pylint: disable=pointless-string-statement
@@ -83,7 +73,7 @@ MODE_PARSER.add_argument("--input-candidates", type=str, default=None, required=
                              loaded.""")
 
 MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
-                         help="""Name of the json file where the candidates will be saved.
+                         help="""Name of the fits.gz file where the candidates will be saved.
                              In training mode, the model will be saved using this name
                              (without the extension) as base name and append the extension
                              _model.json to it""")
@@ -214,11 +204,11 @@ MERGING_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER]
 
 MERGING_PARSER.add_argument("--input-candidates", nargs='+', default=None, required=True,
                             action=min_length(2),
-                            help="""[REQUIRED] List of json files containing candidates objects to
+                            help="""[REQUIRED] List of fits files containing candidates objects to
                                 merge.""")
 
 MERGING_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
-                            help="""Name of the json file where the candidates will be saved.""")
+                            help="""Name of the fits file where the candidates will be saved.""")
 
 
 if __name__ == '__main__':

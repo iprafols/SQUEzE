@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 from squeze.common_functions import verboseprint
-from squeze.common_functions import save_json, load_json
+from squeze.common_functions import load_json
 from squeze.common_functions import deserialize
 from squeze.error import Error
 from squeze.model import Model
@@ -46,7 +46,7 @@ class Candidates(object):
     # pylint: disable=too-many-instance-attributes
     # 12 is reasonable in this case.
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
-                 mode="operation", name="SQUEzE_candidates.json",
+                 mode="operation", name="SQUEzE_candidates.fits.gz",
                  weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
                  model=None, model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
@@ -69,11 +69,11 @@ class Candidates(object):
             Running mode. "training" mode assumes that true redshifts are known
             and provide a series of functions to train the model.
 
-            name : string - Default: "SQUEzE_candidates.csv"
+            name : string - Default: "SQUEzE_candidates.fits.gz"
             Name of the candidates sample. The code will save an python-binary
             with the information of the database in a csv file with this name.
             If load is set to True, then the candidates sample will be loaded
-            from this file. Recommended extension is json.
+            from this file. Recommended extension is fits.gz.
 
             weighting_mode : string - Default: "weights"
             Name of the weighting mode. Can be "weights" if ivar is to be used
@@ -101,7 +101,11 @@ class Candidates(object):
             self.__mode = mode
         else:
             raise Error("Invalid mode")
-        self.__name = name
+
+        if name.endswith(".fit.gz") or name.endswith(".fits"):
+            self.__name = name
+        else:
+            raise Error("Candidates name should have .fits or .fits.gz extensions")
 
         self.__candidates = None # initialize empty catalogue
 
@@ -782,8 +786,13 @@ class Candidates(object):
         # add columns to compute the class in training
         selected_cols += ['class_person', 'correct_redshift']
 
-        self.__model = Model("{}_model.json".format(self.__name[:self.__name.rfind(".")]),
-                             selected_cols, self.__get_settings(),
+        if self.__name.endswith(".fits"):
+            model_name = self.__name.replace(".fits", "_model.json")
+        elif self.__name.endswith(".fits.gz"):
+            model_name = self.__name.replace(".fits.gz", "_model.json")
+        else:
+            raise Error("Invalid model name")
+        self.__model = Model(model_name, selected_cols, self.__get_settings(),
                              model_opt=self.__model_opt)
         self.__model.train(self.__candidates)
         self.__model.save_model()
