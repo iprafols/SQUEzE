@@ -20,7 +20,6 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 from squeze.common_functions import verboseprint
-from squeze.common_functions import load_json
 from squeze.common_functions import deserialize
 from squeze.error import Error
 from squeze.model import Model
