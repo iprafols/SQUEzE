@@ -117,11 +117,6 @@ def main():
     userprint("Training model")
     candidates.train_model()
 
-    # save the catalogue as a fits file
-    if not args.no_save_fits:
-        found_catalogue = candidates.candidates()
-        candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
-
     userprint("Done")
 if __name__ == '__main__':
     main()

@@ -65,10 +65,10 @@ def main():
     candidates.classify_candidates()
 
     # save the catalogue as a fits file
-    if not args.no_save_fits:
+    if not args.no_save_catalogue:
         found_catalogue = candidates.candidates()
         found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
-                                          (found_catalogue["prob"] > args.prob_cut)]
+                                          (found_catalogue["prob"] >= args.prob_cut)]
         candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
     userprint("Done")

@@ -149,7 +149,30 @@ TRAINING_PARSER.add_argument("--weighting-mode", type=str, default="weights", re
                                  the rest will be averaged without weighting), or 'none' if weights
                                  are to be ignored.""")
 
+"""
+This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
+""" # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement
+OPERATION_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER,
+                                                                    MODE_PARSER])
 
+OPERATION_PARSER.add_argument("--prob-cut", default=0.0, type=float,
+                              help="""Only objects with probability >= PROB_CUT will be included
+                                  in the catalogue""")
+
+OPERATION_PARSER.add_argument("--model", required=True, type=str,
+                              help="""[REQUIRED] Name of the json file containing the model to be used
+                                  in the computation of the probabilities of candidates
+                                  being quasars""")
+
+OPERATION_PARSER.add_argument("--no-save-catalogue", action="store_true",
+                              help="""Do not save the final catalogue excluding duplicated candidates
+                               and those candidates with probability < PROB_CUT """)
+
+OPERATION_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
+                              help="""Name of the fits file where the final catalogue will be
+                               stored. If not specified, the catalogue will be saved using
+                               --output-candidates as name base, Ignored if --save-fits is
+                               not passed""")
 
 """
 This TEST_PARSER contains the common options used to run SQUEzE in training mode
@@ -157,12 +180,8 @@ This TEST_PARSER contains the common options used to run SQUEzE in training mode
 TEST_PARSER = argparse.ArgumentParser(add_help=False,
                                       parents=[PARENT_PARSER,
                                                MODE_PARSER,
+                                               OPERATION_PARSER,
                                                QUASAR_CATALOGUE_PARSER])
-
-TEST_PARSER.add_argument("--model", required=True, type=str,
-                         help="""[REQUIRED] Name of the json file containing the model to be used
-                             in the computation of the probabilities of candidates
-                             being quasars""")
 
 TEST_PARSER.add_argument("--check-statistics", action="store_true",
                          help="""Check the candidates' statistics at the end""")
@@ -174,28 +193,6 @@ TEST_PARSER.add_argument("--check-probs", nargs='+', default=None, required=Fals
                              cuts in probabilities. Ignored if --check-statistics
                              is not passed. If it is not passed and --check-statistics
                              is then np.arange(0.9, 0.0, -0.05)""")
-
-TEST_PARSER.add_argument("--prob-cut", default=0.0, type=float,
-                         help="""Only objects with probability > PROB_CUT will
-                         be includedin the catalogue""")
-
-
-
-
-"""
-This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
-""" # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement
-OPERATION_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER,
-                                                                    MODE_PARSER])
-
-OPERATION_PARSER.add_argument("--prob-cut", default=0.0, type=float,
-                              help="""Only objects with probability > PROB_CUT will be included
-                                  in the catalogue""")
-
-OPERATION_PARSER.add_argument("--model", required=True, type=str,
-                              help="""[REQUIRED] Name of the json file containing the model to be used
-                                  in the computation of the probabilities of candidates
-                                  being quasars""")
 
 """
 This MERGING_PARSER contains the options used to run SQUEzE in merging mode
