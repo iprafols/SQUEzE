@@ -417,7 +417,18 @@ class Candidates(object):
 
     def save_candidates(self):
         """ Save the candidates DataFrame. """
-        save_json(self.__name, self.__candidates)
+        def convert_dtype(dtype):
+             if dtype == "O":
+                 return "15A"
+             else:
+                 return dtype
+
+        hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
+                                                         format=convert_dtype(dtype),
+                                                         array=self.__candidates[col])
+                                             for col, dtype in zip(self.__candidates.columns,
+                                                                   self.__candidates.dtypes)])
+        hdu.writeto(self.__name, overwrite=True)
 
     def candidates(self):
         """ Access the candidates DataFrame. """
