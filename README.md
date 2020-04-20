@@ -2,14 +2,6 @@
 
 Spectroscopic QUasar Extractor and redshift (z) Estimator
 
-requirements:
-* python 2.7 or 3.6
-* argparse
-* numpy
-* pandas
-* sklearn - only for training
-* astropy
-
 ## Description
 
 SQUEzE is a software package to identify quasars and estimate their redshift in a sample of spectra.
