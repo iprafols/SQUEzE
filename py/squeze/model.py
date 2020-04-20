@@ -10,6 +10,7 @@ __version__ = "0.1"
 
 import numpy as np
 import pandas as pd
+import astropy.io.fits as fits
 
 from squeze.common_functions import save_json
 from squeze.defaults import CLASS_PREDICTED
@@ -172,6 +173,113 @@ class Model(object):
     def save_model(self):
         """ Save the model"""
         save_json(self.__name, self)
+
+    def save_model_as_fits(self):
+        """ Save the model as a fits file"""
+        # Create settings HDU to store items in self.__settings
+        header = fits.Header()
+        header["Z_PRECISION"] = self.__settings.get("z_precision")
+        header["PEAKFIND_WIDTH"] = self.__settings.get("peakfind_width")
+        header["PEAKFIND_SIG"] = self.__settings.get("peakfind_sig")
+        header["WEIGHTING_MODE"] = self.__settings.get("weighting_mode")
+        # now create the columns to store lines and try_lines.
+        lines = self.__settings.get("lines")
+        cols = [
+            fits.Column(name="LINE_NAME",
+                        array=lines.index,
+                        format="E",
+                        ),
+            fits.Column(name="LINE_WAVE",
+                        array=lines["wave"],
+                        format="E",
+                        ),
+            fits.Column(name="LINE_START",
+                        array=lines["start"],
+                        format="E",
+                        ),
+            fits.Column(name="LINE_END",
+                        array=lines["end"],
+                        format="E",
+                        ),
+            fits.Column(name="LINE_BLUE_START",
+                        array=lines["blue_start"],
+                        format="E",
+                        ),
+            fits.Column(name="LINE_BLUE_END",
+                        array=lines["blue_end"],
+                        format="E",
+                        ),
+            fits.Column(name="LINE_RED_START",
+                        array=lines["red_start"],
+                        format="E",
+                        ),
+            fits.Column(name="LINE_RED_END",
+                        array=lines["red_end"],
+                        format="E",
+                        ),
+            # try lines is stored as an array of booleans
+            # (True if the value in LINES_NAME is in try_lines, and
+            # false otherwise)
+            fits.Column(name="TRY_LINES",
+                        array=LINES.index.isin(TRY_LINES,
+                        format="L",
+                        ),
+        ]
+        # Create settings HDUs
+        hdu = fits.BinTableHDU.from_columns(cols,
+                                            name="SETTINGS",
+                                            header=header)
+        # Update header with more detailed info
+        desc = {"Z_PRECISION": "z_try correct if in z_true +/- Z_PRECISION",
+                "PEAKFIND_WIDTH": "smoothing used by the peak finder",
+                "PEAKFIND_SIG": "min significance used by the peak finder",
+                "WEIGHTING_MODE": "deprecated, included for testing",
+                "LINE_NAME": "name of the line",
+                "LINE_WAVE": "wavelength of the line",
+                "LINE_START": "start of the peak interval",
+                "LINE_END": "end of the peak interval",
+                "LINE_BLUE_START": "start of the blue continuum interval",
+                "LINE_BLUE_END": "end of the blue continuum interval",
+                "LINE_RED_START": "start of the red continuum interval",
+                "LINE_RED_END": "end of the red continuum interval",
+                "TRY_LINE": "True if this line is part of try_lines",
+                }
+        for key in hdu.header:
+            hdu.header.comments[key] = desc.get(hdu.header[key], "")
+        # End of settings HDU
+
+        # store HDU in HDU list and liberate memory
+        hdul = fits.HDUList([fits.PrimaryHDU(), hdu])
+        del hdu, header, cols, desc
+
+        if self.__highlow_split:
+            items = ["high", "low"]
+        else:
+            items = ["all"]
+
+        # Create model HDU(s) to store self.__clfs_options
+        for item in items:
+            header = fits.Header()
+            for key, value in self.__clf_options.get(item).items():
+                header[key] = value
+            if item is not "all":
+                header["COMMENT"] = ("Options passed to the classifier for"
+                                     "{} redshift quasars. Redshifts are"
+                                     "split at 2.1"
+                                     ).format(item)
+            else:
+                header["COMMENT"] = ("Options passed to the classifier
+            # create HDU
+            hdu = fits.BinTableHDU(header=header,
+                                   name="MODEL_{}".format(item))
+            # add to HDU list
+            hdul.append(hdu)
+            del hdu, header
+        # End of model HDU(s)
+
+        #
+
+        return
 
     def compute_probability(self, data_frame):
         """ Compute the probability of a list of candidates to be quasars
