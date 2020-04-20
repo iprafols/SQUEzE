@@ -15,9 +15,6 @@ import pandas as pd
 
 import astropy.io.fits as fits
 
-import matplotlib.pyplot as plt
-from matplotlib import gridspec
-
 from squeze.common_functions import verboseprint
 from squeze.common_functions import save_json, load_json
 from squeze.common_functions import deserialize
@@ -663,6 +660,10 @@ class Candidates(object):
             -------
             The figure object
             """
+        # extra imports for this function
+        import matplotlib.pyplot as plt
+        from matplotlib import gridspec
+
         # plot settings
         fontsize = 20
         labelsize = 18
@@ -715,6 +716,10 @@ class Candidates(object):
             -------
             The figure object
             """
+        # extra imports for this function
+        import matplotlib.pyplot as plt
+        from matplotlib import gridspec
+        
         # get the number of plots and the names of the columns
         plot_cols = np.array([item for item in self.__candidates.columns if "ratio" in item])
         num_ratios = plot_cols.size
