@@ -19,11 +19,17 @@ SQUEzE can run in different modes:
 
 ## Installation
 
-download
+Download
 ```
 git clone https://github.com/iprafols/SQUEzE.git
 ```
-Add <path_to_SQUEzE>/`SQUEzE/py/` to your `PYTHONPATH`.
+Run
+```
+cd SQUEzE
+pip install -e . (--user)
+```
+Noge that the `--user` option is optional. Alternatively, add
+<path_to_SQUEzE>/`SQUEzE/py/` to your `PYTHONPATH`.
 
 It is recommended to pretrain SQUEzE using the provided results from BOSS.
 To do so run

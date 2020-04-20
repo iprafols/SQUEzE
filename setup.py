@@ -21,9 +21,9 @@ setup(name="squeze",
     install_requires=['numpy','pandas','argparse','astropy'],
     extras_require={
         'train': ['sklearn'],
-        'plot': ['matplotlib']
-    }
-    test_suite=['squeze.test.test_peakfinder', 'squeze.test.test_training',
-                'squeze.test.test_modes',],
+        'plot': ['matplotlib'],
+        'test': ['unittest']
+    },
+    test_suite='test',
     scripts = scripts
     )
