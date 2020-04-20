@@ -26,10 +26,15 @@ git clone https://github.com/iprafols/SQUEzE.git
 Run
 ```
 cd SQUEzE
-pip install -e . (--user)
+pip install . (--user)
 ```
 Noge that the `--user` option is optional. Alternatively, add
 <path_to_SQUEzE>/`SQUEzE/py/` to your `PYTHONPATH`.
+
+To test that the installation was successful run
+```
+python setup.py test
+```
 
 It is recommended to pretrain SQUEzE using the provided results from BOSS.
 To do so run

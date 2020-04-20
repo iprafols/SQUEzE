@@ -15,7 +15,7 @@ setup(name="squeze",
     url="https://github.com/iprafols/SQUEzE",
     author="Ignasi Pérez-Ràfols",
     author_email="iprafols@gmail.com",
-    packages=['squeze'],
+    packages=['squeze', 'squeze.tests'],
     package_dir = {'': 'py'},
     package_data = {},
     install_requires=['numpy','pandas','argparse','astropy'],
@@ -24,6 +24,5 @@ setup(name="squeze",
         'plot': ['matplotlib'],
         'test': ['unittest']
     },
-    test_suite='test',
     scripts = scripts
     )
