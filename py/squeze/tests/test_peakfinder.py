@@ -36,7 +36,7 @@ class TestPeakFinder(unittest.TestCase):
             sig : float
             Squared root of the Gaussian variance
             """
-            return amp*np.exp(-(x-mu)**2./(2*sig**2.))
+            return amp*np.exp(-(wave-mu)**2./(2*sig**2.))
 
         # create arrays
         wave = np.arange(4000, 9000, 1, dtype=float)
@@ -46,7 +46,7 @@ class TestPeakFinder(unittest.TestCase):
         # add three peaks
         self.__peaks_positions = [5000, 5500, 7000]
         self.__peak_amplitudes = [10, 7, 7]
-        self.__peak_sigmas = [150, 150, 150]
+        self.__peak_sigmas = [100, 150, 100]
         for mu, amp, sig in zip(self.__peaks_positions,
                                  self.__peak_amplitudes,
                                  self.__peak_sigmas):
@@ -65,9 +65,9 @@ class TestPeakFinder(unittest.TestCase):
         peakfind_width = 70
         peakfind_sig = 6
         peak_finder = PeakFinder(peakfind_width, peakfind_sig)
-        indexs, significances = peak_finder(self.__noiseless_spec)
+        indexs, significances = peak_finder.find_peaks(self.__noiseless_spec)
 
-        self.assertTrue(index.size == 3)
+        self.assertTrue(indexs.size == 3)
 
     def test_significance_cut(self):
         """Test that the significance cut works.
@@ -79,9 +79,9 @@ class TestPeakFinder(unittest.TestCase):
         peakfind_width = 70
         peakfind_sig = 40
         peak_finder = PeakFinder(peakfind_width, peakfind_sig)
-        indexs, significances = peak_finder(self.__noiseless_spec)
+        indexs, significances = peak_finder.find_peaks(self.__noiseless_spec)
 
-        self.assertTrue(index.size == 2)
+        self.assertTrue(indexs.size == 2)
 
     def test_smoothing(self):
         """Test that the smoothing works.
@@ -93,9 +93,9 @@ class TestPeakFinder(unittest.TestCase):
         peakfind_width = 200
         peakfind_sig = 6
         peak_finder = PeakFinder(peakfind_width, peakfind_sig)
-        indexs, significances = peak_finder(self.__noiseless_spec)
+        indexs, significances = peak_finder.find_peaks(self.__noiseless_spec)
 
-        self.assertTrue(index.size == 2)
+        self.assertTrue(indexs.size == 2)
 
 if __name__ == '__main__':
     unittest.main()
