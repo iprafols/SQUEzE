@@ -48,8 +48,8 @@ class Model(object):
             model_opt : tuple -  Default: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
             A tuple. First item should be a dictionary with the options to be
             passed to the random forest. If two random forests are to be trained
-            for high (>2.1) and low redshift candidates separately, then the
-            dictionary must only contain the keys 'high'and 'low, and the
+            for high (>=2.1) and low redshift candidates separately, then the
+            dictionary must only contain the keys 'high' and 'low', and the
             corresponding values must be dictionaries with the options for each
             of the classifiers. The second element of the tuple is the random
             state that will be used to initialize the forest.
@@ -62,6 +62,7 @@ class Model(object):
         if "high" in self.__clf_options.keys() and "low" in self.__clf_options.keys():
             self.__highlow_split = True
         else:
+            self.__clf_options = {"all": model_opt[0]}
             self.__highlow_split = False
 
         # load models
@@ -71,7 +72,7 @@ class Model(object):
             self.__clf_high = RandomForestClassifier(**self.__clf_options.get("high"))
             self.__clf_low = RandomForestClassifier(**self.__clf_options.get("low"))
         else:
-            self.__clf_options["random_state"] = self.__random_state
+            self.__clf_options.get("all")["random_state"] = self.__random_state
             self.__clf = RandomForestClassifier(**self.__clf_options)
 
 
@@ -252,34 +253,37 @@ class Model(object):
         hdul = fits.HDUList([fits.PrimaryHDU(), hdu])
         del hdu, header, cols, desc
 
-        if self.__highlow_split:
-            items = ["high", "low"]
-        else:
-            items = ["all"]
 
-        # Create model HDU(s) to store self.__clfs_options
-        for item in items:
+        # Create model HDU(s) to store the classifiers
+        if self.__highlow_split:
+            names = ["high", "low"]
+            classifiers = [self.__clf_high, self.__clf_low]
+        else:
+            names = ["all"]
+            classifiers = [self.__clf]
+
+        for names, classifier in zip(items, classifiers):
             header = fits.Header()
-            for key, value in self.__clf_options.get(item).items():
+            for key, value in self.__clf_options.get(names).items():
                 header[key] = value
-            if item is not "all":
+            if names is not "all":
                 header["COMMENT"] = ("Options passed to the classifier for"
                                      "{} redshift quasars. Redshifts are"
                                      "split at 2.1"
                                      ).format(item)
             else:
-                header["COMMENT"] = ("Options passed to the classifier
+                header["COMMENT"] = ("Options passed to the classifier for"
+                                     "all redshift quasars")
             # create HDU
-            hdu = fits.BinTableHDU(header=header,
-                                   name="MODEL_{}".format(item))
+            hdu = classifier.to_fits_hdu(header, name=name)
+
             # add to HDU list
             hdul.append(hdu)
             del hdu, header
         # End of model HDU(s)
 
-        #
-
-        return
+        # save fits file
+        hdul.writeto(self.__name.replace(".json", "fits.gz"), overwrite=True)
 
     def compute_probability(self, data_frame):
         """ Compute the probability of a list of candidates to be quasars
