@@ -177,6 +177,7 @@ class Model(object):
 
     def save_model_as_fits(self):
         """ Save the model as a fits file"""
+        
         # Create settings HDU to store items in self.__settings
         header = fits.Header()
         header["Z_PRECISION"] = self.__settings.get("z_precision")
@@ -275,7 +276,7 @@ class Model(object):
                 header["COMMENT"] = ("Options passed to the classifier for"
                                      "all redshift quasars")
             # create HDU
-            hdu = classifier.to_fits_hdu(header, name=name)
+            hdu = classifier.to_fits_hdu(header, name)
 
             # add to HDU list
             hdul.append(hdu)

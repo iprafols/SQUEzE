@@ -18,6 +18,7 @@ __version__ = "0.1"
 import sys
 
 import numpy as np
+import astropy.io.fits as fits
 
 from squeze.common_functions import deserialize
 
@@ -209,6 +210,38 @@ class RandomForestClassifier(object):
     def set_trees(self, trees):
         """ Set the variable __trees. Should only be called from the method from_json"""
         self.__trees = trees
+
+    def to_fits_hdu(header, name):
+        """ Formats classifier as a fits Header Data Unit
+
+            Parameters
+            ----------
+            header : fits.Header
+            Header to be appended to the HDU
+
+            name : string
+            Name of the HDU
+            """
+
+        # add number of trees to the header
+        header["NUM TREES"] = self.__num_trees
+        header["NUM CATEGORIES"] = self.__num_categories
+
+        # create HDU columns
+        cols = [fits.Column(name="{}_{}".format(field, index)
+                    array=self.__trees[index].get(field),
+                    format="E",
+                    )
+                for field, type in [("children_left", "I"),
+                                    ("children_right", "I"),
+                                    ("feature", "I"),
+                                    ("threshold", "E"),
+                                    ("proba", "E")]
+                for index in range(self.__num_trees)
+                ]
+
+        # create HDU and return
+        return fits.BinTableHDU.from_columns(cols, name=name, header=header)
 
 if __name__ == '__main__':
     pass
