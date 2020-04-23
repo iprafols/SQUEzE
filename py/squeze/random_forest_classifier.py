@@ -199,6 +199,39 @@ class RandomForestClassifier(object):
 
         return cls_instance
 
+    @classmethod
+    def from_fits_hdu(cls, hdu, args):
+        """ This function parses the RandomForestClassifier from the data
+            contained in a fits Header Data Unit. The HDU has to be
+            according to the format specified in method to_fits_hdu
+
+            Parameters
+            ----------
+            hdu : fits.BinTableHDU
+            The Header Data Unit Containing the trained classifier
+
+            args : dict -  Default: {}}
+            Options to be passed to the RandomForestClassifier
+
+            """
+        # create instance using the constructor
+        cls_instance = cls(**args)
+
+        # now update the instance to the current values
+        cls_instance.set_num_trees(hdu.header["NUM TREES"])
+        cls_instance.set_num_categories(hdu.header["NUM CATEGORIES"])
+        cls_instance.classes_ = hdu.data["CLASSES"]
+
+        trees = [{"children_left": hdu.data["children_left_{}".format(index)],
+                  "children_right": hdu.data["children_right_{}".format(index)],
+                  "feature": hdu.data["feature_{}".format(index)],
+                  "threshold": hdu.data["threshold_{}".format(index)],
+                  "proba": hdu.data["proba_{}".format(index)],
+                } for index in range(hdu.header["NUM TREES"])]
+        cls_instance.set_trees(trees)
+
+        return cls_instance
+
     def set_num_trees(self, num_trees):
         """ Set the variable __num_trees. Should only be called from the method from_json"""
         self.__num_trees = num_trees
@@ -221,6 +254,10 @@ class RandomForestClassifier(object):
 
             name : string
             Name of the HDU
+
+            Returns
+            -------
+            The Header Data Unit
             """
 
         # add number of trees to the header
@@ -228,14 +265,14 @@ class RandomForestClassifier(object):
         header["NUM CATEGORIES"] = self.__num_categories
 
         # create HDU columns
-        cols = [fits.Column(name="{}_{}".format(field, index)
+        cols = [fits.Column(name="{}_{}".format(field, index),
                     array=self.__trees[index].get(field),
-                    format="E",
+                    format=type,
                     )
                 for field, type in [("children_left", "I"),
                                     ("children_right", "I"),
                                     ("feature", "I"),
-                                    ("threshold", "E"),
+                                    ("threshold", "I"),
                                     ("proba", "E")]
                 for index in range(self.__num_trees)
                 ]
