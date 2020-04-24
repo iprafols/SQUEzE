@@ -200,15 +200,28 @@ class RandomForestClassifier(object):
         return cls_instance
 
     @classmethod
-    def from_fits_hdu(cls, hdu, args):
+    def from_fits_hdul(cls, hdul, name_prefix, num_trees, num_categories,
+                       classes, args={}):
         """ This function parses the RandomForestClassifier from the data
-            contained in a fits Header Data Unit. The HDU has to be
-            according to the format specified in method to_fits_hdu
+            contained in a fits HDUList. Each HDU in HDUL has to be according
+            to the format specified in method to_fits_hdu
 
             Parameters
             ----------
-            hdu : fits.BinTableHDU
+            hdul : fits.hdu.hdulist.HDUList
             The Header Data Unit Containing the trained classifier
+
+            name_prefix : string
+            Prefix of the HDU names (high, low, or all)
+
+            num_trees : int
+            Number of trees in the forest
+
+            num_categories : int
+            Number of categories to classify
+
+            classes : array
+            Classes present in the data
 
             args : dict -  Default: {}}
             Options to be passed to the RandomForestClassifier
@@ -218,16 +231,18 @@ class RandomForestClassifier(object):
         cls_instance = cls(**args)
 
         # now update the instance to the current values
-        cls_instance.set_num_trees(hdu.header["NUM TREES"])
-        cls_instance.set_num_categories(hdu.header["NUM CATEGORIES"])
-        cls_instance.classes_ = hdu.data["CLASSES"]
+        cls_instance.set_num_trees(num_trees)
+        cls_instance.set_num_categories(num_categories)
+        cls_instance.classes_ = classes
 
-        trees = [{"children_left": hdu.data["children_left_{}".format(index)],
-                  "children_right": hdu.data["children_right_{}".format(index)],
-                  "feature": hdu.data["feature_{}".format(index)],
-                  "threshold": hdu.data["threshold_{}".format(index)],
-                  "proba": hdu.data["proba_{}".format(index)],
-                } for index in range(hdu.header["NUM TREES"])]
+        hdus = [hdul["{}{}".format(name_prefix, index)]
+                for index in range(num_trees)]
+        trees = [{"children_left": hdu.data["children_left"],
+                  "children_right": hdu.data["children_right"],
+                  "feature": hdu.data["feature"],
+                  "threshold": hdu.data["threshold"],
+                  "proba": hdu.data["proba"],
+                } for hdu in hdus]
         cls_instance.set_trees(trees)
 
         return cls_instance
@@ -244,13 +259,21 @@ class RandomForestClassifier(object):
         """ Set the variable __trees. Should only be called from the method from_json"""
         self.__trees = trees
 
-    def to_fits_hdu(header, name):
-        """ Formats classifier as a fits Header Data Unit
+    def num_trees(self):
+        """ Access the number of trees """
+        return self.__num_trees
+
+    def num_categories(self):
+        """ Access the number of categories """
+        return self.__num_categories
+
+    def to_fits_hdu(self, index, name):
+        """ Formats tree as a fits Header Data Unit
 
             Parameters
             ----------
-            header : fits.Header
-            Header to be appended to the HDU
+            index : int
+            Index of the tree to format
 
             name : string
             Name of the HDU
@@ -259,13 +282,8 @@ class RandomForestClassifier(object):
             -------
             The Header Data Unit
             """
-
-        # add number of trees to the header
-        header["NUM TREES"] = self.__num_trees
-        header["NUM CATEGORIES"] = self.__num_categories
-
         # create HDU columns
-        cols = [fits.Column(name="{}_{}".format(field, index),
+        cols = [fits.Column(name="{}".format(field),
                     array=self.__trees[index].get(field),
                     format=type,
                     )
@@ -273,12 +291,11 @@ class RandomForestClassifier(object):
                                     ("children_right", "I"),
                                     ("feature", "I"),
                                     ("threshold", "I"),
-                                    ("proba", "E")]
-                for index in range(self.__num_trees)
+                                    ("proba", "{}E".format(self.__num_categories))]
                 ]
 
         # create HDU and return
-        return fits.BinTableHDU.from_columns(cols, name=name, header=header)
+        return fits.BinTableHDU.from_columns(cols, name=name)
 
 if __name__ == '__main__':
     pass
