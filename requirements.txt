@@ -4,5 +4,3 @@ pandas>=0.25.3
 astropy>=3.2.3
 json>=2.0.9
 setuptools>=40.8.0
-glob
-sys
