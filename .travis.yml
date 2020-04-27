@@ -4,6 +4,6 @@ python:
     - "3.6"
 
 install:
-    - pip intall .
+    - pip install .
 
 script: python setup.py test
