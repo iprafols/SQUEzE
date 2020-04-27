@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
     SQUEzE - Mini J-PAS
     ==============
