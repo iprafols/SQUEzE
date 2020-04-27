@@ -18,6 +18,7 @@ setup(name="squeze",
     packages=['squeze', 'squeze.tests'],
     package_dir = {'': 'py'},
     package_data = {},
+    test_suite ="squeze.tests",
     install_requires=['numpy','pandas','argparse','astropy'],
     extras_require={
         'train': ['sklearn'],
