@@ -11,21 +11,13 @@ import subprocess
 from squeze.common_functions import verboseprint as userprint
 from squeze.common_functions import deserialize, load_json
 
-try:
-    import sklearn
-    module_not_found = False
-except ModuleNotFoundError:
-    module_not_found = True
-
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-@unittest.skipIf(module_not_found, ("Skip training tests since sklearn was not"
-                                    "installed"))
-class TestTraining(unittest.TestCase):
+class TestCandidates(unittest.TestCase):
     """Test the training mode
 
-        CLASS: TestTraining
-        PURPOSE: Test training mode of squeze
+        CLASS: TestCandidates
+        PURPOSE: Test candidatse mode of squeze
         """
     def setUp(self):
         """ Check that the results folder exists and create it
@@ -33,11 +25,11 @@ class TestTraining(unittest.TestCase):
         if not os.path.exists("{}/results/".format(THIS_DIR)):
             os.makedirs("{}/results/".format(THIS_DIR))
 
-    def test_training(self):
+    def test_candidates(self):
         """ Run training on data from plate 7102 and compare the results
             from the stored candidates """
 
-        command = ["squeze_training.py",
+        command = ["squeze_candidates.py",
                    "--peakfind-width", "70",
                    "--peakfind-sig", "6",
                    "--z-precision", "0.15",
