@@ -24,7 +24,7 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 class TestTraining(unittest.TestCase):
     """Test the training mode
 
-        CLASS: TestPeakFinder
+        CLASS: TestTraining
         PURPOSE: Test training mode of squeze
         """
     def setUp(self):
