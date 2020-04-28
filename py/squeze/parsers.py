@@ -134,8 +134,7 @@ This TRAINING_PARSER contains the common options used to run SQUEzE in training 
 TRAINING_PARSER = argparse.ArgumentParser(add_help=False,
                                           parents=[PARENT_PARSER,
                                                    MODE_PARSER,
-                                                   PEAKFIND_PARSER,
-                                                   QUASAR_CATALOGUE_PARSER])
+                                                   PEAKFIND_PARSER])
 
 TRAINING_PARSER.add_argument("--z-precision", type=float, default=None, required=False,
                              help="""Maximum difference betwee the true redshift and the
