@@ -29,15 +29,20 @@ class TestCandidates(unittest.TestCase):
         """ Run training on data from plate 7102 and compare the results
             from the stored candidates """
 
-        command = ["squeze_candidates.py",
+        in_file = "{}/data/formatted_boss_test1.json".format(THIS_DIR)
+        out_file = "{}/results/candidates_boss_test1_nopred.json".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test1_nopred.json".format(THIS_DIR)
+
+        command = ["squeze_training.py",
                    "--peakfind-width", "70",
                    "--peakfind-sig", "6",
                    "--z-precision", "0.15",
                    "--output-candidates",
-                   "{}/results/candidates_width70_sig6_plate7102.json".format(THIS_DIR),
+                   out_file,
                    "--input-spectra",
-                   "{}/data/boss_dr12_spectra_plate7102.json".format(THIS_DIR),
+                   in_file,
                    ]
+        userprint("Running command: ", " ".join(command))
 
         with subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
                               universal_newlines=True) as process:
@@ -50,14 +55,12 @@ class TestCandidates(unittest.TestCase):
         self.assertTrue(os.path.isfile(THIS_DIR+
             "/results/candidates_width70_sig6_plate7102_model.json"))
 
-        orig_file = "data/candidates_width70_sig6_plate7102.json"
-        new_file = orig_file.replace("data/", "results/")
-        self.compare_data_frames(orig_file, new_file)
+        self.compare_data_frames(test_file, out_file)
 
     def compare_data_frames(self, orig_file, new_file):
         """ Compares two dataframes to check that they are equal """
-        orig_df = deserialize(load_json("{}/{}".format(THIS_DIR, orig_file)))
-        new_df = deserialize(load_json("{}/{}".format(THIS_DIR, orig_file)))
+        orig_df = deserialize(load_json(orig_file))
+        new_df = deserialize(load_json(new_file))
         self.assertTrue(orig_df.equals(new_df))
 
 if __name__ == '__main__':
