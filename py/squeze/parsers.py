@@ -189,7 +189,32 @@ TEST_PARSER.add_argument("--prob-cut", default=0.0, type=float,
                          be includedin the catalogue""")
 
 
+"""
+This CANDIDATES_PARSER contains the options used to run SQUEzE in candidates mode
+""" # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement
+CANDIDATES_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER,
+                                                                      MODE_PARSER,
+                                                                      PEAKFIND_PARSER])
 
+CANDIDATES_PARSER.add_argument("--model", required=False, type=str, default=None,
+                               help="""Name of the json file containing the model to be used
+                                   in the computation of the probabilities of candidates
+                                   being quasars. If this is passed, then the rest of the
+                                   options are ignored.""")
+
+CANDIDATES_PARSER.add_argument("--z-precision", type=float, default=None, required=False,
+                               help="""Maximum difference betwee the true redshift and the
+                                   measured redshift for a candidate to be considered a
+                                   true detection. This option only works on cuts of
+                                   type 'percentile'.""")
+
+CANDIDATES_PARSER.add_argument("--lines", type=str, default=None, required=False,
+                               help="""Name of the json file containing the lines ratios
+                                   to be computed.""")
+
+CANDIDATES_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, required=False,
+                               help="""Name of the lines that will be associated to the peaks
+                                   to estimate the redshift.""")
 
 """
 This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
