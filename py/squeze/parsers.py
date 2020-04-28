@@ -141,14 +141,6 @@ TRAINING_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, r
                              help="""Name of the lines that will be associated to the peaks
                              to estimate the redshift.""")
 
-TRAINING_PARSER.add_argument("--weighting-mode", type=str, default="weights", required=False,
-                             help="""Selects the weighting mode when computing the line ratios.
-                                 Can be 'weights' if ivar is to be used as weights when computing
-                                 the line ratios, 'flags' if ivar is to be used as flags when
-                                 computing the line ratios (pixels with 0 value will be ignored,
-                                 the rest will be averaged without weighting), or 'none' if weights
-                                 are to be ignored.""")
-
 """
 This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
 """ # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement

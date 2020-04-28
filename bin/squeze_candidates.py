@@ -73,14 +73,12 @@ def main():
     if args.output_candidates is None:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="candidates",
-                                weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_sig),
                                 model=None)
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="candidates",
                                 name=args.output_candidates,
-                                weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_sig),
                                 model=None)
 
