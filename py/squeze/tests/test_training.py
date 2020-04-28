@@ -42,7 +42,7 @@ class TestTraining(unittest.TestCase):
                    "--peakfind-sig", "6",
                    "--z-precision", "0.15",
                    "--output-candidates",
-                   "{}/results/candidates_width70_sig6_plate7102.json".format(THIS_DIR),
+                   "{}/results/candidates_width70_sig6_plate7102.fits.gz".format(THIS_DIR),
                    "--input-spectra",
                    "{}/data/boss_dr12_spectra_plate7102.json".format(THIS_DIR),
                    ]
