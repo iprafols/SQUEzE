@@ -184,7 +184,6 @@ class Model(object):
         header["Z_PREC"] = self.__settings.get("z_precision")
         header["PF_WIDTH"] = self.__settings.get("peakfind_width")
         header["PF_SIG"] = self.__settings.get("peakfind_sig")
-        header["W_MODE"] = self.__settings.get("weighting_mode")
         # now create the columns to store lines and try_lines.
         lines = self.__settings.get("lines")
         try_lines = self.__settings.get("try_lines")
@@ -495,7 +494,6 @@ class Model(object):
             "lines": lines,
             "try_lines": try_lines,
             "z_precision": hdul["SETTINGS"].header["Z_PREC"],
-            "weighting_mode": hdul["SETTINGS"].header["W_MODE"],
             "peakfind_width": hdul["SETTINGS"].header["PF_WIDTH"],
             "peakfind_sig": hdul["SETTINGS"].header["PF_SIG"],
         }

@@ -44,7 +44,7 @@ class Candidates(object):
     # 12 is reasonable in this case.
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.fits.gz",
-                 weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
+                 peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
                  model=None, model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
 
@@ -71,13 +71,6 @@ class Candidates(object):
             with the information of the database in a csv file with this name.
             If load is set to True, then the candidates sample will be loaded
             from this file. Recommended extension is fits.gz.
-
-            weighting_mode : string - Default: "weights"
-            Name of the weighting mode. Can be "weights" if ivar is to be used
-            as weights when computing the line ratios, "flags" if ivar is to
-            be used as flags when computing the line ratios (pixels with 0 value
-            will be ignored, the rest will be averaged without weighting), or
-            "none" if weights are to be ignored.
 
             model : Model or None  - Default: None
             Instance of the Model class defined in squeze_model or None.
@@ -112,7 +105,6 @@ class Candidates(object):
         self.__lines = lines_settings[0]
         self.__try_lines = lines_settings[1]
         self.__z_precision = z_precision
-        self.__weighting_mode = weighting_mode
 
         # options to be passed to the peak finder
         self.__peakfind_width = peakfind[0]
@@ -205,7 +197,6 @@ class Candidates(object):
         return {"lines": self.__lines,
                 "try_lines": self.__try_lines,
                 "z_precision": self.__z_precision,
-                "weighting_mode": self.__weighting_mode,
                 "peakfind_width": self.__peakfind_width,
                 "peakfind_sig": self.__peakfind_sig,
                }
@@ -414,7 +405,6 @@ class Candidates(object):
         self.__lines = settings.get("lines")
         self.__try_lines = settings.get("try_lines")
         self.__z_precision = settings.get("z_precision")
-        self.__weighting_mode = settings.get("weighting_mode")
         self.__peakfind_width = settings.get("peakfind_width")
         self.__peakfind_sig = settings.get("peakfind_sig")
 
@@ -739,7 +729,7 @@ class Candidates(object):
         # extra imports for this function
         import matplotlib.pyplot as plt
         from matplotlib import gridspec
-        
+
         # get the number of plots and the names of the columns
         plot_cols = np.array([item for item in self.__candidates.columns if "ratio" in item])
         num_ratios = plot_cols.size
