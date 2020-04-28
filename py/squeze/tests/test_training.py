@@ -13,12 +13,14 @@ from squeze.common_functions import deserialize, load_json
 
 try:
     import sklearn
+    module_not_found = False
 except ModuleNotFoundError:
-    raise unittest.SkipTest(("Skip training tests since sklearn was not"
-                             "installed"))
+    module_not_found = True
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+@unittest.skipIf(module_not_found, ("Skip training tests since sklearn was not"
+                                    "installed"))
 class TestTraining(unittest.TestCase):
     """Test the training mode
 
@@ -60,12 +62,12 @@ class TestTraining(unittest.TestCase):
 
         orig_file = "data/candidates_width70_sig6_plate7102.json"
         new_file = orig_file.replace("data/", "results/")
-        self.compare_data_frames(orig_file, new_file)
+        self.compare_results(orig_file, new_file)
 
     def compare_results(self, orig_file, new_file):
         """ Compares two dataframes to check that they are equal """
-        orig_df = deserialize(load_json(THIS_DIR + orig_file))
-        new_df = deserialize(load_json(THIS_DIR + new_file))
+        orig_df = deserialize(load_json("{}/{}".format(THIS_DIR, orig_file)))
+        new_df = deserialize(load_json("{}/{}".format(THIS_DIR, orig_file)))
         self.assertTrue(orig_df.equals(new_df))
 
 if __name__ == '__main__':
