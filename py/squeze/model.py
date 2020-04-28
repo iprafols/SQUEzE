@@ -195,31 +195,31 @@ class Model(object):
                         ),
             fits.Column(name="LINE_WAVE",
                         array=lines["wave"],
-                        format="E",
+                        format="D",
                         ),
             fits.Column(name="LINE_START",
                         array=lines["start"],
-                        format="E",
+                        format="D",
                         ),
             fits.Column(name="LINE_END",
                         array=lines["end"],
-                        format="E",
+                        format="D",
                         ),
             fits.Column(name="LINE_BLUE_START",
                         array=lines["blue_start"],
-                        format="E",
+                        format="D",
                         ),
             fits.Column(name="LINE_BLUE_END",
                         array=lines["blue_end"],
-                        format="E",
+                        format="D",
                         ),
             fits.Column(name="LINE_RED_START",
                         array=lines["red_start"],
-                        format="E",
+                        format="D",
                         ),
             fits.Column(name="LINE_RED_END",
                         array=lines["red_end"],
-                        format="E",
+                        format="D",
                         ),
             # try lines is stored as an array of booleans
             # (True if the value in LINES_NAME is in try_lines, and
@@ -288,7 +288,7 @@ class Model(object):
             header["N_CAT"] = classifier.num_categories()
             cols = [fits.Column(name="CLASSES",
                         array=classifier.classes_,
-                        format="I",
+                        format="D",
                         ),]
 
             # create HDU
@@ -463,6 +463,8 @@ class Model(object):
         hdul = fits.open(filename)
 
         name = filename.replace("fits.gz", "json")
+
+        # load lines
         selected_cols = [sel_col.strip()
                          for sel_col in hdul["SETTINGS"].data["SELECTED_COLS"]]
 
@@ -474,30 +476,29 @@ class Model(object):
                 "LINE_BLUE_END": "blue_end",
                 "LINE_RED_START": "red_start",
                 "LINE_RED_END":  "red_end",}
-        dtypes = [str, float, float, float, float, float, float, float]
+        dtypes = [str, np.float64, np.float64, np.float64, np.float64,
+                  np.float64, np.float64, np.float64]
         pos = np.where(hdul["SETTINGS"].data["LINE_NAME"] != "")
         dat = {col: hdul["SETTINGS"].data[col][pos].astype(dtype)
                for col, dtype in zip(cols, dtypes)}
         lines = pd.DataFrame(dat)
         lines = lines.rename(columns=cols).set_index("line")
 
-        # load settings used to find the candidates
-        settings = {
-            "z_precision": hdul["SETTINGS"].header["Z_PREC"],
-            "peakfind_width": hdul["SETTINGS"].header["PF_WIDTH"],
-            "peakfind_sig": hdul["SETTINGS"].header["PF_SIG"],
-            "weighting_mode": hdul["SETTINGS"].header["W_MODE"],
-        }
-
-        # add try_lines
+        # load try_lines
         pos = np.where((hdul["SETTINGS"].data["TRY_LINES"]) &
                        (hdul["SETTINGS"].data["LINE_NAME"] != ""))
         try_lines = hdul["SETTINGS"].data["LINE_NAME"][pos]
         try_lines = [try_line.strip() for try_line in try_lines]
-        settings["try_lines"] = try_lines
 
-        # add lines
-        settings["lines"] = lines
+        # load settings used to find the candidates
+        settings = {
+            "lines": lines,
+            "try_lines": try_lines,
+            "z_precision": hdul["SETTINGS"].header["Z_PREC"],
+            "weighting_mode": hdul["SETTINGS"].header["W_MODE"],
+            "peakfind_width": hdul["SETTINGS"].header["PF_WIDTH"],
+            "peakfind_sig": hdul["SETTINGS"].header["PF_SIG"],
+        }
 
         # now load model options
         # cas 1: highlow_split
@@ -540,18 +541,18 @@ class Model(object):
             cls_instance.set_clf_high(RandomForestClassifier.from_fits_hdul(
                 hdul, "high", hdul["HIGHINFO"].header["N_TREES"],
                 hdul["HIGHINFO"].header["N_CAT"],
-                hdul["HIGHINFO"].data["CLASSES"],
+                hdul["HIGHINFO"].data["CLASSES"].astype(np.float64),
                 args=model_opt[0].get("high")))
             cls_instance.set_clf_low(RandomForestClassifier.from_fits_hdul(
                 hdul, "low", hdul["LOWINFO"].header["N_TREES"],
                 hdul["LOWINFO"].header["N_CAT"],
-                hdul["LOWINFO"].data["CLASSES"],
+                hdul["LOWINFO"].data["CLASSES"].astype(np.float64),
                 args=model_opt[0].get("low")))
         else:
             cls_instance.set_clf(RandomForestClassifier.from_fits_hdul(
                 hdul, "all", hdul["ALLINFO"].header["N_TREES"],
                 hdul["ALLINFO"].header["N_CAT"],
-                hdul["ALLINFO"].data["CLASSES"],
+                hdul["ALLINFO"].data["CLASSES"].astype(np.float64),
                 args=model_opt[0]))
 
         hdul.close()

@@ -237,11 +237,12 @@ class RandomForestClassifier(object):
 
         hdus = [hdul["{}{}".format(name_prefix, index)]
                 for index in range(num_trees)]
-        trees = [{"children_left": hdu.data["children_left"],
-                  "children_right": hdu.data["children_right"],
-                  "feature": hdu.data["feature"],
-                  "threshold": hdu.data["threshold"],
-                  "proba": hdu.data["proba"],
+        trees = [{"children_left": hdu.data["children_left"].astype(np.int64),
+                  "children_right": hdu.data["children_right"].astype(np.int64),
+                  "feature": hdu.data["feature"].astype(np.int64),
+                  "threshold": hdu.data["threshold"].astype(np.float64),
+                  "proba": hdu.data["proba"].astype(np.float64).reshape(
+                    (hdu.data["proba"].shape[0], 1, hdu.data["proba"].shape[1])),
                 } for hdu in hdus]
         cls_instance.set_trees(trees)
 
@@ -290,8 +291,8 @@ class RandomForestClassifier(object):
                 for field, type in [("children_left", "I"),
                                     ("children_right", "I"),
                                     ("feature", "I"),
-                                    ("threshold", "I"),
-                                    ("proba", "{}E".format(self.__num_categories))]
+                                    ("threshold", "D"),
+                                    ("proba", "{}D".format(self.__num_categories))]
                 ]
 
         # create HDU and return
