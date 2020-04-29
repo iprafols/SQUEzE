@@ -183,11 +183,6 @@ TEST_PARSER.add_argument("--check-probs", nargs='+', default=None, required=Fals
                              is not passed. If it is not passed and --check-statistics
                              is then np.arange(0.9, 0.0, -0.05)""")
 
-TEST_PARSER.add_argument("--prob-cut", default=0.0, type=float,
-                         help="""Only objects with probability > PROB_CUT will
-                         be includedin the catalogue""")
-
-
 """
 This CANDIDATES_PARSER contains the options used to run SQUEzE in candidates mode
 """ # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement
@@ -214,21 +209,6 @@ CANDIDATES_PARSER.add_argument("--lines", type=str, default=None, required=False
 CANDIDATES_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, required=False,
                                help="""Name of the lines that will be associated to the peaks
                                    to estimate the redshift.""")
-
-"""
-This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
-""" # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement
-OPERATION_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER,
-                                                                    MODE_PARSER])
-
-OPERATION_PARSER.add_argument("--prob-cut", default=0.0, type=float,
-                              help="""Only objects with probability > PROB_CUT will be included
-                                  in the catalogue""")
-
-OPERATION_PARSER.add_argument("--model", required=True, type=str,
-                              help="""[REQUIRED] Name of the json file containing the model to be used
-                                  in the computation of the probabilities of candidates
-                                  being quasars""")
 
 """
 This MERGING_PARSER contains the options used to run SQUEzE in merging mode
