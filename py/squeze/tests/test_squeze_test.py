@@ -13,10 +13,10 @@ from squeze.common_functions import deserialize, load_json
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class TestSquezeCandidates(AbstractTest):
-    """Test the training mode
+    """Test the test mode
 
         CLASS: TestSquezeCandidates
-        PURPOSE: Test candidatse mode of squeze
+        PURPOSE: Test test mode of squeze
         """
     def test_squeze_test_nostats(self):
         """ Run squeze_test.py wihtout computing stastics"""
