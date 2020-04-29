@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
     SQUEzE
     ======
@@ -52,8 +53,8 @@ def main():
                  "red_start", "red_end"]
         ).set_index("line")
 
-    # save them as a csv file to be used by SQUEzE
-    save_json("lines.csv", lines)
+    # save them as a json file to be used by SQUEzE
+    save_json("lines.json", lines)
 
 if __name__ == '__main__':
     main()

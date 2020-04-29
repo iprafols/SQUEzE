@@ -15,16 +15,12 @@ import pandas as pd
 
 import astropy.io.fits as fits
 
-import matplotlib.pyplot as plt
-from matplotlib import gridspec
-
 from squeze.common_functions import verboseprint
 from squeze.common_functions import save_json, load_json
 from squeze.common_functions import deserialize
 from squeze.error import Error
 from squeze.model import Model
 from squeze.peak_finder import PeakFinder
-from squeze.defaults import CUTS
 from squeze.defaults import LINES
 from squeze.defaults import TRY_LINES
 from squeze.defaults import RANDOM_FOREST_OPTIONS
@@ -49,7 +45,7 @@ class Candidates(object):
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.json",
                  weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
-                 model=(None, CUTS), model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
+                 model=None, model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
 
             Parameters
@@ -65,7 +61,8 @@ class Candidates(object):
             of Delta_z is lower or equal than z_precision. Ignored if mode is
             "operation". This will be overloaded if model is not None.
 
-            mode : "training", "test", "operation", or "merge" - Default: "operation"
+            mode : "training", "test", "operation", "candidates", or "merge"
+            - Default: "operation"
             Running mode. "training" mode assumes that true redshifts are known
             and provide a series of functions to train the model.
 
@@ -73,7 +70,7 @@ class Candidates(object):
             Name of the candidates sample. The code will save an python-binary
             with the information of the database in a csv file with this name.
             If load is set to True, then the candidates sample will be loaded
-            from this file. Recommended extension is csv.
+            from this file. Recommended extension is json.
 
             weighting_mode : string - Default: "weights"
             Name of the weighting mode. Can be "weights" if ivar is to be used
@@ -82,16 +79,12 @@ class Candidates(object):
             will be ignored, the rest will be averaged without weighting), or
             "none" if weights are to be ignored.
 
-            model : (Model or None, tuple)  - Default: (None, CUTS)
-            First item is the instance of the Model class defined in
-            squeze_model or None. In test and operation mode, it is supposed
+            model : Model or None  - Default: None
+            Instance of the Model class defined in squeze_model or None.
+            In test and operation mode, it is supposed
             to be the quasar model to construct the catalogue. In training mode,
             it is supposed to be None initially, and the model will be trained
             and given as an output of the code.
-            Second item are the hard-code cuts. In training mode they will be
-            added to the model and trained using contaminants. These cuts will
-            fix the probability of some of the candidates to 1. In testing and
-            operation mode this will be ignored.
 
             model_opt : (dict, int) - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
             The first dictionary sets the options to be passed to the random forest
@@ -101,7 +94,10 @@ class Candidates(object):
             of the classifiers. In training mode, they're passed to the model
             instance before training. Otherwise it's ignored.
             """
-        self.__mode = mode
+        if mode in ["training", "test", "operation", "candidates", "merge"]:
+            self.__mode = mode
+        else:
+            raise Error("Invalid mode")
         self.__name = name
 
         self.__candidates = None # initialize empty catalogue
@@ -117,11 +113,10 @@ class Candidates(object):
         self.__peakfind_sig = peakfind[1]
 
         # model
-        if model[0] is None:
+        if model is None:
             self.__model = None
-            self.__cuts = model[1]
         else:
-            self.__model = model[0]
+            self.__model = model
             self.__load_model_settings()
         self.__model_opt = model_opt
 
@@ -154,12 +149,12 @@ class Candidates(object):
         ivar = spectrum.ivar()
 
         # compute intervals
-        pix_peak = np.where((wave >= (1.0+z_try)*self.__lines.ix[index]["start"])
-                            & (wave <= (1.0+z_try)*self.__lines.ix[index]["end"]))[0]
-        pix_blue = np.where((wave >= (1.0+z_try)*self.__lines.ix[index]["blue_start"])
-                            & (wave <= (1.0+z_try)*self.__lines.ix[index]["blue_end"]))[0]
-        pix_red = np.where((wave >= (1.0+z_try)*self.__lines.ix[index]["red_start"])
-                           & (wave <= (1.0+z_try)*self.__lines.ix[index]["red_end"]))[0]
+        pix_peak = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["start"])
+                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["end"]))[0]
+        pix_blue = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["blue_start"])
+                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["blue_end"]))[0]
+        pix_red = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["red_start"])
+                           & (wave <= (1.0+z_try)*self.__lines.iloc[index]["red_end"]))[0]
 
         # compute peak and continuum values
         compute_ratio = True
@@ -385,16 +380,18 @@ class Candidates(object):
 
         columns_candidates = spectrum.metadata_names()
         for i in range(self.__lines.shape[0]):
-            columns_candidates.append("{}_ratio".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_ratio_SN".format(self.__lines.ix[i].name))
-            columns_candidates.append("{}_ratio2".format(self.__lines.ix[i].name))
+            columns_candidates.append("{}_ratio".format(self.__lines.iloc[i].name))
+            columns_candidates.append("{}_ratio_SN".format(self.__lines.iloc[i].name))
+            columns_candidates.append("{}_ratio2".format(self.__lines.iloc[i].name))
         columns_candidates.append("z_try")
         columns_candidates.append("peak_significance")
         columns_candidates.append("assumed_line")
         candidates_df = pd.DataFrame(candidates, columns=columns_candidates)
 
         # add truth table if running in training or test modes
-        if self.__mode in ["training", "test"]:
+        if (self.__mode in ["training", "test"] or
+            (self.__mode == "candidates" and
+            "z_true" in candidates_df.columns)):
             candidates_df["Delta_z"] = candidates_df["z_try"] - candidates_df["z_true"]
             if candidates_df.shape[0] > 0:
                 candidates_df["is_correct"] = candidates_df.apply(self.__is_correct, axis=1)
@@ -417,7 +414,7 @@ class Candidates(object):
         self.__peakfind_width = settings.get("peakfind_width")
         self.__peakfind_sig = settings.get("peakfind_sig")
 
-    def __save_candidates(self):
+    def save_candidates(self):
         """ Save the candidates DataFrame. """
         save_json(self.__name, self.__candidates)
 
@@ -428,6 +425,22 @@ class Candidates(object):
     def lines(self):
         """ Access the lines DataFrame. """
         return self.__lines
+
+    def set_mode(self, mode):
+        """ Allow user to change the running mode
+
+        Parameters
+        ----------
+        mode : "training", "test", "operation", or "merge" - Default: "operation"
+        Running mode. "training" mode assumes that true redshifts are known
+        and provide a series of functions to train the model.
+        """
+        if mode in ["training", "test", "operation", "merge"]:
+            self.__mode = mode
+        else:
+            raise Error("Invalid mode")
+
+        return
 
     def classify_candidates(self):
         """ Create a model instance and train it. Save the resulting model"""
@@ -440,7 +453,7 @@ class Candidates(object):
                          "but no candidates were found/loaded. Check your " +
                          "formatter")
         self.__candidates = self.__model.compute_probability(self.__candidates)
-        self.__save_candidates()
+        self.save_candidates()
 
     def find_candidates(self, spectra):
         """ Find candidates for a given set of spectra, then integrate them in the
@@ -466,7 +479,7 @@ class Candidates(object):
                 self.__candidates = self.__candidates.append(candidates_df, ignore_index=True)
 
         # save the new version of the catalogue
-        self.__save_candidates()
+        self.save_candidates()
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None,
                                  get_results=False, userprint=verboseprint):
@@ -520,14 +533,14 @@ class Candidates(object):
         num_quasars_zge1 = quasars_data_frame[quasars_data_frame["z_true"] >= 1.0].shape[0]
         num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["z_true"] >= 2.1].shape[0]
         for index in np.arange(num_quasars):
-            specid = quasars_data_frame.ix[quasars_data_frame.index[index]]["specid"]
+            specid = quasars_data_frame.iloc[quasars_data_frame.index[index]]["specid"]
             if data_frame[(data_frame["specid"] == specid) &
                           (data_frame["is_correct"])].shape[0] > 0:
                 found_quasars += 1
-                if quasars_data_frame.ix[quasars_data_frame.index[index]]["z_true"] >= 2.1:
+                if quasars_data_frame.iloc[quasars_data_frame.index[index]]["z_true"] >= 2.1:
                     found_quasars_zge2_1 += 1
                     found_quasars_zge1 += 1
-                elif quasars_data_frame.ix[quasars_data_frame.index[index]]["z_true"] >= 1:
+                elif quasars_data_frame.iloc[quasars_data_frame.index[index]]["z_true"] >= 1:
                     found_quasars_zge1 += 1
         if float(num_quasars) > 0.0:
             completeness = float(found_quasars)/float(num_quasars)
@@ -594,27 +607,41 @@ class Candidates(object):
             json_dict = load_json(filename)
         self.__candidates = deserialize(json_dict)
 
-    def merge(self, others_list):
+    def merge(self, others_list, userprint=verboseprint, save=True):
         """
             Merge self.__candidates with another candidates object
 
             Parameters
             ----------
-            other : pd.DataFrame
+            others_list : pd.DataFrame
             The other candidates object to merge
+
+            userprint : function - Default: verboseprint
+            Print function to use
+
+            save : bool - Defaut: True
+            If True, save candidates before exiting
             """
         if self.__mode != "merge":
             raise  Error("The function merge is available in the " +
                          "merge mode only. Detected mode is {}".format(self.__mode))
 
-        for candidates_filename in others_list:
-            # load candidates
-            other = deserialize(load_json(candidates_filename))
+        for index, candidates_filename in enumerate(others_list):
+            userprint("Merging... {} of {}".format(index, len(others_list)))
 
-            # append to candidates list
-            self.__candidates = self.__candidates.append(other, ignore_index=True)
+            try:
+                # load candidates
+                other = deserialize(load_json(candidates_filename))
 
-        self.__save_candidates()
+                # append to candidates list
+                self.__candidates = self.__candidates.append(other, ignore_index=True)
+
+            except TypeError:
+                userprint("Error occured when loading file {}.".format(candidates_filename))
+                userprint("Ignoring file")
+
+        if save:
+            self.save_candidates()
 
     def plot_histograms(self, plot_col, normed=True):
         """
@@ -634,6 +661,10 @@ class Candidates(object):
             -------
             The figure object
             """
+        # extra imports for this function
+        import matplotlib.pyplot as plt
+        from matplotlib import gridspec
+
         # plot settings
         fontsize = 20
         labelsize = 18
@@ -686,6 +717,10 @@ class Candidates(object):
             -------
             The figure object
             """
+        # extra imports for this function
+        import matplotlib.pyplot as plt
+        from matplotlib import gridspec
+
         # get the number of plots and the names of the columns
         plot_cols = np.array([item for item in self.__candidates.columns if "ratio" in item])
         num_ratios = plot_cols.size
@@ -744,12 +779,11 @@ class Candidates(object):
 
         self.__model = Model("{}_model.json".format(self.__name[:self.__name.rfind(".")]),
                              selected_cols, self.__get_settings(),
-                             model_opt=self.__model_opt,
-                             cuts=self.__cuts)
+                             model_opt=self.__model_opt)
         self.__model.train(self.__candidates)
         self.__model.save_model()
 
-    def to_fits(self, filename, data_frame=None):
+    def to_fits(self, filename=None, data_frame=None):
         """Save the DataFrame as a fits file. String columns with length greater than 15
             characters might be truncated
 
@@ -765,7 +799,7 @@ class Candidates(object):
             data_frame = self.__candidates
 
         if filename is None:
-            filename = self.__name.replace("json", "fits")
+            filename = self.__name.replace("json", "fits.gz")
 
         def convert_dtype(dtype):
              if dtype == "O":

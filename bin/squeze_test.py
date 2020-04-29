@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # pylint: disable=duplicate-code
 """
     SQUEzE
@@ -19,7 +20,6 @@ from squeze.quasar_catalogue import QuasarCatalogue
 from squeze.model import Model
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
-from squeze.defaults import CUTS
 from squeze.parsers import TEST_PARSER
 
 
@@ -33,23 +33,24 @@ def main():
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
 
-    # load quasar catalogue
-    userprint("Loading quasar catalogue")
-    if args.qso_dataframe is not None:
-        if ((args.qso_cat is not None) or (args.qso_cols is not None) or
-                (args.qso_specid is not None) or (args.qso_ztrue is not None)):
-            parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
-                         "are incompatible with --qso-dataframe")
-        quasar_catalogue = deserialize(load_json(args.qso_dataframe))
-        quasar_catalogue["loaded"] = True
-    else:
-        if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
-            parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
-                         "required if --qso-dataframe is not passed")
-        quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
-                                           args.qso_specid, args.qso_ztrue,
-                                           args.qso_hdu).quasar_catalogue()
-        quasar_catalogue["loaded"] = False
+    # load quasar catalogue (only if --check-statistics is passed)
+    if args.check_statistics:
+        userprint("Loading quasar catalogue")
+        if args.qso_dataframe is not None:
+            if ((args.qso_cat is not None) or (args.qso_specid is not None)
+                    or (args.qso_ztrue is not None)):
+                parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
+                             "are incompatible with --qso-dataframe")
+            quasar_catalogue = deserialize(load_json(args.qso_dataframe))
+            quasar_catalogue["loaded"] = True
+        else:
+            if (args.qso_cat is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
+                parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
+                             "required if --qso-dataframe is not passed")
+            quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
+                                               args.qso_specid, args.qso_ztrue,
+                                               args.qso_hdu).quasar_catalogue()
+            quasar_catalogue["loaded"] = False
 
     # load model
     userprint("Loading model")
@@ -58,10 +59,10 @@ def main():
     # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
-        candidates = Candidates(mode="test", model=(model, CUTS))
+        candidates = Candidates(mode="test", model=model)
     else:
         candidates = Candidates(mode="test", name=args.output_candidates,
-                                model=(model, CUTS))
+                                model=model)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
@@ -80,12 +81,13 @@ def main():
                 raise Error("Invalid list of spectra")
 
             # flag loaded quasars as such
-            for spec in spectra.spectra_list():
-                if quasar_catalogue[
-                        quasar_catalogue["specid"] == spec.metadata_by_key("specid")].shape[0] > 0:
-                    index = quasar_catalogue.index[
-                        quasar_catalogue["specid"] == spec.metadata_by_key("specid")].tolist()[0]
-                    quasar_catalogue.at[index, "loaded"] = True
+            if args.check_statistics:
+                for spec in spectra.spectra_list():
+                    if quasar_catalogue[
+                            quasar_catalogue["specid"] == spec.metadata_by_key("specid")].shape[0] > 0:
+                        index = quasar_catalogue.index[
+                            quasar_catalogue["specid"] == spec.metadata_by_key("specid")].tolist()[0]
+                        quasar_catalogue.at[index, "loaded"] = True
 
             # look for candidates
             userprint("Looking for candidates")
@@ -102,11 +104,11 @@ def main():
         data_frame = candidates.candidates()
         userprint("\n---------------")
         userprint("step 1")
-        candidates.find_completeness_purity(quasar_catalogue, data_frame)
+        candidates.find_completeness_purity(quasar_catalogue.reset_index(), data_frame)
         for prob in probs:
             userprint("\n---------------")
             userprint("proba > {}".format(prob))
-            candidates.find_completeness_purity(quasar_catalogue,
+            candidates.find_completeness_purity(quasar_catalogue.reset_index(),
                                                 data_frame[(data_frame["prob"] > prob) &
                                                            ~(data_frame["duplicated"]) &
                                                            (data_frame["z_conf_person"] == 3)],
@@ -118,6 +120,8 @@ def main():
         found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
                                           (found_catalogue["prob"] > args.prob_cut)]
         candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
+
+    userprint("Done")
 
 if __name__ == '__main__':
     main()
