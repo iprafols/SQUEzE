@@ -389,7 +389,9 @@ class Candidates(object):
         candidates_df = pd.DataFrame(candidates, columns=columns_candidates)
 
         # add truth table if running in training or test modes
-        if self.__mode in ["training", "test"]:
+        if (self.__mode in ["training", "test"] or
+            (self.__mode == "candidates" and
+            "z_true" in candidates_df.columns)):
             candidates_df["Delta_z"] = candidates_df["z_try"] - candidates_df["z_true"]
             if candidates_df.shape[0] > 0:
                 candidates_df["is_correct"] = candidates_df.apply(self.__is_correct, axis=1)
@@ -439,7 +441,6 @@ class Candidates(object):
             raise Error("Invalid mode")
 
         return
-
 
     def classify_candidates(self):
         """ Create a model instance and train it. Save the resulting model"""
@@ -719,7 +720,7 @@ class Candidates(object):
         # extra imports for this function
         import matplotlib.pyplot as plt
         from matplotlib import gridspec
-        
+
         # get the number of plots and the names of the columns
         plot_cols = np.array([item for item in self.__candidates.columns if "ratio" in item])
         num_ratios = plot_cols.size
