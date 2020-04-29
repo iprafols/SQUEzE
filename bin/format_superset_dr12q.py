@@ -128,7 +128,7 @@ def main():
             parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
                          "are incompatible with --qso-dataframe")
         quasar_catalogue = deserialize(load_json(args.qso_dataframe))
-        quasar_catalogue["loaded"] = True
+        quasar_catalogue["LOADED"] = True
     else:
         if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
             parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
@@ -136,11 +136,11 @@ def main():
         quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
                                            args.qso_specid, args.qso_ztrue,
                                            args.qso_hdu).quasar_catalogue()
-        quasar_catalogue["loaded"] = False
+        quasar_catalogue["LOADED"] = False
 
     # make sure that quasar catalogue contains a column called class_person
-    if "class_person" not in quasar_catalogue.columns:
-        raise  Error("Quasar catalogue does not contain the column 'class_person'" +
+    if "CLASS_PERSON" not in quasar_catalogue.columns:
+        raise  Error("Quasar catalogue does not contain the column 'CLASS_PERSON'" +
                      "Please add it using --qso-cols or on the dataframe if you load" +
                      "it using --qso-dataframe")
 
@@ -162,11 +162,11 @@ def main():
         folder = "{}{:04d}/".format(args.input_folder, plate)
 
         # loop over spectra
-        for index in quasar_catalogue[quasar_catalogue["plate"] == plate].index:
+        for index in quasar_catalogue[quasar_catalogue["PLATE"] == plate].index:
             entry = quasar_catalogue.loc[index]
-            z_conf_person = entry["z_conf_person"]
-            boss_target1 = entry["boss_target1"].astype(int)
-            eboss_target0 = entry["eboss_target0"].astype(int)
+            z_conf_person = entry["Z_CONF_PERSON"]
+            boss_target1 = entry["BOSS_TARGET1"].astype(int)
+            eboss_target0 = entry["EBOSS_TARGET0"].astype(int)
             if args.confident_only:
                 if (z_conf_person != 3):
                     continue
@@ -207,8 +207,8 @@ def main():
             for column in quasar_catalogue.columns:
                 metadata[column] = entry[column]
             spectrum_file = "spec-{:04d}-{:05d}-{:04d}.fits".format(plate,
-                                                                    entry["mjd"].astype(int),
-                                                                    entry["fiberid"].astype(int))
+                                                                    entry["MJD"].astype(int),
+                                                                    entry["FIBERID"].astype(int))
 
 
             # add spectra to list

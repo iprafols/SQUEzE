@@ -89,10 +89,8 @@ def main():
 
 
         # prepare metadata
-        metadata = {}
-        for column in args.keep_cols:
-            metadata[column] = row[column]
-        metadata["specid"] = int("{}{}".format(row["FLambdaDualObj.TILE_ID"],
+        metadata = {col.upper(): row[col] for col in args.keep_cols}
+        metadata["SPECID"] = int("{}{}".format(row["FLambdaDualObj.TILE_ID"],
                                                row["FLambdaDualObj.NUMBER"]))
 
         # format spectrum

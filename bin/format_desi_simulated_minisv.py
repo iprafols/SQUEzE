@@ -70,9 +70,9 @@ def main():
         pos = np.where(desi_spectra.fibermap["TARGETID"] == targid)
 
         # prepare metadata
-        metadata = {"targetid": targid,
-                    "specid": targid,
-                    "sv1_desi_target": desi_spectra.fibermap["SV1_DESI_TARGET"][pos[0][0]] }
+        metadata = {"TARGETID": targid,
+                    "SPECID": targid,
+                    "SV1_DESI_TARGET": desi_spectra.fibermap["SV1_DESI_TARGET"][pos[0][0]] }
 
         # Extract-2 data
         flux = {}

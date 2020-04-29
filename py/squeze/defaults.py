@@ -51,10 +51,10 @@ LINES = pd.DataFrame(
         ("oiii", 5008.24, 4990.0, 5020.0, 4700.0, 4770.0, 5030.0, 5105.0),
         ("ha", 6564.61, 6480.0, 6650.0, 6320.0, 6460.0, 6750.0, 6850.0),
         ],
-    columns=["line", "wave", "start", "end",
-             "blue_start", "blue_end",
-             "red_start", "red_end"]
-    ).set_index("line")
+    columns=["LINE", "WAVE", "START", "END",
+             "BLUE_START", "BLUE_END",
+             "RED_START", "RED_END"]
+    ).set_index("LINE")
 
 """
 Name of the json and log file (without extension) where the
@@ -65,7 +65,7 @@ TRY_LINES = ["lya", "civ", "ciii", "mgii", "hb", "ha"]
 """
 This variable sets the redshift precision with which the code will assume
 a candidate has the correct redshift. The truth table will be constructed
-such that any candidates with z_try = z_true +/- Z_PRECISION
+such that any candidates with Z_TRY = Z_TRUE +/- Z_PRECISION
 will be considered as a true quasar.
 This will be ignored in operation mode.
 """ # description of Z_PRECISION ... pylint: disable=pointless-string-statement

@@ -149,12 +149,12 @@ class Candidates(object):
         ivar = spectrum.ivar()
 
         # compute intervals
-        pix_peak = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["start"])
-                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["end"]))[0]
-        pix_blue = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["blue_start"])
-                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["blue_end"]))[0]
-        pix_red = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["red_start"])
-                           & (wave <= (1.0+z_try)*self.__lines.iloc[index]["red_end"]))[0]
+        pix_peak = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["START"])
+                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["END"]))[0]
+        pix_blue = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["BLUE_START"])
+                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["BLUE_END"]))[0]
+        pix_red = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["RED_START"])
+                           & (wave <= (1.0+z_try)*self.__lines.iloc[index]["RED_END"]))[0]
 
         # compute peak and continuum values
         compute_ratio = True
@@ -196,12 +196,12 @@ class Candidates(object):
 
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """
-        return {"lines": self.__lines,
-                "try_lines": self.__try_lines,
-                "z_precision": self.__z_precision,
-                "weighting_mode": self.__weighting_mode,
-                "peakfind_width": self.__peakfind_width,
-                "peakfind_sig": self.__peakfind_sig,
+        return {"LINES": self.__lines,
+                "TRY_LINES": self.__try_lines,
+                "Z_PRECISION": self.__z_precision,
+                "WEIGHTING_MODE": self.__weighting_mode,
+                "PEAKFIND_WIDTH": self.__peakfind_width,
+                "PEAKFIND_SIG": self.__peakfind_sig,
                }
 
     def __is_correct(self, row):
@@ -220,9 +220,9 @@ class Candidates(object):
             -------
             True if a candidate is a true quasar and False otherwise
             """
-        return bool((row["Delta_z"] <= self.__z_precision)
-                    and row["Delta_z"] >= -self.__z_precision
-                    and (np.isin(row["class_person"], [3, 30])))
+        return bool((row["DELTA_Z"] <= self.__z_precision)
+                    and row["DELTA_Z"] >= -self.__z_precision
+                    and (np.isin(row["CLASS_PERSON"], [3, 30])))
 
     def __is_correct_redshift(self, row):
         """ Returns True if a candidate has a correct redshift and False otherwise.
@@ -242,9 +242,9 @@ class Candidates(object):
             True if a candidate is a true quasar and False otherwise
             """
         correct_redshift = False
-        if row["class_person"] != 1:
-            correct_redshift = bool((row["Delta_z"] <= self.__z_precision)
-                                   and (row["Delta_z"] >= -self.__z_precision))
+        if row["CLASS_PERSON"] != 1:
+            correct_redshift = bool((row["DELTA_Z"] <= self.__z_precision)
+                                   and (row["DELTA_Z"] >= -self.__z_precision))
         return correct_redshift
 
     def __is_line(self, row):
@@ -266,22 +266,22 @@ class Candidates(object):
             """
         is_line = False
         # correct identification
-        if row["is_correct"]:
+        if row["IS_CORRECT"]:
             is_line = True
         # not a quasar
-        elif not np.isin(row["class_person"], [3, 30]):
+        elif not np.isin(row["CLASS_PERSON"], [3, 30]):
             pass
         # not a peak
-        elif row["assumed_line"] == "none":
+        elif row["ASSUMED_LINE"] == "none":
             pass
         else:
             for line in self.__lines.index:
-                if line == row["assumed_line"]:
+                if line == row["ASSUMED_LINE"]:
                     continue
-                z_try_line = (self.__lines["wave"][row["assumed_line"]]/
-                              self.__lines["wave"][line])*(1 + row["z_try"]) - 1
-                if ((z_try_line - row["z_true"] <= self.__z_precision) and
-                        (z_try_line - row["z_true"] >= -self.__z_precision)):
+                z_try_line = (self.__lines["WAVE"][row["ASSUMED_LINE"]]/
+                              self.__lines["WAVE"][line])*(1 + row["Z_TRY"]) - 1
+                if ((z_try_line - row["Z_TRUE"] <= self.__z_precision) and
+                        (z_try_line - row["Z_TRUE"] >= -self.__z_precision)):
                     is_line = True
         return is_line
 
@@ -315,13 +315,13 @@ class Candidates(object):
                         "{ivar_size}, and {wave_size}.".format(wave_size=spectrum.wave().size,
                                                                ivar_size=spectrum.ivar().size))
 
-        if self.__mode == "training" and "z_true" not in spectrum.metadata_names():
+        if self.__mode == "training" and "Z_TRUE" not in spectrum.metadata_names():
             raise Error("Mode is set to 'training', but spectrum have does not " +
-                        "have the property 'z_true'.")
+                        "have the property 'Z_TRUE'.")
 
-        if self.__mode == "test" and "z_true" not in spectrum.metadata_names():
+        if self.__mode == "test" and "Z_TRUE" not in spectrum.metadata_names():
             raise Error("Mode is set to 'test', but spectrum have does not " +
-                        "have the property 'z_true'.")
+                        "have the property 'Z_TRUE'.")
 
         if self.__mode == "merge":
             raise Error("Mode 'merge' is not valid for function __find_candidates.")
@@ -355,7 +355,7 @@ class Candidates(object):
             for peak_index, significance in zip(peak_indexs, significances):
                 for try_line in self.__try_lines:
                     # compute redshift
-                    z_try = spectrum.wave()[peak_index]/self.__lines["wave"][try_line] - 1.0
+                    z_try = spectrum.wave()[peak_index]/self.__lines["WAVE"][try_line] - 1.0
                     if z_try < 0.0:
                         continue
 
@@ -380,39 +380,39 @@ class Candidates(object):
 
         columns_candidates = spectrum.metadata_names()
         for i in range(self.__lines.shape[0]):
-            columns_candidates.append("{}_ratio".format(self.__lines.iloc[i].name))
-            columns_candidates.append("{}_ratio_SN".format(self.__lines.iloc[i].name))
-            columns_candidates.append("{}_ratio2".format(self.__lines.iloc[i].name))
-        columns_candidates.append("z_try")
-        columns_candidates.append("peak_significance")
-        columns_candidates.append("assumed_line")
+            columns_candidates.append("{}_RATIO".format(self.__lines.iloc[i].name.upper()))
+            columns_candidates.append("{}_RATIO_SN".format(self.__lines.iloc[i].name.upper()))
+            columns_candidates.append("{}_RATIO2".format(self.__lines.iloc[i].name.upper()))
+        columns_candidates.append("Z_TRY")
+        columns_candidates.append("PEAK_SIGNIFICANCE")
+        columns_candidates.append("ASSUMED_LINE")
         candidates_df = pd.DataFrame(candidates, columns=columns_candidates)
 
         # add truth table if running in training or test modes
         if (self.__mode in ["training", "test"] or
             (self.__mode == "candidates" and
-            "z_true" in candidates_df.columns)):
-            candidates_df["Delta_z"] = candidates_df["z_try"] - candidates_df["z_true"]
+            "Z_TRUE" in candidates_df.columns)):
+            candidates_df["DELTA_Z"] = candidates_df["Z_TRY"] - candidates_df["Z_TRUE"]
             if candidates_df.shape[0] > 0:
-                candidates_df["is_correct"] = candidates_df.apply(self.__is_correct, axis=1)
-                candidates_df["is_line"] = candidates_df.apply(self.__is_line, axis=1)
-                candidates_df["correct_redshift"] = candidates_df.apply(self.__is_correct_redshift, axis=1)
+                candidates_df["IS_CORRECT"] = candidates_df.apply(self.__is_correct, axis=1)
+                candidates_df["IS_LINE"] = candidates_df.apply(self.__is_line, axis=1)
+                candidates_df["CORRECT_REDSHIFT"] = candidates_df.apply(self.__is_correct_redshift, axis=1)
             else:
-                candidates_df["is_correct"] = pd.Series(dtype=bool)
-                candidates_df["is_line"] = pd.Series(dtype=bool)
-                candidates_df["correct_redshift"] = pd.Series(dtype=bool)
+                candidates_df["IS_CORRECT"] = pd.Series(dtype=bool)
+                candidates_df["IS_LINE"] = pd.Series(dtype=bool)
+                candidates_df["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
 
         return candidates_df
 
     def __load_model_settings(self):
         """ Overload the settings with those stored in self.__model """
         settings = self.__model.get_settings()
-        self.__lines = deserialize(settings.get("lines"))
-        self.__try_lines = settings.get("try_lines")
-        self.__z_precision = settings.get("z_precision")
-        self.__weighting_mode = settings.get("weighting_mode")
-        self.__peakfind_width = settings.get("peakfind_width")
-        self.__peakfind_sig = settings.get("peakfind_sig")
+        self.__lines = deserialize(settings.get("LINES"))
+        self.__try_lines = settings.get("TRY_LINES")
+        self.__z_precision = settings.get("Z_PRECISION")
+        self.__weighting_mode = settings.get("WEIGHTING_MODE")
+        self.__peakfind_width = settings.get("PEAKFIND_WIDTH")
+        self.__peakfind_sig = settings.get("PEAKFIND_SIG")
 
     def save_candidates(self):
         """ Save the candidates DataFrame. """
@@ -519,29 +519,29 @@ class Candidates(object):
         if data_frame is None:
             data_frame = self.__candidates
 
-        if "is_correct" not in data_frame.columns:
+        if "IS_CORRECT" not in data_frame.columns:
             raise Error("find_completeness_purity: invalid DataFrame, the column " +
-                        "'is_correct' is missing")
+                        "'IS_CORRECT' is missing")
 
-        if "specid" not in data_frame.columns:
+        if "SPECID" not in data_frame.columns:
             raise Error("find_completeness_purity: invalid DataFrame, the column " +
-                        "'specid' is missing")
+                        "'SPECID' is missing")
 
         found_quasars = 0
         found_quasars_zge1 = 0
         found_quasars_zge2_1 = 0
         num_quasars = quasars_data_frame.shape[0]
-        num_quasars_zge1 = quasars_data_frame[quasars_data_frame["z_true"] >= 1.0].shape[0]
-        num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["z_true"] >= 2.1].shape[0]
+        num_quasars_zge1 = quasars_data_frame[quasars_data_frame["Z_TRUE"] >= 1.0].shape[0]
+        num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["Z_TRUE"] >= 2.1].shape[0]
         for index in np.arange(num_quasars):
-            specid = quasars_data_frame.iloc[quasars_data_frame.index[index]]["specid"]
-            if data_frame[(data_frame["specid"] == specid) &
-                          (data_frame["is_correct"])].shape[0] > 0:
+            specid = quasars_data_frame.iloc[quasars_data_frame.index[index]]["SPECID"]
+            if data_frame[(data_frame["SPECID"] == specid) &
+                          (data_frame["IS_CORRECT"])].shape[0] > 0:
                 found_quasars += 1
-                if quasars_data_frame.iloc[quasars_data_frame.index[index]]["z_true"] >= 2.1:
+                if quasars_data_frame.iloc[quasars_data_frame.index[index]]["Z_TRUE"] >= 2.1:
                     found_quasars_zge2_1 += 1
                     found_quasars_zge1 += 1
-                elif quasars_data_frame.iloc[quasars_data_frame.index[index]]["z_true"] >= 1:
+                elif quasars_data_frame.iloc[quasars_data_frame.index[index]]["Z_TRUE"] >= 1:
                     found_quasars_zge1 += 1
         if float(num_quasars) > 0.0:
             completeness = float(found_quasars)/float(num_quasars)
@@ -558,16 +558,16 @@ class Candidates(object):
 
 
         if float(data_frame.shape[0]) > 0.:
-            purity = float(data_frame["is_correct"].sum())/float(data_frame.shape[0])
-            purity_zge1 = (float(data_frame[data_frame["z_true"] >= 1]["is_correct"].sum())/
-                           float(data_frame[data_frame["z_true"] >= 1].shape[0]))
-            purity_zge2_1 = (float(data_frame[data_frame["z_true"] >= 2.1]["is_correct"].sum())/
-                             float(data_frame[data_frame["z_true"] >= 2.1].shape[0]))
-            line_purity = float(data_frame["is_line"].sum())/float(data_frame.shape[0])
+            purity = float(data_frame["IS_CORRECT"].sum())/float(data_frame.shape[0])
+            purity_zge1 = (float(data_frame[data_frame["Z_TRUE"] >= 1]["IS_CORRECT"].sum())/
+                           float(data_frame[data_frame["Z_TRUE"] >= 1].shape[0]))
+            purity_zge2_1 = (float(data_frame[data_frame["Z_TRUE"] >= 2.1]["IS_CORRECT"].sum())/
+                             float(data_frame[data_frame["Z_TRUE"] >= 2.1].shape[0]))
+            line_purity = float(data_frame["IS_LINE"].sum())/float(data_frame.shape[0])
             #purity_to_quasars = (float(data_frame[data_frame["specid"] > 0].shape[0])/
             #                     float(data_frame.shape[0]))
-            quasar_specids = np.unique(data_frame[data_frame["specid"] > 0]["specid"])
-            specids = np.unique(data_frame["specid"])
+            quasar_specids = np.unique(data_frame[data_frame["SPECID"] > 0]["SPECID"])
+            specids = np.unique(data_frame["SPECID"])
             #quasar_spectra_fraction = float(quasar_specids.size)/float(specids.size)
         else:
             purity = np.nan
@@ -676,8 +676,8 @@ class Candidates(object):
 
         # distinguish from contaminants and non-contaminants i necessary
         if self.__mode == "training":
-            contaminants_df = self.__candidates[~self.__candidates["is_correct"]]
-            correct_df = self.__candidates[self.__candidates["is_correct"]]
+            contaminants_df = self.__candidates[~self.__candidates["IS_CORRECT"]]
+            correct_df = self.__candidates[self.__candidates["IS_CORRECT"]]
 
         # plot the histograms
         fig_ax = fig.add_subplot(axes_grid[0])
@@ -723,7 +723,7 @@ class Candidates(object):
         from matplotlib import gridspec
 
         # get the number of plots and the names of the columns
-        plot_cols = np.array([item for item in self.__candidates.columns if "ratio" in item])
+        plot_cols = np.array([item for item in self.__candidates.columns if "RATIO" in item])
         num_ratios = plot_cols.size
 
         # plot settings
@@ -737,8 +737,8 @@ class Candidates(object):
 
         # distinguish from contaminants and non-contaminants i necessary
         if self.__mode == "training":
-            contaminants_df = self.__candidates[~self.__candidates["is_correct"]]
-            correct_df = self.__candidates[self.__candidates["is_correct"]]
+            contaminants_df = self.__candidates[~self.__candidates["IS_CORRECT"]]
+            correct_df = self.__candidates[self.__candidates["IS_CORRECT"]]
 
         # plot the histograms
         for index, plot_col in enumerate(plot_cols):
@@ -770,13 +770,13 @@ class Candidates(object):
             raise  Error("The function train_model is available in the " +
                          "training mode only. Detected mode is {}".format(self.__mode))
 
-        selected_cols = [col for col in self.__candidates.columns if col.endswith("ratio_SN")]
-        selected_cols += [col for col in self.__candidates.columns if col.endswith("ratio2")]
-        selected_cols += [col for col in self.__candidates.columns if col.endswith("ratio")]
-        selected_cols += ["peak_significance"]
+        selected_cols = [col.upper() for col in self.__candidates.columns if col.endswith("RATIO_SN")]
+        selected_cols += [col.upper() for col in self.__candidates.columns if col.endswith("RATIO2")]
+        selected_cols += [col.upper() for col in self.__candidates.columns if col.endswith("RATIO")]
+        selected_cols += ["PEAK_SIGNIFICANCE"]
 
         # add columns to compute the class in training
-        selected_cols += ['class_person', 'correct_redshift']
+        selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
 
         self.__model = Model("{}_model.json".format(self.__name[:self.__name.rfind(".")]),
                              selected_cols, self.__get_settings(),

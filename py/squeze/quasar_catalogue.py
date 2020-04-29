@@ -41,12 +41,12 @@ class QuasarCatalogue(object):
             Number of the Header Data Unit to load
             """
         catalogue_hdu = fits.open(filename)
-        data = [catalogue_hdu[hdu].data[col].copy() for col in columns]
+        data = [catalogue_hdu[hdu].data[col.upper()].copy() for col in columns]
         data.append(catalogue_hdu[hdu].data[specid_column].copy())
         data.append(catalogue_hdu[hdu].data[ztrue_column].copy())
-        columns = [col for col in columns]
-        columns.append("specid")
-        columns.append("z_true")
+        columns = [col.upper() for col in columns]
+        columns.append("SPECID")
+        columns.append("Z_TRUE")
         self.__quasar_catalogue = pd.DataFrame(list(zip(*data)), columns=columns)
         del catalogue_hdu[hdu].data
         catalogue_hdu.close()
