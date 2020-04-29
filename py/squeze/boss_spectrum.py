@@ -67,14 +67,14 @@ class BossSpectrum(Spectrum):
             wavelength coverage, and hard cuts will be applied
             """
         # check that "specid" is present in metadata
-        if "specid" not in metadata.keys():
-            raise Error("""The property "specid" must be present in metadata""")
+        if "SPECID" not in metadata.keys():
+            raise Error("""The property "SPECID" must be present in metadata""")
 
         # open fits file
         spectrum_hdu = fits.open(spectrum_file)
 
         # compute sky mask
-        self._wave = 10**spectrum_hdu[1].data["loglam"].copy()
+        self._wave = 10**spectrum_hdu[1].data["LOGLAM"].copy()
         masklambda = sky_mask[0]
         margin = sky_mask[1]
         self.__find_skymask(masklambda, margin)
@@ -85,9 +85,9 @@ class BossSpectrum(Spectrum):
 
         # store the wavelength, flux and inverse variance as masked arrays
         #self._wave = np.ma.array(self._wave, mask=self.__skymask)
-        self._flux = np.ma.array(spectrum_hdu[1].data["flux"].copy(),
+        self._flux = np.ma.array(spectrum_hdu[1].data["FLUX"].copy(),
                                  mask=self.__skymask)
-        self._ivar = np.ma.array(spectrum_hdu[1].data["ivar"].copy(),
+        self._ivar = np.ma.array(spectrum_hdu[1].data["IVAR"].copy(),
                                  mask=self.__skymask)
         self._metadata = metadata
         if noise_increase > 1:
