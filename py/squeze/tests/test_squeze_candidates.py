@@ -23,7 +23,7 @@ class TestSquezeCandidates(AbstractTest):
         """ Run squeze_candidates.py using a model """
 
         in_file = "{}/data/formatted_boss_test1.json".format(THIS_DIR)
-        out_file = "{}/results/candidates_boss_test1_from_model.json".format(THIS_DIR)
+        out_file = "{}/results/candidates_boss_test1_frommodel.json".format(THIS_DIR)
         test_file = "{}/data/candidates_boss_test1_nopred.json".format(THIS_DIR)
         model_file = "{}/data/candidates_boss_test1_nopred_model.json".format(THIS_DIR)
 
@@ -42,7 +42,7 @@ class TestSquezeCandidates(AbstractTest):
         """ Run squeze_candidates.py using specific settings """
 
         in_file = "{}/data/formatted_boss_test1.json".format(THIS_DIR)
-        out_file = "{}/results/candidates_boss_test1_from_settings.json".format(THIS_DIR)
+        out_file = "{}/results/candidates_boss_test1_fromsettings.json".format(THIS_DIR)
         test_file = "{}/data/candidates_boss_test1_nopred.json".format(THIS_DIR)
 
         command = ["squeze_candidates.py",
