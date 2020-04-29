@@ -2,7 +2,7 @@
     SQUEzE
     ======
 
-    This file contains tests related to the testing mode of SQUEzE
+    This file contains tests related to the operation mode of SQUEzE
 """
 import unittest
 import os
@@ -15,8 +15,8 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 class TestSquezeOperation(AbstractTest):
     """Test the operation mode
 
-        CLASS: TestSquezeCandidates
-        PURPOSE: Test candidatse mode of squeze
+        CLASS: TestSquezeOperation
+        PURPOSE: Test operation mode of squeze
         """
     def test_squeze_operation(self):
         """ Run squeze_operation.py"""
