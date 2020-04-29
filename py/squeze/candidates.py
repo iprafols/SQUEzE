@@ -431,11 +431,12 @@ class Candidates(object):
 
         Parameters
         ----------
-        mode : "training", "test", "operation", or "merge" - Default: "operation"
+        mode : "training", "test", "candidates", "operation", or "merge"
+               - Default: "operation"
         Running mode. "training" mode assumes that true redshifts are known
         and provide a series of functions to train the model.
         """
-        if mode in ["training", "test", "operation", "merge"]:
+        if mode in ["training", "test", "candidates", "operation", "merge"]:
             self.__mode = mode
         else:
             raise Error("Invalid mode")
