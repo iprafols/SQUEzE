@@ -613,8 +613,10 @@ class Candidates(object):
             filename = self.__name
 
         data = Table.read(filename, format='fits')
-        self.__candidates = data.to_pandas()
-        del data
+        candidates = data.to_pandas()
+        candidates.columns = candidates.columns.str.upper()
+        self.__candidates = candidates
+        del data, candidates
 
     def merge(self, others_list, userprint=verboseprint, save=True):
         """
