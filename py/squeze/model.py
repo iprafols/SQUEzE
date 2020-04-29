@@ -103,14 +103,14 @@ class Model(object):
             """
         # find class from the truth table
         if train:
-            if row["class_person"] == 30 and not row["correct_redshift"]:
+            if row["CLASS_PERSON"] == 30 and not row["CORRECT_REDSHIFT"]:
                 data_class = 305
-            elif row["class_person"] == 3 and not row["correct_redshift"]:
+            elif row["CLASS_PERSON"] == 3 and not row["CORRECT_REDSHIFT"]:
                 data_class = 35
-            elif row["class_person"] == 4 and not row["correct_redshift"]:
+            elif row["CLASS_PERSON"] == 4 and not row["CORRECT_REDSHIFT"]:
                 data_class = 45
             else:
-                data_class = row["class_person"]
+                data_class = row["CLASS_PERSON"]
 
         # find class from the probabilities
         else:
@@ -121,8 +121,8 @@ class Model(object):
             else:
                 class_labels = self.__clf.classes_
             for class_label in class_labels:
-                if row["prob_class{:d}".format(int(class_label))] > aux_prob:
-                    aux_prob = row["prob_class{:d}".format(int(class_label))]
+                if row["PROB_CLASS{:d}".format(int(class_label))] > aux_prob:
+                    aux_prob = row["PROB_CLASS{:d}".format(int(class_label))]
                     data_class = int(class_label)
 
         return data_class
@@ -146,21 +146,21 @@ class Model(object):
             is taken as the other one. If both are unavailable, then return
             np.nan
             """
-        if "prob_class3" in columns and "prob_class30" in columns:
-            if row["prob_class3"] == -1.0:
+        if "PROB_CLASS3" in columns and "PROB_CLASS30" in columns:
+            if row["PROB_CLASS3"] == -1.0:
                 prob = -1.0
             else:
-                prob = row["prob_class3"] + row["prob_class30"]
-        elif "prob_class30" in columns:
-            if row["prob_class30"] == -1.0:
+                prob = row["PROB_CLASS3"] + row["PROB_CLASS30"]
+        elif "PROB_CLASS30" in columns:
+            if row["PROB_CLASS30"] == -1.0:
                 prob = -1.0
             else:
-                prob = row["prob_class30"]
-        elif "prob_class3" in columns:
-            if row["prob_class3"] == -1.0:
+                prob = row["PROB_CLASS30"]
+        elif "PROB_CLASS3" in columns:
+            if row["PROB_CLASS3"] == -1.0:
                 prob = -1.0
             else:
-                prob = row["prob_class3"]
+                prob = row["PROB_CLASS3"]
         else:
             prob = np.nan
         return prob
@@ -185,7 +185,7 @@ class Model(object):
         if self.__highlow_split:
             # high-z split
             # compute probabilities for each of the classes
-            data_frame_high = data_frame[data_frame["z_try"] >= 2.1]
+            data_frame_high = data_frame[data_frame["Z_TRY"] >= 2.1]
             if data_frame_high.shape[0] > 0:
                 data_frame_high = data_frame_high.fillna(-9999.99)
                 data_vector = data_frame_high[self.__selected_cols[:-2]].values
@@ -193,11 +193,11 @@ class Model(object):
 
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_high.classes_):
-                    data_frame_high["prob_class{:d}".format(int(class_label))] = data_class_probs[:,index]
+                    data_frame_high["PROB_CLASS{:d}".format(int(class_label))] = data_class_probs[:,index]
 
             # low-z split
             # compute probabilities for each of the classes
-            data_frame_low = data_frame[(data_frame["z_try"] < 2.1) & (data_frame["z_try"] >= 0.0)]
+            data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1) & (data_frame["Z_TRY"] >= 0.0)]
             if data_frame_low.shape[0] > 0:
                 data_frame_low = data_frame_low.fillna(-9999.99)
                 data_vector = data_frame_low[self.__selected_cols[:-2]].values
@@ -205,15 +205,15 @@ class Model(object):
 
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_low["prob_class{:d}".format(int(class_label))] = data_class_probs[:,index]
+                    data_frame_low["PROB_CLASS{:d}".format(int(class_label))] = data_class_probs[:,index]
 
             # non-peaks
-            data_frame_nonpeaks = data_frame[data_frame["z_try"] == -1.0]
+            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"] == -1.0]
             if data_frame_nonpeaks.shape[0] > 0:
                 data_frame_nonpeaks = data_frame_nonpeaks.fillna(-9999.99)
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_nonpeaks["prob_class{:d}".format(int(class_label))] = -1.0
+                    data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = -1.0
 
             # join datasets
             if (data_frame_high.shape[0] == 0 and data_frame_low.shape[0] == 0 and
@@ -225,22 +225,22 @@ class Model(object):
         else:
             # peaks
             # compute probabilities for each of the classes
-            data_frame_peaks = data_frame[data_frame["z_try"] >= 0.0]
+            data_frame_peaks = data_frame[data_frame["Z_TRY"] >= 0.0]
             if data_frame_peaks.shape[0] > 0:
                 data_vector = data_frame_peaks[self.__selected_cols[:-2]].fillna(-9999.99).values
                 data_class_probs = self.__clf.predict_proba(data_vector)
 
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf.classes_):
-                    data_frame_peaks["prob_class{:d}".format(int(class_label))] = data_class_probs[:,index]
+                    data_frame_peaks["PROB_CLASS{:d}".format(int(class_label))] = data_class_probs[:,index]
 
             # non-peaks
-            data_frame_nonpeaks = data_frame[data_frame["z_try"] == -1.0]
+            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"] == -1.0]
             if not data_frame_nonpeaks.shape[0] == 0:
                 data_frame_nonpeaks = data_frame_nonpeaks.fillna(-9999.99)
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_nonpeaks["prob_class{:d}".format(int(class_label))] = -1.0
+                    data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = -1.0
 
             # join datasets
             if (data_frame_peaks.shape[0] == 0 and data_frame_nonpeaks.shape[0] == 0):
@@ -249,13 +249,13 @@ class Model(object):
                 data_frame = pd.concat([data_frame_peaks, data_frame_nonpeaks], sort=False)
 
         # predict class and find the probability of the candidate being a quasar
-        data_frame["class_predicted"] = data_frame.apply(self.__find_class, axis=1,
+        data_frame["CLASS_PREDICTED"] = data_frame.apply(self.__find_class, axis=1,
                                                          args=(False, ))
-        data_frame["prob"] = data_frame.apply(self.__find_prob, axis=1,
+        data_frame["PROB"] = data_frame.apply(self.__find_prob, axis=1,
                                               args=(data_frame.columns, ))
 
         # flag duplicated instances
-        data_frame["duplicated"] = data_frame.sort_values(["specid", "prob"], ascending=False).duplicated(subset=("specid",), keep="first").sort_index()
+        data_frame["DUPLICATED"] = data_frame.sort_values(["SPECID", "PROB"], ascending=False).duplicated(subset=("SPECID",), keep="first").sort_index()
 
         return data_frame
 
@@ -271,18 +271,18 @@ class Model(object):
         # train classifier
         if self.__highlow_split:
             # high-z split
-            data_frame_high = data_frame[data_frame["z_try"] >= 2.1].fillna(-9999.99)
+            data_frame_high = data_frame[data_frame["Z_TRY"] >= 2.1].fillna(-9999.99)
             data_vector = data_frame_high[self.__selected_cols[:-2]].values
             data_class = data_frame_high.apply(self.__find_class, axis=1, args=(True,))
             self.__clf_high.fit(data_vector, data_class)
             # low-z split
-            data_frame_low = data_frame[(data_frame["z_try"] < 2.1) & (data_frame["z_try"] >= 0.0)].fillna(-9999.99)
+            data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1) & (data_frame["Z_TRY"] >= 0.0)].fillna(-9999.99)
             data_vector = data_frame_low[self.__selected_cols[:-2]].values
             data_class = data_frame_low.apply(self.__find_class, axis=1, args=(True,))
             self.__clf_low.fit(data_vector, data_class)
 
         else:
-            data_frame = data_frame[(data_frame["z_try"] >= 0.0)][self.__selected_cols].fillna(-9999.99)
+            data_frame = data_frame[(data_frame["Z_TRY"] >= 0.0)][self.__selected_cols].fillna(-9999.99)
             data_vector = data_frame[self.__selected_cols[:-2]].values
             data_class = data_frame.apply(self.__find_class, axis=1, args=(True,))
             self.__clf.fit(data_vector, data_class)
@@ -298,6 +298,7 @@ class Model(object):
         # create instance using the constructor
         name = data.get("_Model__name")
         selected_cols = data.get("_Model__selected_cols")
+        selected_cols = [col.upper() for col in selected_cols]
         settings = data.get("_Model__settings")
         model_opt = [data.get("_Model__clf_options"), data.get("_Model__random_state")]
         cls_instance = cls(name, selected_cols, settings,

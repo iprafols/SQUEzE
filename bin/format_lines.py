@@ -48,10 +48,10 @@ def main():
             ("oiii", 5008.24, 4990.0, 5020.0, 4700.0, 4770.0, 5030.0, 5105.0),
             ("ha", 6564.61, 6480.0, 6650.0, 6320.0, 6460.0, 6750.0, 6850.0),
             ],
-        columns=["line", "wave", "start", "end",
-                 "blue_start", "blue_end",
-                 "red_start", "red_end"]
-        ).set_index("line")
+        columns=["LINE", "WAVE", "START", "END",
+                 "BLUE_START", "BLUE_END",
+                 "RED_START", "RED_END"]
+        ).set_index("LINE")
 
     # save them as a json file to be used by SQUEzE
     save_json("lines.json", lines)

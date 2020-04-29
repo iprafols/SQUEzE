@@ -39,8 +39,8 @@ class WeaveSpectrum(Spectrum):
             A dictionary with the metadata. Keys should be strings
             """
         # check that "specid" is present in metadata
-        if "specid" not in metadata.keys():
-            raise Error("""The property "specid" must be present in metadata""")
+        if "SPECID" not in metadata.keys():
+            raise Error("""The property "SPECID" must be present in metadata""")
 
         self._flux, self._ivar, self._wave = get_spectra(spectrum_dict, wave)
         self._metadata = metadata

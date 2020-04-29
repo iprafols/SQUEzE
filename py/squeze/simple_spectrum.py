@@ -57,7 +57,8 @@ class SimpleSpectrum(Spectrum):
         flux = deserialize(data.get("_flux"))
         ivar = deserialize(data.get("_ivar"))
         wave = deserialize(data.get("_wave"))
-        metadata = data.get("_metadata")
+        metadata = {key.upper(): value
+                    for key, value in data.get("_metadata").items()}
 
         return cls(flux, ivar, wave, metadata)
 

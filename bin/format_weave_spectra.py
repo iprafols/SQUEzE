@@ -121,24 +121,24 @@ def main():
                 continue
 
             # add targid to metadata
-            metadata = {"targid" : targid[index], "specid" : targid[index]}
+            metadata = {"TARGID" : targid[index], "SPECID" : targid[index]}
 
             # add true redshift to metadata
-            if quasar_catalogue[quasar_catalogue["targid"] == targid[index]]["z"].shape[0] > 0:
-                metadata["z_true"] = quasar_catalogue[quasar_catalogue["targid"] ==
-                                                      targid[index]]["z"].values[0]
+            if quasar_catalogue[quasar_catalogue["TARGID"] == targid[index]]["Z"].shape[0] > 0:
+                metadata["Z_TRUE"] = quasar_catalogue[quasar_catalogue["TARGID"] ==
+                                                      targid[index]]["Z"].values[0]
             else:
-                metadata["z_true"] = np.nan
+                metadata["Z_TRUE"] = np.nan
 
             # add magnitudes to metadata
-            if mags_catalogue[mags_catalogue["targid"] == targid[index]]["gmag"].shape[0] > 0:
-                metadata["gmag"] = mags_catalogue[mags_catalogue["targid"] == \
-                                                  targid[index]]["gmag"].values[0]
-                metadata["rmag"] = mags_catalogue[mags_catalogue["targid"] == \
-                                                  targid[index]]["rmag"].values[0]
+            if mags_catalogue[mags_catalogue["TARGID"] == targid[index]]["GMAG"].shape[0] > 0:
+                metadata["GMAG"] = mags_catalogue[mags_catalogue["TARGID"] == \
+                                                  targid[index]]["GMAG"].values[0]
+                metadata["RMAG"] = mags_catalogue[mags_catalogue["TARGID"] == \
+                                                  targid[index]]["RMAG"].values[0]
             else:
-                metadata["gmag"] = np.nan
-                metadata["rmag"] = np.nan
+                metadata["GMAG"] = np.nan
+                metadata["RMAG"] = np.nan
 
             # add spectrum to list
             spectra.append(WeaveSpectrum(spectrum_dict, wave, metadata))

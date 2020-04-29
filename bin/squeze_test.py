@@ -42,7 +42,7 @@ def main():
                 parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
                              "are incompatible with --qso-dataframe")
             quasar_catalogue = deserialize(load_json(args.qso_dataframe))
-            quasar_catalogue["loaded"] = True
+            quasar_catalogue["LOADED"] = True
         else:
             if (args.qso_cat is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
                 parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
@@ -50,7 +50,7 @@ def main():
             quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
                                                args.qso_specid, args.qso_ztrue,
                                                args.qso_hdu).quasar_catalogue()
-            quasar_catalogue["loaded"] = False
+            quasar_catalogue["LOADED"] = False
 
     # load model
     userprint("Loading model")
@@ -84,10 +84,10 @@ def main():
             if args.check_statistics:
                 for spec in spectra.spectra_list():
                     if quasar_catalogue[
-                            quasar_catalogue["specid"] == spec.metadata_by_key("specid")].shape[0] > 0:
+                            quasar_catalogue["SPECID"] == spec.metadata_by_key("SPECID")].shape[0] > 0:
                         index = quasar_catalogue.index[
-                            quasar_catalogue["specid"] == spec.metadata_by_key("specid")].tolist()[0]
-                        quasar_catalogue.at[index, "loaded"] = True
+                            quasar_catalogue["SPECID"] == spec.metadata_by_key("SPECID")].tolist()[0]
+                        quasar_catalogue.at[index, "LOADED"] = True
 
             # look for candidates
             userprint("Looking for candidates")
@@ -109,16 +109,16 @@ def main():
             userprint("\n---------------")
             userprint("proba > {}".format(prob))
             candidates.find_completeness_purity(quasar_catalogue.reset_index(),
-                                                data_frame[(data_frame["prob"] > prob) &
-                                                           ~(data_frame["duplicated"]) &
-                                                           (data_frame["z_conf_person"] == 3)],
+                                                data_frame[(data_frame["PROB"] > prob) &
+                                                           ~(data_frame["DUPLICATED"]) &
+                                                           (data_frame["Z_CONF_PERSON"] == 3)],
                                                 userprint=userprint)
 
     # save the catalogue as a fits file
     if not args.no_save_fits:
         found_catalogue = candidates.candidates()
-        found_catalogue = found_catalogue[(~found_catalogue["duplicated"]) &
-                                          (found_catalogue["prob"] > args.prob_cut)]
+        found_catalogue = found_catalogue[(~found_catalogue["DUPLICATED"]) &
+                                          (found_catalogue["PROB"] > args.prob_cut)]
         candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
 
     userprint("Done")
