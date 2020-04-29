@@ -41,9 +41,9 @@ class TestSquezeCandidates(AbstractTest):
     def test_squeze_candidates_from_settings(self):
         """ Run squeze_candidates.py using specific settings """
 
-        in_file = "{}/data/formatted_boss_test1.json".format(THIS_DIR)
-        out_file = "{}/results/candidates_boss_test1_fromsettings.json".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test1_nopred.json".format(THIS_DIR)
+        in_file = "{}/data/formatted_boss_test2.json".format(THIS_DIR)
+        out_file = "{}/results/candidates_boss_test2_fromsettings.json".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test2_nopred.json".format(THIS_DIR)
 
         command = ["squeze_candidates.py",
                    "--peakfind-width", "70",
