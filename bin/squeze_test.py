@@ -33,23 +33,24 @@ def main():
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
 
-    # load quasar catalogue
-    userprint("Loading quasar catalogue")
-    if args.qso_dataframe is not None:
-        if ((args.qso_cat is not None) or (args.qso_specid is not None)
-                or (args.qso_ztrue is not None)):
-            parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
-                         "are incompatible with --qso-dataframe")
-        quasar_catalogue = deserialize(load_json(args.qso_dataframe))
-        quasar_catalogue["loaded"] = True
-    else:
-        if (args.qso_cat is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
-            parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
-                         "required if --qso-dataframe is not passed")
-        quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
-                                           args.qso_specid, args.qso_ztrue,
-                                           args.qso_hdu).quasar_catalogue()
-        quasar_catalogue["loaded"] = False
+    # load quasar catalogue (only if --check-statistics is passed)
+    if args.check_statistics:
+        userprint("Loading quasar catalogue")
+        if args.qso_dataframe is not None:
+            if ((args.qso_cat is not None) or (args.qso_specid is not None)
+                    or (args.qso_ztrue is not None)):
+                parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
+                             "are incompatible with --qso-dataframe")
+            quasar_catalogue = deserialize(load_json(args.qso_dataframe))
+            quasar_catalogue["loaded"] = True
+        else:
+            if (args.qso_cat is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
+                parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
+                             "required if --qso-dataframe is not passed")
+            quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
+                                               args.qso_specid, args.qso_ztrue,
+                                               args.qso_hdu).quasar_catalogue()
+            quasar_catalogue["loaded"] = False
 
     # load model
     userprint("Loading model")
@@ -80,12 +81,13 @@ def main():
                 raise Error("Invalid list of spectra")
 
             # flag loaded quasars as such
-            for spec in spectra.spectra_list():
-                if quasar_catalogue[
-                        quasar_catalogue["specid"] == spec.metadata_by_key("specid")].shape[0] > 0:
-                    index = quasar_catalogue.index[
-                        quasar_catalogue["specid"] == spec.metadata_by_key("specid")].tolist()[0]
-                    quasar_catalogue.at[index, "loaded"] = True
+            if args.check_statistics:
+                for spec in spectra.spectra_list():
+                    if quasar_catalogue[
+                            quasar_catalogue["specid"] == spec.metadata_by_key("specid")].shape[0] > 0:
+                        index = quasar_catalogue.index[
+                            quasar_catalogue["specid"] == spec.metadata_by_key("specid")].tolist()[0]
+                        quasar_catalogue.at[index, "loaded"] = True
 
             # look for candidates
             userprint("Looking for candidates")
