@@ -25,6 +25,19 @@ def min_length(nmin):
             setattr(args, self.dest, values)
     return RequiredLength
 
+def quasar_parser_check(parser, args):
+    """Require either --qso-dataframe or all of --qso-cat, --qso-specid,
+    and --qso-ztrue are passed as arguments"""
+    if args.qso_dataframe is not None:
+        if ((args.qso_cat is not None) or (args.qso_specid is not None)
+                or (args.qso_ztrue is not None)):
+            parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
+                         "are incompatible with --qso-dataframe")
+    else:
+        if (args.qso_cat is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
+            parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
+                         "required if --qso-dataframe is not passed")
+
 """
 This PARENT_PARSER contains the common options used by all SQUEzE executables.
 Other, more specific parent_parsers are defined later in this file
