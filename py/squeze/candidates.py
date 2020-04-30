@@ -404,7 +404,7 @@ class Candidates(object):
     def __load_model_settings(self):
         """ Overload the settings with those stored in self.__model """
         settings = self.__model.get_settings()
-        self.__lines = deserialize(settings.get("LINES"))
+        self.__lines = settings.get("LINES")
         self.__try_lines = settings.get("TRY_LINES")
         self.__z_precision = settings.get("Z_PRECISION")
         self.__peakfind_width = settings.get("PEAKFIND_WIDTH")

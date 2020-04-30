@@ -181,43 +181,43 @@ class Model(object):
 
         # Create settings HDU to store items in self.__settings
         header = fits.Header()
-        header["Z_PREC"] = self.__settings.get("z_precision")
-        header["PF_WIDTH"] = self.__settings.get("peakfind_width")
-        header["PF_SIG"] = self.__settings.get("peakfind_sig")
+        header["Z_PREC"] = self.__settings.get("Z_PRECISION")
+        header["PF_WIDTH"] = self.__settings.get("PEAKFIND_WIDTH")
+        header["PF_SIG"] = self.__settings.get("PEAKFIND_SIG")
         # now create the columns to store lines and try_lines.
-        lines = self.__settings.get("lines")
-        try_lines = self.__settings.get("try_lines")
+        lines = self.__settings.get("LINES")
+        try_lines = self.__settings.get("TRY_LINES")
         cols = [
             fits.Column(name="LINE_NAME",
                         array=lines.index,
                         format="10A",
                         ),
             fits.Column(name="LINE_WAVE",
-                        array=lines["wave"],
+                        array=lines["WAVE"],
                         format="D",
                         ),
             fits.Column(name="LINE_START",
-                        array=lines["start"],
+                        array=lines["START"],
                         format="D",
                         ),
             fits.Column(name="LINE_END",
-                        array=lines["end"],
+                        array=lines["END"],
                         format="D",
                         ),
             fits.Column(name="LINE_BLUE_START",
-                        array=lines["blue_start"],
+                        array=lines["BLUE_START"],
                         format="D",
                         ),
             fits.Column(name="LINE_BLUE_END",
-                        array=lines["blue_end"],
+                        array=lines["BLUE_END"],
                         format="D",
                         ),
             fits.Column(name="LINE_RED_START",
-                        array=lines["red_start"],
+                        array=lines["RED_START"],
                         format="D",
                         ),
             fits.Column(name="LINE_RED_END",
-                        array=lines["red_end"],
+                        array=lines["RED_END"],
                         format="D",
                         ),
             # try lines is stored as an array of booleans
@@ -433,7 +433,9 @@ class Model(object):
         name = data.get("_Model__name")
         selected_cols = data.get("_Model__selected_cols")
         selected_cols = [col.upper() for col in selected_cols]
-        settings = data.get("_Model__settings")
+        settings = {key.upper(): value
+                    for key, value in data.get("_Model__settings").items()}
+        settings["LINES"] = deserialize(settings.get("LINES"))
         model_opt = [data.get("_Model__clf_options"), data.get("_Model__random_state")]
         cls_instance = cls(name, selected_cols, settings,
                            model_opt=model_opt)
@@ -467,21 +469,21 @@ class Model(object):
         selected_cols = [sel_col.strip()
                          for sel_col in hdul["SETTINGS"].data["SELECTED_COLS"]]
 
-        cols = {"LINE_NAME": "line",
-                "LINE_WAVE": "wave",
-                "LINE_START": "start",
-                "LINE_END": "end",
-                "LINE_BLUE_START": "blue_start",
-                "LINE_BLUE_END": "blue_end",
-                "LINE_RED_START": "red_start",
-                "LINE_RED_END":  "red_end",}
+        cols = {"LINE_NAME": "LINE",
+                "LINE_WAVE": "WAVE",
+                "LINE_START": "START",
+                "LINE_END": "END",
+                "LINE_BLUE_START": "BLUE_START",
+                "LINE_BLUE_END": "BLUE_END",
+                "LINE_RED_START": "RED_START",
+                "LINE_RED_END":  "RED_END",}
         dtypes = [str, np.float64, np.float64, np.float64, np.float64,
                   np.float64, np.float64, np.float64]
         pos = np.where(hdul["SETTINGS"].data["LINE_NAME"] != "")
-        dat = {col: hdul["SETTINGS"].data[col][pos].astype(dtype)
+        dat = {col.upper(): hdul["SETTINGS"].data[col][pos].astype(dtype)
                for col, dtype in zip(cols, dtypes)}
         lines = pd.DataFrame(dat)
-        lines = lines.rename(columns=cols).set_index("line")
+        lines = lines.rename(columns=cols).set_index("LINE")
 
         # load try_lines
         pos = np.where((hdul["SETTINGS"].data["TRY_LINES"]) &
@@ -491,11 +493,11 @@ class Model(object):
 
         # load settings used to find the candidates
         settings = {
-            "lines": lines,
-            "try_lines": try_lines,
-            "z_precision": hdul["SETTINGS"].header["Z_PREC"],
-            "peakfind_width": hdul["SETTINGS"].header["PF_WIDTH"],
-            "peakfind_sig": hdul["SETTINGS"].header["PF_SIG"],
+            "LINES": lines,
+            "TRY_LINES": try_lines,
+            "Z_PRECISION": hdul["SETTINGS"].header["Z_PREC"],
+            "PEAKFIND_WIDTH": hdul["SETTINGS"].header["PF_WIDTH"],
+            "PEAKFIND_SIG": hdul["SETTINGS"].header["PF_SIG"],
         }
 
         # now load model options
