@@ -18,6 +18,7 @@ __version__ = "0.1"
 import sys
 
 import numpy as np
+import astropy.io.fits as fits
 
 from squeze.common_functions import deserialize
 
@@ -80,8 +81,8 @@ class RandomForestClassifier(object):
         self.classes_ = rf.classes_
         for dt in rf.estimators_:
             tree_sklearn = dt.tree_
-            tree = {}
 
+            tree = {}
             tree["children_left"] = tree_sklearn.children_left
             tree["children_right"] = tree_sklearn.children_right
             tree["feature"] = tree_sklearn.feature
@@ -107,11 +108,11 @@ class RandomForestClassifier(object):
             Index of the location of the desired tree in self.__trees
 
             """
-        self.__children_left = self.__trees[tree_index].get("children_left")
-        self.__children_right = self.__trees[tree_index].get("children_right")
-        self.__feature = self.__trees[tree_index].get("feature")
-        self.__threshold = self.__trees[tree_index].get("threshold")
-        self.__tree_proba = self.__trees[tree_index].get("proba")
+        self.__children_left = self.__trees[tree_index]["children_left"]
+        self.__children_right = self.__trees[tree_index]["children_right"]
+        self.__feature = self.__trees[tree_index]["feature"]
+        self.__threshold = self.__trees[tree_index]["threshold"]
+        self.__tree_proba = self.__trees[tree_index]["proba"]
 
         if len(self.__children_left) > sys.getrecursionlimit():
             sys.setrecursionlimit(int(len(self.__children_left)*1.2))
@@ -198,6 +199,60 @@ class RandomForestClassifier(object):
 
         return cls_instance
 
+    @classmethod
+    def from_fits_hdul(cls, hdul, name_prefix, num_trees, num_categories,
+                       classes, args={}):
+        """ This function parses the RandomForestClassifier from the data
+            contained in a fits HDUList. Each HDU in HDUL has to be according
+            to the format specified in method to_fits_hdu
+
+            Parameters
+            ----------
+            hdul : fits.hdu.hdulist.HDUList
+            The Header Data Unit Containing the trained classifier
+
+            name_prefix : string
+            Prefix of the HDU names (high, low, or all)
+
+            num_trees : int
+            Number of trees in the forest
+
+            num_categories : int
+            Number of categories to classify
+
+            classes : array
+            Classes present in the data
+
+            args : dict -  Default: {}}
+            Options to be passed to the RandomForestClassifier
+
+            """
+        # create instance using the constructor
+        cls_instance = cls(**args)
+
+        # now update the instance to the current values
+        cls_instance.set_num_trees(num_trees)
+        cls_instance.set_num_categories(num_categories)
+        cls_instance.classes_ = classes
+
+        # TODO: remove old loading
+        """
+        hdus = [hdul["{}{}".format(name_prefix, index)]
+                for index in range(num_trees)]
+        trees = [{"children_left": hdu.data["children_left"].astype(np.int64),
+                  "children_right": hdu.data["children_right"].astype(np.int64),
+                  "feature": hdu.data["feature"].astype(np.int64),
+                  "threshold": hdu.data["threshold"].astype(np.float64),
+                  "proba": hdu.data["proba"].astype(np.float64).reshape(
+                    (hdu.data["proba"].shape[0], 1, hdu.data["proba"].shape[1])),
+                } for hdu in hdus]
+        """
+        cls_instance._RandomForestClassifier__trees = [hdul["{}{}".format(name_prefix, index)].data
+                              for index in range(num_trees)]
+        #cls_instance.set_trees(trees)
+
+        return cls_instance
+
     def set_num_trees(self, num_trees):
         """ Set the variable __num_trees. Should only be called from the method from_json"""
         self.__num_trees = num_trees
@@ -209,6 +264,44 @@ class RandomForestClassifier(object):
     def set_trees(self, trees):
         """ Set the variable __trees. Should only be called from the method from_json"""
         self.__trees = trees
+
+    def num_trees(self):
+        """ Access the number of trees """
+        return self.__num_trees
+
+    def num_categories(self):
+        """ Access the number of categories """
+        return self.__num_categories
+
+    def to_fits_hdu(self, index, name):
+        """ Formats tree as a fits Header Data Unit
+
+            Parameters
+            ----------
+            index : int
+            Index of the tree to format
+
+            name : string
+            Name of the HDU
+
+            Returns
+            -------
+            The Header Data Unit
+            """
+        # create HDU columns
+        cols = [fits.Column(name="{}".format(field),
+                    array=self.__trees[index].get(field),
+                    format=type,
+                    )
+                for field, type in [("children_left", "I"),
+                                    ("children_right", "I"),
+                                    ("feature", "I"),
+                                    ("threshold", "D"),
+                                    ("proba", "{}D".format(self.__num_categories))]
+                ]
+
+        # create HDU and return
+        return fits.BinTableHDU.from_columns(cols, name=name)
 
 if __name__ == '__main__':
     pass

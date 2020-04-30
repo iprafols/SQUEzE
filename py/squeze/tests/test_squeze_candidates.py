@@ -23,8 +23,8 @@ class TestSquezeCandidates(AbstractTest):
         """ Run squeze_candidates.py using a model """
 
         in_file = "{}/data/formatted_boss_test1.json".format(THIS_DIR)
-        out_file = "{}/results/candidates_boss_test1_frommodel.json".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test1_nopred.json".format(THIS_DIR)
+        out_file = "{}/results/candidates_boss_test1_frommodel.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
         model_file = "{}/data/candidates_boss_test1_nopred_model.json".format(THIS_DIR)
 
         command = ["squeze_candidates.py",
@@ -42,8 +42,8 @@ class TestSquezeCandidates(AbstractTest):
         """ Run squeze_candidates.py using specific settings """
 
         in_file = "{}/data/formatted_boss_test2.json".format(THIS_DIR)
-        out_file = "{}/results/candidates_boss_test2_fromsettings.json".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test2_nopred.json".format(THIS_DIR)
+        out_file = "{}/results/candidates_boss_test2_fromsettings.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test2_nopred.fits.gz".format(THIS_DIR)
 
         command = ["squeze_candidates.py",
                    "--peakfind-width", "70",

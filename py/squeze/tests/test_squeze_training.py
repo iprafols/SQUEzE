@@ -31,8 +31,8 @@ class TestSquezeTraining(AbstractTest):
         """ Run squeze_training.py """
 
         in_file = "{}/data/formatted_boss_test1.json".format(THIS_DIR)
-        out_file = "{}/results/training_boss_test1.json".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test1_nopred.json".format(THIS_DIR)
+        out_file = "{}/results/training_boss_test1.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
 
         command = ["squeze_training.py",
                    "--peakfind-width", "70",
@@ -45,7 +45,7 @@ class TestSquezeTraining(AbstractTest):
                    ]
         self.run_command(command)
         self.assertTrue(os.path.isfile(out_file))
-        self.assertTrue(os.path.isfile(out_file.replace(".json",
+        self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
                                                         "_model.json")))
 
         self.compare_data_frames(test_file, out_file)

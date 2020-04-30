@@ -54,7 +54,10 @@ def main():
 
     # load model
     userprint("Loading model")
-    model = Model.from_json(load_json(args.model))
+    if args.model.endswith(".json"):
+        model = Model.from_json(load_json(args.model))
+    else:
+        model = Model.from_fits(args.model)
 
     # initialize candidates object
     userprint("Looking for candidates")
@@ -115,11 +118,8 @@ def main():
                                                 userprint=userprint)
 
     # save the catalogue as a fits file
-    if not args.no_save_fits:
-        found_catalogue = candidates.candidates()
-        found_catalogue = found_catalogue[(~found_catalogue["DUPLICATED"]) &
-                                          (found_catalogue["PROB"] > args.prob_cut)]
-        candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
+    if not args.no_save_catalogue:
+        candidates.save_catalogue(args.output_catalogue, args.prob_cut)
 
     userprint("Done")
 

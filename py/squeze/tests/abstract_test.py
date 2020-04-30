@@ -8,7 +8,9 @@
 import unittest
 import os
 import subprocess
+import numpy as np
 
+from squeze.candidates import Candidates
 from squeze.common_functions import verboseprint as userprint
 from squeze.common_functions import deserialize, load_json
 
@@ -55,9 +57,32 @@ class AbstractTest(unittest.TestCase):
 
     def compare_data_frames(self, orig_file, new_file):
         """ Compares two dataframes to check that they are equal """
-        orig_df = deserialize(load_json(orig_file))
-        new_df = deserialize(load_json(new_file))
-        self.assertTrue(orig_df.equals(new_df))
+        # load dataframes
+        orig_candidates = Candidates()
+        orig_candidates.load_candidates(orig_file)
+        orig_df = orig_candidates.candidates()
+        new_candidates = Candidates()
+        new_candidates.load_candidates(new_file)
+        new_df = new_candidates.candidates()
+
+        # compare them
+        equal_df = orig_df.equals(new_df)
+        if not equal_df and orig_df.columns.equals(new_df.columns):
+            # this bit tests if they are equal within machine z_precision
+            are_similar = True
+            for col, dtype in zip(orig_df.columns, orig_df.dtypes):
+                if (dtype == "O"):
+                    if not orig_df[col].equals(new_df[col]):
+                        are_similar = False
+                        break
+                else:
+                    if not np.allclose(orig_df[col], new_df[col],
+                                       equal_nan=True):
+                        are_similar = False
+                        break
+        else:
+            are_similar = False
+        self.assertTrue(equal_df or are_similar)
 
 if __name__ == '__main__':
     pass

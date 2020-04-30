@@ -14,9 +14,9 @@ import numpy as np
 import pandas as pd
 
 import astropy.io.fits as fits
+from astropy.table import Table
 
 from squeze.common_functions import verboseprint
-from squeze.common_functions import save_json, load_json
 from squeze.common_functions import deserialize
 from squeze.error import Error
 from squeze.model import Model
@@ -43,8 +43,8 @@ class Candidates(object):
     # pylint: disable=too-many-instance-attributes
     # 12 is reasonable in this case.
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
-                 mode="operation", name="SQUEzE_candidates.json",
-                 weighting_mode="weights", peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
+                 mode="operation", name="SQUEzE_candidates.fits.gz",
+                 peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
                  model=None, model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
 
@@ -66,18 +66,11 @@ class Candidates(object):
             Running mode. "training" mode assumes that true redshifts are known
             and provide a series of functions to train the model.
 
-            name : string - Default: "SQUEzE_candidates.csv"
+            name : string - Default: "SQUEzE_candidates.fits.gz"
             Name of the candidates sample. The code will save an python-binary
             with the information of the database in a csv file with this name.
             If load is set to True, then the candidates sample will be loaded
-            from this file. Recommended extension is json.
-
-            weighting_mode : string - Default: "weights"
-            Name of the weighting mode. Can be "weights" if ivar is to be used
-            as weights when computing the line ratios, "flags" if ivar is to
-            be used as flags when computing the line ratios (pixels with 0 value
-            will be ignored, the rest will be averaged without weighting), or
-            "none" if weights are to be ignored.
+            from this file. Recommended extension is fits.gz.
 
             model : Model or None  - Default: None
             Instance of the Model class defined in squeze_model or None.
@@ -98,7 +91,13 @@ class Candidates(object):
             self.__mode = mode
         else:
             raise Error("Invalid mode")
-        self.__name = name
+
+        if name.endswith(".fits.gz") or name.endswith(".fits"):
+            self.__name = name
+        else:
+            message = "Candidates name should have .fits or .fits.gz extensions."
+            message += "Given name was {}".format(name)
+            raise Error(message)
 
         self.__candidates = None # initialize empty catalogue
 
@@ -106,7 +105,6 @@ class Candidates(object):
         self.__lines = lines_settings[0]
         self.__try_lines = lines_settings[1]
         self.__z_precision = z_precision
-        self.__weighting_mode = weighting_mode
 
         # options to be passed to the peak finder
         self.__peakfind_width = peakfind[0]
@@ -199,7 +197,6 @@ class Candidates(object):
         return {"LINES": self.__lines,
                 "TRY_LINES": self.__try_lines,
                 "Z_PRECISION": self.__z_precision,
-                "WEIGHTING_MODE": self.__weighting_mode,
                 "PEAKFIND_WIDTH": self.__peakfind_width,
                 "PEAKFIND_SIG": self.__peakfind_sig,
                }
@@ -407,16 +404,26 @@ class Candidates(object):
     def __load_model_settings(self):
         """ Overload the settings with those stored in self.__model """
         settings = self.__model.get_settings()
-        self.__lines = deserialize(settings.get("LINES"))
+        self.__lines = settings.get("LINES")
         self.__try_lines = settings.get("TRY_LINES")
         self.__z_precision = settings.get("Z_PRECISION")
-        self.__weighting_mode = settings.get("WEIGHTING_MODE")
         self.__peakfind_width = settings.get("PEAKFIND_WIDTH")
         self.__peakfind_sig = settings.get("PEAKFIND_SIG")
 
     def save_candidates(self):
         """ Save the candidates DataFrame. """
-        save_json(self.__name, self.__candidates)
+        def convert_dtype(dtype):
+             if dtype == "O":
+                 return "15A"
+             else:
+                 return dtype
+
+        hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
+                                                         format=convert_dtype(dtype),
+                                                         array=self.__candidates[col])
+                                             for col, dtype in zip(self.__candidates.columns,
+                                                                   self.__candidates.dtypes)])
+        hdu.writeto(self.__name, overwrite=True)
 
     def candidates(self):
         """ Access the candidates DataFrame. """
@@ -603,10 +610,13 @@ class Candidates(object):
             If None, then load from self.__name
             """
         if filename is None:
-            json_dict = load_json(self.__name)
-        else:
-            json_dict = load_json(filename)
-        self.__candidates = deserialize(json_dict)
+            filename = self.__name
+
+        data = Table.read(filename, format='fits')
+        candidates = data.to_pandas()
+        candidates.columns = candidates.columns.str.upper()
+        self.__candidates = candidates
+        del data, candidates
 
     def merge(self, others_list, userprint=verboseprint, save=True):
         """
@@ -632,7 +642,9 @@ class Candidates(object):
 
             try:
                 # load candidates
-                other = deserialize(load_json(candidates_filename))
+                data = Table.read(candidates_filename, format='fits')
+                other = data.to_pandas()
+                del data
 
                 # append to candidates list
                 self.__candidates = self.__candidates.append(other, ignore_index=True)
@@ -763,8 +775,15 @@ class Candidates(object):
 
         return fig
 
-    def train_model(self):
-        """ Create a model instance and train it. Save the resulting model"""
+    def train_model(self, model_fits):
+        """ Create a model instance and train it. Save the resulting model
+
+            Parameters
+            ----------
+            model_fits : bool
+            If True, save the model as a fits file. Otherwise, save it as a
+            json file.
+            """
         # consistency checks
         if self.__mode != "training":
             raise  Error("The function train_model is available in the " +
@@ -778,35 +797,53 @@ class Candidates(object):
         # add columns to compute the class in training
         selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
 
-        self.__model = Model("{}_model.json".format(self.__name[:self.__name.rfind(".")]),
-                             selected_cols, self.__get_settings(),
+        if self.__name.endswith(".fits"):
+            if model_fits:
+                model_name = self.__name.replace(".fits", "_model.fits.gz")
+            else:
+                model_name = self.__name.replace(".fits", "_model.json")
+        elif self.__name.endswith(".fits.gz"):
+            if model_fits:
+                model_name = self.__name.replace(".fits.gz", "_model.fits.gz")
+            else:
+                model_name = self.__name.replace(".fits.gz", "_model.json")
+        else:
+            raise Error("Invalid model name")
+        self.__model = Model(model_name, selected_cols, self.__get_settings(),
                              model_opt=self.__model_opt)
         self.__model.train(self.__candidates)
         self.__model.save_model()
 
-    def to_fits(self, filename=None, data_frame=None):
-        """Save the DataFrame as a fits file. String columns with length greater than 15
+    def save_catalogue(self, filename, prob_cut):
+        """ Save the final catalogue as a fits file. Only non-duplicated
+            candidates with probability greater or equal to prob_cut will
+            be included in this catalogue.
+            String columns with length greater than 15
             characters might be truncated
 
             Parameters
             ----------
-            filename : str
-            Name of the fits file the dataframe is going to be saved to
+            filename : str or None
+            Name of the fits file the final catalogue is going to be saved to.
+            If it is None, then we will use self.__candidates with '_catalogue'
+            appended to it before the extension.
 
-            data_frame : pd.DataFrame - Default: self.__candidates
-            DataFrame to save
+            prob_cut : float
+            Probability cut to be applied to the candidates. Only candidates
+            with greater probability will be saved
         """
-        if data_frame is None:
-            data_frame = self.__candidates
-
         if filename is None:
-            filename = self.__name.replace("json", "fits.gz")
+            filename = self.__name.replace(".fits", "_catalogue.fits")
 
         def convert_dtype(dtype):
              if dtype == "O":
                  return "15A"
              else:
                  return dtype
+
+        # filter data DataFrame
+        data_frame = self.__candidates[(~self.__candidates["DUPLICATED"]) &
+                                       (self.__candidates["PROB"] >= prob_cut)]
 
         hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
                                                          format=convert_dtype(dtype),

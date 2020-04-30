@@ -41,11 +41,6 @@ def main():
     userprint("Merging with the other candidate objects")
     candidates.merge(args.input_candidates[1:], userprint=userprint)
 
-    # save the catalogue as a fits file
-    if not args.no_save_fits:
-        found_catalogue = candidates.candidates()
-        candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
-
     userprint("Done")
 
 if __name__ == '__main__':

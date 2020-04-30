@@ -34,16 +34,6 @@ PARENT_PARSER = argparse.ArgumentParser(add_help=False)
 PARENT_PARSER.add_argument("--quiet", action="store_true",
                            help="""Do not print messages""")
 
-PARENT_PARSER.add_argument("--no-save-fits", action="store_true",
-                           help="""Do not save the final catalogue also as a fits file""")
-
-PARENT_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
-                           help="""Name of the fits file where the final catalogue will be
-                               stored. If not specified, the catalogue will be saved using
-                               --output-candidates as name base, Ignored if --save-fits is
-                               not passed""")
-
-
 """
 This PEAKFIND_PARSER contains the options passed to the peak finding algorithms
 """ # description of PEAKFIND_PARSER ... pylint: disable=pointless-string-statement
@@ -83,7 +73,7 @@ MODE_PARSER.add_argument("--input-candidates", type=str, default=None, required=
                              loaded.""")
 
 MODE_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
-                         help="""Name of the json file where the candidates will be saved.
+                         help="""Name of the fits.gz file where the candidates will be saved.
                              In training mode, the model will be saved using this name
                              (without the extension) as base name and append the extension
                              _model.json to it""")
@@ -150,28 +140,41 @@ TRAINING_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, r
                              help="""Name of the lines that will be associated to the peaks
                              to estimate the redshift.""")
 
-TRAINING_PARSER.add_argument("--weighting-mode", type=str, default="weights", required=False,
-                             help="""Selects the weighting mode when computing the line ratios.
-                                 Can be 'weights' if ivar is to be used as weights when computing
-                                 the line ratios, 'flags' if ivar is to be used as flags when
-                                 computing the line ratios (pixels with 0 value will be ignored,
-                                 the rest will be averaged without weighting), or 'none' if weights
-                                 are to be ignored.""")
+TRAINING_PARSER.add_argument("--model-fits", action="store_true",
+                             help="""If this argument is passed, the model is saved as
+                             fits file instead of a json file.""")
 
+"""
+This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
+""" # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement
+OPERATION_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER,
+                                                                    MODE_PARSER])
 
+OPERATION_PARSER.add_argument("--prob-cut", default=0.0, type=float,
+                              help="""Only objects with probability >= PROB_CUT will be included
+                                  in the catalogue""")
+
+OPERATION_PARSER.add_argument("--model", required=True, type=str,
+                              help="""[REQUIRED] Name of the json or fits file containing the model to be used
+                                  in the computation of the probabilities of candidates
+                                  being quasars""")
+
+OPERATION_PARSER.add_argument("--no-save-catalogue", action="store_true",
+                              help="""Do not save the final catalogue excluding duplicated candidates
+                               and those candidates with probability < PROB_CUT """)
+
+OPERATION_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
+                              help="""Name of the fits file where the final catalogue will be
+                               stored. If not specified, the catalogue will be saved using
+                               --output-candidates as name base, Ignored if --save-fits is
+                               not passed""")
 
 """
 This TEST_PARSER contains the common options used to run SQUEzE in training mode
 """ # description of TRAINING_PARSER ... pylint: disable=pointless-string-statement
 TEST_PARSER = argparse.ArgumentParser(add_help=False,
-                                      parents=[PARENT_PARSER,
-                                               MODE_PARSER,
+                                      parents=[OPERATION_PARSER,
                                                QUASAR_CATALOGUE_PARSER])
-
-TEST_PARSER.add_argument("--model", required=True, type=str,
-                         help="""[REQUIRED] Name of the json file containing the model to be used
-                             in the computation of the probabilities of candidates
-                             being quasars""")
 
 TEST_PARSER.add_argument("--check-statistics", action="store_true",
                          help="""Check the candidates' statistics at the end""")
@@ -183,11 +186,6 @@ TEST_PARSER.add_argument("--check-probs", nargs='+', default=None, required=Fals
                              cuts in probabilities. Ignored if --check-statistics
                              is not passed. If it is not passed and --check-statistics
                              is then np.arange(0.9, 0.0, -0.05)""")
-
-TEST_PARSER.add_argument("--prob-cut", default=0.0, type=float,
-                         help="""Only objects with probability > PROB_CUT will
-                         be includedin the catalogue""")
-
 
 """
 This CANDIDATES_PARSER contains the options used to run SQUEzE in candidates mode
@@ -217,32 +215,17 @@ CANDIDATES_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None,
                                    to estimate the redshift.""")
 
 """
-This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
-""" # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement
-OPERATION_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER,
-                                                                    MODE_PARSER])
-
-OPERATION_PARSER.add_argument("--prob-cut", default=0.0, type=float,
-                              help="""Only objects with probability > PROB_CUT will be included
-                                  in the catalogue""")
-
-OPERATION_PARSER.add_argument("--model", required=True, type=str,
-                              help="""[REQUIRED] Name of the json file containing the model to be used
-                                  in the computation of the probabilities of candidates
-                                  being quasars""")
-
-"""
 This MERGING_PARSER contains the options used to run SQUEzE in merging mode
 """ # description of MERGING_PARSER ... pylint: disable=pointless-string-statement
 MERGING_PARSER = argparse.ArgumentParser(add_help=False, parents=[PARENT_PARSER])
 
 MERGING_PARSER.add_argument("--input-candidates", nargs='+', default=None, required=True,
                             action=min_length(2),
-                            help="""[REQUIRED] List of json files containing candidates objects to
+                            help="""[REQUIRED] List of fits files containing candidates objects to
                                 merge.""")
 
 MERGING_PARSER.add_argument("--output-candidates", type=str, default=None, required=False,
-                            help="""Name of the json file where the candidates will be saved.""")
+                            help="""Name of the fits file where the candidates will be saved.""")
 
 
 if __name__ == '__main__':

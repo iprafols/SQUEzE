@@ -57,14 +57,12 @@ def main():
     if args.output_candidates is None:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
-                                weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_sig),
                                 model=None)
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 name=args.output_candidates,
-                                weighting_mode=args.weighting_mode,
                                 peakfind=(peakfind_width, peakfind_sig),
                                 model=None)
 
@@ -90,12 +88,7 @@ def main():
 
     # train model
     userprint("Training model")
-    candidates.train_model()
-
-    # save the catalogue as a fits file
-    if not args.no_save_fits:
-        found_catalogue = candidates.candidates()
-        candidates.to_fits(args.output_catalogue, data_frame=found_catalogue)
+    candidates.train_model(args.model_fits)
 
     userprint("Done")
 if __name__ == '__main__':
