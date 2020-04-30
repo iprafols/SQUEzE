@@ -174,7 +174,11 @@ class Model(object):
 
     def save_model(self):
         """ Save the model"""
-        save_json(self.__name, self)
+
+        if self.__name.endswith(".json"):
+            save_json(self.__name, self)
+        else:
+            self.save_model_as_fits()
 
     def save_model_as_fits(self):
         """ Save the model as a fits file"""

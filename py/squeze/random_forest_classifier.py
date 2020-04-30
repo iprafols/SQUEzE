@@ -81,8 +81,8 @@ class RandomForestClassifier(object):
         self.classes_ = rf.classes_
         for dt in rf.estimators_:
             tree_sklearn = dt.tree_
-            tree = {}
 
+            tree = {}
             tree["children_left"] = tree_sklearn.children_left
             tree["children_right"] = tree_sklearn.children_right
             tree["feature"] = tree_sklearn.feature
@@ -108,11 +108,11 @@ class RandomForestClassifier(object):
             Index of the location of the desired tree in self.__trees
 
             """
-        self.__children_left = self.__trees[tree_index].get("children_left")
-        self.__children_right = self.__trees[tree_index].get("children_right")
-        self.__feature = self.__trees[tree_index].get("feature")
-        self.__threshold = self.__trees[tree_index].get("threshold")
-        self.__tree_proba = self.__trees[tree_index].get("proba")
+        self.__children_left = self.__trees[tree_index]["children_left"]
+        self.__children_right = self.__trees[tree_index]["children_right"]
+        self.__feature = self.__trees[tree_index]["feature"]
+        self.__threshold = self.__trees[tree_index]["threshold"]
+        self.__tree_proba = self.__trees[tree_index]["proba"]
 
         if len(self.__children_left) > sys.getrecursionlimit():
             sys.setrecursionlimit(int(len(self.__children_left)*1.2))
@@ -235,6 +235,8 @@ class RandomForestClassifier(object):
         cls_instance.set_num_categories(num_categories)
         cls_instance.classes_ = classes
 
+        # TODO: remove old loading
+        """
         hdus = [hdul["{}{}".format(name_prefix, index)]
                 for index in range(num_trees)]
         trees = [{"children_left": hdu.data["children_left"].astype(np.int64),
@@ -244,7 +246,10 @@ class RandomForestClassifier(object):
                   "proba": hdu.data["proba"].astype(np.float64).reshape(
                     (hdu.data["proba"].shape[0], 1, hdu.data["proba"].shape[1])),
                 } for hdu in hdus]
-        cls_instance.set_trees(trees)
+        """
+        cls_instance._RandomForestClassifier__trees = [hdul["{}{}".format(name_prefix, index)].data
+                              for index in range(num_trees)]
+        #cls_instance.set_trees(trees)
 
         return cls_instance
 

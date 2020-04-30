@@ -775,8 +775,15 @@ class Candidates(object):
 
         return fig
 
-    def train_model(self):
-        """ Create a model instance and train it. Save the resulting model"""
+    def train_model(self, model_fits):
+        """ Create a model instance and train it. Save the resulting model
+
+            Parameters
+            ----------
+            model_fits : bool
+            If True, save the model as a fits file. Otherwise, save it as a
+            json file.
+            """
         # consistency checks
         if self.__mode != "training":
             raise  Error("The function train_model is available in the " +
@@ -791,9 +798,15 @@ class Candidates(object):
         selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
 
         if self.__name.endswith(".fits"):
-            model_name = self.__name.replace(".fits", "_model.json")
+            if model_fits:
+                model_name = self.__name.replace(".fits", "_model.fits.gz")
+            else:
+                model_name = self.__name.replace(".fits", "_model.json")
         elif self.__name.endswith(".fits.gz"):
-            model_name = self.__name.replace(".fits.gz", "_model.json")
+            if model_fits:
+                model_name = self.__name.replace(".fits.gz", "_model.fits.gz")
+            else:
+                model_name = self.__name.replace(".fits.gz", "_model.json")
         else:
             raise Error("Invalid model name")
         self.__model = Model(model_name, selected_cols, self.__get_settings(),

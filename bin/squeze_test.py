@@ -54,7 +54,10 @@ def main():
 
     # load model
     userprint("Loading model")
-    model = Model.from_json(load_json(args.model))
+    if args.model.endswith(".json"):
+        model = Model.from_json(load_json(args.model))
+    else:
+        model = Model.from_fits(args.model)
 
     # initialize candidates object
     userprint("Looking for candidates")

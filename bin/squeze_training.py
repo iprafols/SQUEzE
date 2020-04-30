@@ -88,7 +88,7 @@ def main():
 
     # train model
     userprint("Training model")
-    candidates.train_model()
+    candidates.train_model(args.model_fits)
 
     userprint("Done")
 if __name__ == '__main__':

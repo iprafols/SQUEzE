@@ -140,6 +140,10 @@ TRAINING_PARSER.add_argument("--try-lines", nargs='*', type=str, default=None, r
                              help="""Name of the lines that will be associated to the peaks
                              to estimate the redshift.""")
 
+TRAINING_PARSER.add_argument("--model-fits", action="store_true",
+                             help="""If this argument is passed, the model is saved as
+                             fits file instead of a json file.""")
+
 """
 This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
 """ # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement
@@ -151,7 +155,7 @@ OPERATION_PARSER.add_argument("--prob-cut", default=0.0, type=float,
                                   in the catalogue""")
 
 OPERATION_PARSER.add_argument("--model", required=True, type=str,
-                              help="""[REQUIRED] Name of the json file containing the model to be used
+                              help="""[REQUIRED] Name of the json or fits file containing the model to be used
                                   in the computation of the probabilities of candidates
                                   being quasars""")
 
