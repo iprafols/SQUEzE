@@ -333,7 +333,7 @@ class Candidates(object):
         # and all the metrics set to np.nan
         if peak_indexs.size == 0:
             candidate_info = spectrum.metadata()
-            z_try = -1.0
+            z_try = np.nan
             significance = np.nan
             try_line = 'none'
             ratios = np.zeros(self.__lines.shape[0], dtype=float)

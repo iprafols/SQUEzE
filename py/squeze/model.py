@@ -335,7 +335,7 @@ class Model(object):
 
             # low-z split
             # compute probabilities for each of the classes
-            data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1) & (data_frame["Z_TRY"] >= 0.0)]
+            data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1)]
             if data_frame_low.shape[0] > 0:
                 data_frame_low = data_frame_low.fillna(-9999.99)
                 data_vector = data_frame_low[self.__selected_cols[:-2]].values
@@ -346,12 +346,12 @@ class Model(object):
                     data_frame_low["PROB_CLASS{:d}".format(int(class_label))] = data_class_probs[:,index]
 
             # non-peaks
-            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"] == -1.0]
+            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()]
             if data_frame_nonpeaks.shape[0] > 0:
                 data_frame_nonpeaks = data_frame_nonpeaks.fillna(-9999.99)
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = -1.0
+                    data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = np.nan
 
             # join datasets
             if (data_frame_high.shape[0] == 0 and data_frame_low.shape[0] == 0 and
@@ -373,12 +373,12 @@ class Model(object):
                     data_frame_peaks["PROB_CLASS{:d}".format(int(class_label))] = data_class_probs[:,index]
 
             # non-peaks
-            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"] == -1.0]
+            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()]
             if not data_frame_nonpeaks.shape[0] == 0:
                 data_frame_nonpeaks = data_frame_nonpeaks.fillna(-9999.99)
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = -1.0
+                    data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = np.nan
 
             # join datasets
             if (data_frame_peaks.shape[0] == 0 and data_frame_nonpeaks.shape[0] == 0):
