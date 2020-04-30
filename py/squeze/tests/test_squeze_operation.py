@@ -22,8 +22,8 @@ class TestSquezeOperation(AbstractTest):
         """ Run squeze_operation.py"""
 
         in_file = "{}/data/formatted_boss_test2.json".format(THIS_DIR)
-        out_file = "{}/results/operation_boss_test2.json".format(THIS_DIR)
-        test_file = "{}/data/candidates_operation_boss_test2_pred.json".format(THIS_DIR)
+        out_file = "{}/results/operation_boss_test2.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_operation_boss_test2_pred.fits.gz".format(THIS_DIR)
         model_file = "{}/data/candidates_boss_test1_nopred_model.json".format(THIS_DIR)
 
         command = ["squeze_operation.py",

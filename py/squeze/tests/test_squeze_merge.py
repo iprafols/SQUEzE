@@ -21,10 +21,10 @@ class TestSquezeMerge(AbstractTest):
     def test_squeze_operation(self):
         """ Run squeze_operation.py"""
 
-        in_file1 = "{}/data/candidates_boss_test1_nopred.json".format(THIS_DIR)
-        in_file2 = "{}/data/candidates_boss_test2_nopred.json".format(THIS_DIR)
-        out_file = "{}/results/merge_boss_test1_test2.json".format(THIS_DIR)
-        test_file = "{}/data/candidates_merge_boss_test1_test2_nopred.json".format(THIS_DIR)
+        in_file1 = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
+        in_file2 = "{}/data/candidates_boss_test2_nopred.fits.gz".format(THIS_DIR)
+        out_file = "{}/results/merge_boss_test1_test2.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_merge_boss_test1_test2_nopred.fits.gz".format(THIS_DIR)
 
         command = ["squeze_merge.py",
                    "--input-candidates",

@@ -22,8 +22,8 @@ class TestSquezeCandidates(AbstractTest):
         """ Run squeze_test.py wihtout computing stastics"""
 
         in_file = "{}/data/formatted_boss_test2.json".format(THIS_DIR)
-        out_file = "{}/results/test_boss_test2_nostats.json".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test2_pred.json".format(THIS_DIR)
+        out_file = "{}/results/test_boss_test2_nostats.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test2_pred.fits.gz".format(THIS_DIR)
         model_file = "{}/data/candidates_boss_test1_nopred_model.json".format(THIS_DIR)
 
         command = ["squeze_test.py",
@@ -41,8 +41,8 @@ class TestSquezeCandidates(AbstractTest):
         """ Run squeze_test.py computing stastics"""
 
         in_file = "{}/data/formatted_boss_test2.json".format(THIS_DIR)
-        out_file = "{}/results/test_boss_test2_stats.json".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test2_pred.json".format(THIS_DIR)
+        out_file = "{}/results/test_boss_test2_stats.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test2_pred.fits.gz".format(THIS_DIR)
         model_file = "{}/data/candidates_boss_test1_nopred_model.json".format(THIS_DIR)
         qso_file = "{}/data/quasars_boss_test2.json".format(THIS_DIR)
 

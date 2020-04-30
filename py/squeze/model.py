@@ -434,7 +434,6 @@ class Model(object):
         selected_cols = data.get("_Model__selected_cols")
         selected_cols = [col.upper() for col in selected_cols]
         settings = data.get("_Model__settings")
-        settings["lines"] = deserialize(settings.get("lines"))
         model_opt = [data.get("_Model__clf_options"), data.get("_Model__random_state")]
         cls_instance = cls(name, selected_cols, settings,
                            model_opt=model_opt)

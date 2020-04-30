@@ -829,8 +829,8 @@ class Candidates(object):
                  return dtype
 
         # filter data DataFrame
-        data_frame = self.__candidates[(~self.__candidates["duplicated"]) &
-                                       (self.__candidates["prob"] >= prob_cut)]
+        data_frame = self.__candidates[(~self.__candidates["DUPLICATED"]) &
+                                       (self.__candidates["PROB"] >= prob_cut)]
 
         hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
                                                          format=convert_dtype(dtype),
