@@ -328,12 +328,12 @@ class Candidates(object):
 
         # keep peaks in the spectrum
         candidates = []
-        # if there are no peaks, include the spectrum with redshift -1
+        # if there are no peaks, include the spectrum with redshift np.nan
         # assumed_line='none', significance is set to np.nan
         # and all the metrics set to np.nan
         if peak_indexs.size == 0:
             candidate_info = spectrum.metadata()
-            z_try = -1.0
+            z_try = np.nan
             significance = np.nan
             try_line = 'none'
             ratios = np.zeros(self.__lines.shape[0], dtype=float)

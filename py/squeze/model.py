@@ -150,18 +150,18 @@ class Model(object):
             np.nan
             """
         if "PROB_CLASS3" in columns and "PROB_CLASS30" in columns:
-            if row["PROB_CLASS3"] == -1.0:
-                prob = -1.0
+            if np.isnan(row["PROB_CLASS3"]):
+                prob = np.nan
             else:
                 prob = row["PROB_CLASS3"] + row["PROB_CLASS30"]
         elif "PROB_CLASS30" in columns:
-            if row["PROB_CLASS30"] == -1.0:
-                prob = -1.0
+            if np.isnan(row["PROB_CLASS30"]):
+                prob = np.nan
             else:
                 prob = row["PROB_CLASS30"]
         elif "PROB_CLASS3" in columns:
-            if row["PROB_CLASS3"] == -1.0:
-                prob = -1.0
+            if np.isnan(row["PROB_CLASS3"]):
+                prob = np.nan
             else:
                 prob = row["PROB_CLASS3"]
         else:
@@ -323,10 +323,10 @@ class Model(object):
         if self.__highlow_split:
             # high-z split
             # compute probabilities for each of the classes
-            data_frame_high = data_frame[data_frame["Z_TRY"] >= 2.1]
+            data_frame_high = data_frame[data_frame["Z_TRY"] >= 2.1].copy()
             if data_frame_high.shape[0] > 0:
-                data_frame_high = data_frame_high.fillna(-9999.99)
-                data_vector = data_frame_high[self.__selected_cols[:-2]].values
+                aux = data_frame_high.fillna(-9999.99)
+                data_vector = aux[self.__selected_cols[:-2]].values
                 data_class_probs = self.__clf_high.predict_proba(data_vector)
 
                 # save the probability for each of the classes
@@ -335,10 +335,10 @@ class Model(object):
 
             # low-z split
             # compute probabilities for each of the classes
-            data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1) & (data_frame["Z_TRY"] >= 0.0)]
+            data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1)].copy()
             if data_frame_low.shape[0] > 0:
-                data_frame_low = data_frame_low.fillna(-9999.99)
-                data_vector = data_frame_low[self.__selected_cols[:-2]].values
+                aux = data_frame_low.fillna(-9999.99)
+                data_vector = aux[self.__selected_cols[:-2]].values
                 data_class_probs = self.__clf_low.predict_proba(data_vector)
 
                 # save the probability for each of the classes
@@ -346,12 +346,11 @@ class Model(object):
                     data_frame_low["PROB_CLASS{:d}".format(int(class_label))] = data_class_probs[:,index]
 
             # non-peaks
-            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"] == -1.0]
+            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if data_frame_nonpeaks.shape[0] > 0:
-                data_frame_nonpeaks = data_frame_nonpeaks.fillna(-9999.99)
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = -1.0
+                    data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = np.nan
 
             # join datasets
             if (data_frame_high.shape[0] == 0 and data_frame_low.shape[0] == 0 and
@@ -363,7 +362,7 @@ class Model(object):
         else:
             # peaks
             # compute probabilities for each of the classes
-            data_frame_peaks = data_frame[data_frame["Z_TRY"] >= 0.0]
+            data_frame_peaks = data_frame[data_frame["Z_TRY"] >= 0.0].copy()
             if data_frame_peaks.shape[0] > 0:
                 data_vector = data_frame_peaks[self.__selected_cols[:-2]].fillna(-9999.99).values
                 data_class_probs = self.__clf.predict_proba(data_vector)
@@ -373,12 +372,11 @@ class Model(object):
                     data_frame_peaks["PROB_CLASS{:d}".format(int(class_label))] = data_class_probs[:,index]
 
             # non-peaks
-            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"] == -1.0]
+            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if not data_frame_nonpeaks.shape[0] == 0:
-                data_frame_nonpeaks = data_frame_nonpeaks.fillna(-9999.99)
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = -1.0
+                    data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = np.nan
 
             # join datasets
             if (data_frame_peaks.shape[0] == 0 and data_frame_nonpeaks.shape[0] == 0):
