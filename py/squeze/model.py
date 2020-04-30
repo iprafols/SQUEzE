@@ -323,7 +323,7 @@ class Model(object):
         if self.__highlow_split:
             # high-z split
             # compute probabilities for each of the classes
-            data_frame_high = data_frame[data_frame["Z_TRY"] >= 2.1]
+            data_frame_high = data_frame[data_frame["Z_TRY"] >= 2.1].copy()
             if data_frame_high.shape[0] > 0:
                 aux = data_frame_high.fillna(-9999.99)
                 data_vector = aux[self.__selected_cols[:-2]].values
@@ -335,7 +335,7 @@ class Model(object):
 
             # low-z split
             # compute probabilities for each of the classes
-            data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1)]
+            data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1)].copy()
             if data_frame_low.shape[0] > 0:
                 aux = data_frame_low.fillna(-9999.99)
                 data_vector = aux[self.__selected_cols[:-2]].values
@@ -346,7 +346,7 @@ class Model(object):
                     data_frame_low["PROB_CLASS{:d}".format(int(class_label))] = data_class_probs[:,index]
 
             # non-peaks
-            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()]
+            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if data_frame_nonpeaks.shape[0] > 0:
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
@@ -362,7 +362,7 @@ class Model(object):
         else:
             # peaks
             # compute probabilities for each of the classes
-            data_frame_peaks = data_frame[data_frame["Z_TRY"] >= 0.0]
+            data_frame_peaks = data_frame[data_frame["Z_TRY"] >= 0.0].copy()
             if data_frame_peaks.shape[0] > 0:
                 data_vector = data_frame_peaks[self.__selected_cols[:-2]].fillna(-9999.99).values
                 data_class_probs = self.__clf.predict_proba(data_vector)
@@ -372,7 +372,7 @@ class Model(object):
                     data_frame_peaks["PROB_CLASS{:d}".format(int(class_label))] = data_class_probs[:,index]
 
             # non-peaks
-            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()]
+            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if not data_frame_nonpeaks.shape[0] == 0:
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
