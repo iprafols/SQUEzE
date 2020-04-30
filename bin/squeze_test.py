@@ -20,7 +20,7 @@ from squeze.quasar_catalogue import QuasarCatalogue
 from squeze.model import Model
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
-from squeze.parsers import TEST_PARSER
+from squeze.parsers import TEST_PARSER, quasar_parser_check
 
 
 def main():
@@ -29,6 +29,8 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      parents=[TEST_PARSER])
     args = parser.parse_args()
+    if args.check_statistics:
+        quasar_parser_check(parser, args)
 
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
@@ -37,16 +39,9 @@ def main():
     if args.check_statistics:
         userprint("Loading quasar catalogue")
         if args.qso_dataframe is not None:
-            if ((args.qso_cat is not None) or (args.qso_specid is not None)
-                    or (args.qso_ztrue is not None)):
-                parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
-                             "are incompatible with --qso-dataframe")
             quasar_catalogue = deserialize(load_json(args.qso_dataframe))
             quasar_catalogue["LOADED"] = True
         else:
-            if (args.qso_cat is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
-                parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
-                             "required if --qso-dataframe is not passed")
             quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
                                                args.qso_specid, args.qso_ztrue,
                                                args.qso_hdu).quasar_catalogue()
