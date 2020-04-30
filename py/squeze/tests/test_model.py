@@ -7,6 +7,12 @@
 import unittest
 import os
 
+try:
+    import sklearn
+    module_not_found = False
+except ModuleNotFoundError:
+    module_not_found = True
+
 from squeze.tests.abstract_test import AbstractTest
 from squeze.common_functions import deserialize, load_json
 
