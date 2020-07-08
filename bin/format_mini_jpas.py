@@ -59,14 +59,33 @@ def main():
     parser.add_argument("--keep-cols", nargs='+', default=None, required=False,
                         help="""White-spaced list of the columns to be kept in the
                         formatted spectra""")
+    parser.add_argument("--trays-t1-t2mod", action="store_true", required=False,
+                        help="""If passed, load only filters in trays T1 and T2
+                        modified. Ignored if --trayts-T1-T2 is also passed""")
+    parser.add_argument("--trays-t1-t2", action="store_true", required=False,
+                        help="""If passed, load only filters in trays T1 and
+                        T2.""")
+
 
     args = parser.parse_args()
 
     # load filters information
     hdu_filters = fits.open(args.filters_info)
     filter_names = hdu_filters[1].data["Filter.name"]
-    select_filters = np.array([i for i, name in enumerate(filter_names) if name.startswith("J")])
+
+    if args.trays_t1_t2mod:
+        select_filters = np.array([0,  3,  5,  7,  9, 11, 14, 16, 18, 19, 20,
+                                   21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32,
+                                   33, 34, 35, 36, 37, 38])
+    elif args.trays_t1_t2:
+        select_filters = np.array([0,  2,  5,  6,  9, 10, 14, 15, 18, 19, 20,
+                                   21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32,
+                                   33, 34, 35, 36, 37, 38])
+    else:
+        select_filters = np.array([i for i, name in enumerate(filter_names)
+                                   if name.startswith("J")])
     wave = hdu_filters[1].data["Filter.wavelength"][select_filters]
+
     hdu_filters.close()
 
     # initialize squeze Spectra class
