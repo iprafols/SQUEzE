@@ -566,7 +566,7 @@ def squeze_worker(infiles, model, quiet=False):
                                            join_arms=join_arms,
                                            pack_2_redrock=False)
 
-    spectra = Spectra.from_weave(weave_formatted_spectra)
+    spectra = Spectra.from_weave(weave_formatted_spectra, userprint=userprint)
 
     # TODO: split spectra into several sublists so that we can parallelise
 
