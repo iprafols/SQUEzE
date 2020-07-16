@@ -463,7 +463,7 @@ class Candidates(object):
         self.__candidates = self.__model.compute_probability(self.__candidates)
         self.save_candidates()
 
-    def find_candidates(self, spectra):
+    def find_candidates(self, spectra, save=True):
         """ Find candidates for a given set of spectra, then integrate them in the
             candidates catalogue and save the new version of the catalogue.
 
@@ -471,6 +471,9 @@ class Candidates(object):
             ----------
             spectra : list of Spectrum
             The spectra in which candidates will be looked for.
+
+            save : bool - default: True
+            If True, then save the catalogue file after candidates are found
             """
         if self.__mode == "merge":
             raise Error("The function find_candidates is not available in " +
@@ -487,7 +490,8 @@ class Candidates(object):
                 self.__candidates = self.__candidates.append(candidates_df, ignore_index=True)
 
         # save the new version of the catalogue
-        self.save_candidates()
+        if save:
+            self.save_candidates()
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None,
                                  get_results=False, userprint=verboseprint):
