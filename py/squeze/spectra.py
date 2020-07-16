@@ -11,7 +11,7 @@ __version__ = "0.1"
 from squeze.error import Error
 from squeze.spectrum import Spectrum
 from squeze.simple_spectrum import SimpleSpectrum
-from.squeze.common_functions import quietprint
+from squeze.common_functions import quietprint
 
 class Spectra(object):
     """
