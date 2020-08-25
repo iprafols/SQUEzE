@@ -886,7 +886,7 @@ def main(options=None, comm=None)):
                     format="D",
                     array=np.ones(aux.shape[0])*z_precision),
     ]
-    hdu = fits.BinTableHDU.from_columns(columns)
+    hdu = fits.BinTableHDU.from_columns(columns, name="PRIORS")
     hdu.writeto(priors)
     del aux, columns, hdu
 
