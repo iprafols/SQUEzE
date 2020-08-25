@@ -179,8 +179,7 @@ OPERATION_PARSER.add_argument("--no-save-catalogue", action="store_true",
 OPERATION_PARSER.add_argument("--output-catalogue", default=None, required=False, type=str,
                               help="""Name of the fits file where the final catalogue will be
                                stored. If not specified, the catalogue will be saved using
-                               --output-candidates as name base, Ignored if --save-fits is
-                               not passed""")
+                               --output-candidates as name base""")
 
 """
 This TEST_PARSER contains the common options used to run SQUEzE in training mode
