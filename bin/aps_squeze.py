@@ -64,6 +64,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import os
 import numpy as np
 import pandas as pd
 import astropy.io.fits as fits
@@ -585,8 +586,8 @@ def squeze_worker(infiles, model, quiet=False):
 
     # TODO: if we paralelize, then use 'merging' mode to join the results
 
-    # return the candidates
-    return candidates
+    # return the candidates and the chosen probability threshold
+    return candidates, model.get_settings().get("Z_PRECISION")
 
 def main(options=None, comm=None)):
     """ Run SQUEzE on WEAVE data
@@ -866,10 +867,28 @@ def main(options=None, comm=None)):
         print('ERROR : %s' %(sys.exc_info()[1]))
         return
 
-    candidates = squeze_worker(args.infiles, args.model, quiet=args.quiet)
+    candidates, z_precision = squeze_worker(args.infiles, args.model, quiet=args.quiet)
 
-    # TODO: here is where we format SQUEzE output into priors
-    priors=None
+    # here is where we format SQUEzE output into priors
+    # we currently take a flat prior with SQUEzE preferred redshift solution
+    # and a width as specified in the redshift precision used to train
+    # SQUEzE model
+    priors = args.outpath + "/priors.fits.gz"
+    aux = candidates[~candidates["DUPLICATED"]][["TARGETID", "Z_TRY"]]
+    columns = [
+        fits.Column(name="TARGETID",
+                    format="D",
+                    array=aux["TARGETID"]),
+        fits.Column(name="Z",
+                    format="D",
+                    array=aux["Z_TRY"]),
+        fits.Column(name="SIGMA",
+                    format="D",
+                    array=np.ones(aux.shape[0])*z_precision),
+    ]
+    hdu = fits.BinTableHDU.from_columns(columns)
+    hdu.writeto(priors)
+    del aux, columns, hdu
 
     # now we run redrock
     scandata, zbest, zspec, zfitall = rrweave_worker(
@@ -884,8 +903,9 @@ def main(options=None, comm=None)):
     # TODO: here we format results according to the CS specifications
 
 
-
-
+    # clean the directory
+    if os.path.exists(priors):
+        os.remove(priors)
 
 ##########################################################
 if __name__ == '__main__':
