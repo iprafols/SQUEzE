@@ -8,6 +8,8 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
+import numpy as np
+
 from squeze.error import Error
 from squeze.spectrum import Spectrum
 from squeze.simple_spectrum import SimpleSpectrum
@@ -75,13 +77,16 @@ class Spectra(object):
         spectra_list = []
         for targs in ob_data.data():
             if targs.fib_status.upper() != 'A':
-                userprint('***** Reject APS_ID = %s : FIB_STATUS=%s' %(targs.aps_id, targs.fib_status))
+                userprint(("***** Reject APS_ID = {} : "
+                           "FIB_STATUS={}").format(targs.aps_id, targs.fib_status))
                 continue
 
             metadata = {
                 'TARGID': np.str(targs.targid),
                 'CNAME': np.str(targs.cname),
-                'TARGCLASS': np.str(targs.targclass)
+                'TARGCLASS': np.str(targs.targclass),
+                'SPECID': np.str(targs.targid),
+                'APS_ID': np.str(targs.id)
             }
 
             for specid in range(len(targs.spectra)):

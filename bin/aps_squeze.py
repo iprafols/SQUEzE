@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
     SQUEzE - WEAVE
     ==============
@@ -41,7 +42,6 @@ cache_Rcsr  (Optional)    |     -           |  --cache_Rcsr       (Optional)    
                           |                 |  --mp               (Optional)      |         2         |                               |
                           |                 |  --archetypes       (Optional)      |        None       |                               |
                           |                 |  --zall             (Optional)      |        False      |                               |
-        TBR               |                 |  --priors           (Optional)      |        None       |                               |
                           |                 |  --chi2_scan        (Optional)      |        None       |                               |
                           |                 |  --debug            (Optional)      |        False      |                               |
                           |                 |  --nminima          (Optional)      |        3          |                               |
@@ -65,9 +65,11 @@ __version__ = "0.1"
 
 import argparse
 import os
+import sys
 import numpy as np
 import pandas as pd
 import astropy.io.fits as fits
+from astropy.table import Table, Column, hstack,join
 
 from aps_utils import APSOB, makeR, print_args, none_or_str, str2bool, aps_ids_class,l1_fileinfo, gen_targlist
 import aps_constants
@@ -81,11 +83,57 @@ from redrock.zfind import zfind
 from redrock._version import __version__
 from redrock.archetypes import All_archetypes
 
-from squeze.squeze_common_functions import verboseprint, quietprint
-from squeze.squeze_weave_spectrum import WeaveSpectrum
-from squeze.squeze_spectra import Spectra
-from squeze.squeze_parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
+from squeze.common_functions import verboseprint, quietprint
+from squeze.weave_spectrum import WeaveSpectrum
+from squeze.common_functions import load_json
+from squeze.model import Model
+from squeze.spectra import Spectra
+from squeze.candidates import Candidates
+from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
 
+##########################################################
+
+def write_ztable(outfile, ztable, template_version, archetype_version):
+    """Write output Table to outfile
+
+    Args:
+        outfile (str): output file.
+        ztable (Table): input table (astropy).
+    """
+    header = fits.Header()
+    header['RR_V'] = (__version__, 'Redrock version')
+    header['APS_V'] = (aps_constants.__aps_version__,'PyAPS version')
+    header['APS_RR_V'] = (aps_constants.__aps_rr_version__,'PyAPS Redrock wrapper version')
+
+    ztable.meta['RR_V'] = (__version__, 'Redrock version')
+    ztable.meta['APS_V'] = (aps_constants.__aps_version__,'PyAPS version')
+    ztable.meta['APS_RR_V'] = (aps_constants.__aps_rr_version__,'PyAPS Redrock wrapper version')
+
+    # header['MIN_WAVE'] = lmin
+    # header.comments['MIN_WAVE']= 'Min wavelength (Ang), used by APS_REDROCK'
+    # header['MAX_WAVE'] = lmax
+    # header.comments['MAX_WAVE']= 'MAX wavelength (Ang), used by APS_REDROCK'
+
+    for i, fulltype in enumerate(template_version.keys()):
+        header['TEMNAM'+str(i).zfill(2)] = fulltype
+        header['TEMVER'+str(i).zfill(2)] = template_version[fulltype]
+
+        ztable.meta['TEMNAM'+str(i).zfill(2)] = fulltype
+        ztable.meta['TEMVER'+str(i).zfill(2)] = template_version[fulltype]
+
+    if not archetype_version is None:
+        for i, fulltype in enumerate(archetype_version.keys()):
+            header['ARCNAM'+str(i).zfill(2)] = fulltype
+            header['ARCVER'+str(i).zfill(2)] = archetype_version[fulltype]
+
+            ztable.meta['ARCNAM'+str(i).zfill(2)] = fulltype
+            ztable.meta['ARCVER'+str(i).zfill(2)] = archetype_version[fulltype]
+
+    hx = fits.HDUList()
+    hx.append(fits.PrimaryHDU(header=header))
+    hx.append(fits.convenience.table_to_hdu(ztable))
+    hx.writeto(os.path.expandvars(outfile), overwrite=True)
+    return
 
 ##########################################################
 
@@ -530,7 +578,10 @@ def rrweave_worker(infiles, templates, srvyconf, zbest_fname= None, zall_fname =
 
 ##########################################################
 
-def squeze_worker(infiles, model, quiet=False):
+def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
+                  area, mask_areas, wlranges, cache_Rcsr, sens_corr, mask_gaps,
+                  vacuum, tellurics, fill_gap, arms_ratio, join_arms,
+                  quiet=False, save_file=None):
 
     """
     Function description:
@@ -541,8 +592,10 @@ def squeze_worker(infiles, model, quiet=False):
     userprint = verboseprint if not quiet else quietprint
 
     # load model
+    userprint("================================================")
+    userprint("")
     userprint("Loading model")
-    if args.model.endswith(".json"):
+    if model.endswith(".json"):
         model = Model.from_json(load_json(model))
     else:
         model = Model.from_fits(model)
@@ -567,18 +620,24 @@ def squeze_worker(infiles, model, quiet=False):
                                            join_arms=join_arms,
                                            pack_2_redrock=False)
 
+    userprint("Formatting spectra to be digested by SQUEzE")
     spectra = Spectra.from_weave(weave_formatted_spectra, userprint=userprint)
 
     # TODO: split spectra into several sublists so that we can parallelise
 
     # initialize candidates object
-    userprint("Looking for candidates")
-    candidates = Candidates(mode="operation", name=output_candidates,
-                            model=model)
+    userprint("Initialize candidates object")
+    if save_file is None:
+        candidates = Candidates(mode="operation", model=model)
+    else:
+        candidates = Candidates(mode="operation", model=model, name=save_file)
 
     # look for candidates
     userprint("Looking for candidates")
-    candidates.find_candidates(spectra.spectra_list(), save=False)
+    if save_file is None:
+        candidates.find_candidates(spectra.spectra_list(), save=False)
+    else:
+        candidates.find_candidates(spectra.spectra_list(), save=True)
 
     # compute probabilities
     userprint("Computing probabilities")
@@ -586,8 +645,11 @@ def squeze_worker(infiles, model, quiet=False):
 
     # TODO: if we paralelize, then use 'merging' mode to join the results
 
+    userprint("SQUEzE run is completed, returning")
+    userprint("================================================")
+    userprint("")
     # return the candidates and the chosen probability threshold
-    return candidates, model.get_settings().get("Z_PRECISION")
+    return candidates.candidates(), model.get_settings().get("Z_PRECISION")
 
 def write_results(zfitall, candidates, args):
     """ Format results according to the specifications of the CS
@@ -786,11 +848,15 @@ def write_results(zfitall, candidates, args):
         hdu2.header.comments[key] = desc.get(key, "")
 
     # finally save the catalogue
+    if args.output_catalogue.startswith("/"):
+        filename = args.output_catalogue
+    else:
+        filename = args.output_path + args.output_catalogue
     hdul = fits.HDUList([primary_hdu, hdu, hdu2])
-    hdul.writeto(args.output_path + args.output_catalogue,
+    hdul.writeto(filename,
                  overwrite=True, checksum=True)
 
-def main(options=None, comm=None)):
+def main(options=None, comm=None):
     """ Run SQUEzE on WEAVE data
 
     This loads targets serially and runs SQUEzE on them, producing rought
@@ -863,7 +929,7 @@ def main(options=None, comm=None)):
         help='Output headname. The output filenames will be generated based on this',
         type=str, default='headname', required=True)
 
-    parser.add_argument("--fig", default=False,type=str2bool,
+    parser.add_argument("--fig", default=False, type=str2bool,
         required=False, help="if True, the code also produces plots of the best fitted model")
 
     parser.add_argument('--overwrite',
@@ -908,6 +974,8 @@ def main(options=None, comm=None)):
 
     parser.add_argument("--quiet", action="store_true",
         help="Do not print messages")
+
+    args = parser.parse_args()
 
     comm_size = 1
     comm_rank = 0
@@ -1006,7 +1074,7 @@ def main(options=None, comm=None)):
     # now we make some checks for SQUEzE arguments
     # first we make sure the catalogue's folder exists
     if args.output_catalogue.startswith("/"):
-        catalogue_path = args.output_catalogue[:args.output_catalogue.rfind("/"")]
+        catalogue_path = args.output_catalogue[:args.output_catalogue.rfind("/")]
         if not os.path.exists(catalogue_path):
             os.makedirs(catalogue_path)
             print("OUTPUT_CATALOGUE: %s Created!" %(catalogue_path))
@@ -1016,10 +1084,10 @@ def main(options=None, comm=None)):
     assert os.path.exists(args.model)
     model = args.model
     # finally check that prob is a number between 0 and 1
-    assert (args.prob >= 0.0 and args.prob <= 1.0)
+    assert (args.prob_cut >= 0.0 and args.prob_cut <= 1.0)
 
     # print args and assigned/default values on the screen
-    print_args(args,module='SQUEzE', version= aps_constants.__aps_rr_version__, path=outpath, headname=args.headname)
+    print_args(args, module='SQUEzE', version=aps_constants.__aps_squeze_version__, path=outpath, headname=args.headname)
 
     zbest_fname=os.path.join(args.outpath,'zbest_'+str(args.headname)+'.fits')
 
@@ -1067,18 +1135,42 @@ def main(options=None, comm=None)):
         print('ERROR : %s' %(sys.exc_info()[1]))
         return
 
-    candidates, z_precision = squeze_worker(args.infiles, args.model, quiet=args.quiet)
+    # run SQUEzE
+    if args.debug:
+        assert (args.output_catalogue.endswith(".fit") or
+                args.output_catalogue.endswith(".fits") or
+                args.output_catalogue.endswith(".fits.gz")
+                ), "Invalid extension for output catalogue"
+        ext = args.output_catalogue[args.output_catalogue.rfind("fit")-1:]
+        save_file = args.output_catalogue.replace(ext,
+                                                  "_squeze_candidates{}".format(ext))
+        if not save_file.startswith("/"):
+            save_file = args.outpath + save_file
+    else:
+        save_file = None
+
+    candidates_df, z_precision = squeze_worker(args.infiles, args.model,
+                                               aps_ids, targsrvy, targclass,
+                                               mask_aps_ids, area, mask_areas,
+                                               wlranges, args.cache_Rcsr,
+                                               args.sens_corr, args.mask_gaps,
+                                               args.vacuum, args.tellurics,
+                                               args.fill_gap, arms_ratio,
+                                               args.join_arms,
+                                               quiet=args.quiet,
+                                               save_file=save_file)
 
     # here is where we format SQUEzE output into priors
     # we currently take a flat prior with SQUEzE preferred redshift solution
     # and a width as specified in the redshift precision used to train
     # SQUEzE model
     priors = args.outpath + "/priors.fits.gz"
-    aux = candidates[~candidates["DUPLICATED"]][["TARGETID", "Z_TRY"]]
+    aux = candidates_df[(~candidates_df["DUPLICATED"]) &
+                        (candidates_df["PROB"] >= args.prob_cut)]
     columns = [
         fits.Column(name="TARGETID",
-                    format="D",
-                    array=aux["TARGETID"]),
+                    format="15A",
+                    array=aux["TARGID"]),
         fits.Column(name="Z",
                     format="D",
                     array=aux["Z_TRY"]),
@@ -1087,7 +1179,14 @@ def main(options=None, comm=None)):
                     array=np.ones(aux.shape[0])*z_precision),
     ]
     hdu = fits.BinTableHDU.from_columns(columns, name="PRIORS")
-    hdu.writeto(priors)
+    hdu.writeto(priors, overwrite=args.overwrite)
+    # update aps_ids to only include objects with prior
+    if aps_ids is None:
+        aps_ids = list(aux["APS_ID"])
+    else:
+        for aps_id in aps_ids:
+            if not apd_id in aux["APS_ID"]:
+                aps_ids.pop(aps_id)
     del aux, columns, hdu
 
     # now we run redrock
@@ -1105,15 +1204,17 @@ def main(options=None, comm=None)):
     write_results(zfitall, candidates)
 
     # clean the directory
-    if os.path.exists(priors):
+    if not args.debug and os.path.exists(priors):
         os.remove(priors)
-        # TODO: clean redrock results if necessary
+    # TODO: clean redrock results if necessary
+
+    userprint("Done!")
 
 ##########################################################
 if __name__ == '__main__':
 
     option = [
-    '--infiles', '/Users/alireza/PyAPS_data/opr3/20160907/3161/stacked_1002154.fit', '/Users/alireza/PyAPS_data/opr3/20160907/3161/stacked_1002153.fit',
+    '--infiles', '/Users/iperezra/software/SQUEzE/py/squeze/tests/data/stacked_1004073.fit', '/Users/iperezra/software/SQUEzE/py/squeze/tests/data/stacked_1004073.fit',
     '--aps_ids', '1004,1003, 1002,9,1007',
     '--targsrvy', 'None',
     '--targclass', 'None',
@@ -1126,22 +1227,25 @@ if __name__ == '__main__':
     '--tellurics', 'False',
     '--vacuum', 'True',
     '--fill_gap', 'False',
-    '--arms_ratio', '1.0, 0.83',
-    '--join_arms', 'False',
-    '--templates', '/Users/alireza/PyAPS_templates/templates_RR/',
+    '--arms_ratio', '1.0,0.83',
+    '--join_arms', 'True',
+    '--templates', '/Users/iperezra/software/SQUEzE/py/squeze/tests/data/templates_RR/',
     '--srvyconf', '/Users/alireza/PyAPS/config_files/weave_cls.json',
-    '--archetypes', '/Users/alireza/PyAPS_templates/templates_ARC_RR/',
+    '--archetypes', '/Users/iperezra/software/SQUEzE/py/squeze/tests/data/redrock-archetypes/',
     '--outpath', '/Users/alireza/PyAPS_results/20160907/3161/',
     '--headname', 'test',
     '--zall', 'True',
-    '--priors', 'None',
     '--chi2_scan', 'None',
     '--nminima' , '3',
     '--fig', 'True',
     '--cache_Rcsr', 'False',
     '--debug', 'False',
     '--overwrite', 'True',
-    '--mp' ,'2' ]
+    '--mp' ,'2',
+    '--model', '/Users/iperezra/software/SQUEzE/data/BOSS_train_64plates_model.json',
+    "--prob_cut", '0.0',
+    "--output_catalogue", '',
+    ]
 
     # Set option to None to run the code through the command line
     option = None
