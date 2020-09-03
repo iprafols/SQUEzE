@@ -69,7 +69,10 @@ import sys
 import numpy as np
 import pandas as pd
 import astropy.io.fits as fits
-from astropy.table import Table, Column, hstack,join
+from astropy.table import Table, Column, hstack, join
+from collections import OrderedDict
+import json
+from datetime import datetime
 
 from aps_utils import APSOB, makeR, print_args, none_or_str, str2bool, aps_ids_class,l1_fileinfo, gen_targlist
 import aps_constants
@@ -684,7 +687,7 @@ def write_results(zfitall, candidates, args):
     targclasses = ["QSO"]*cnames.size
     probs = nonduplicate_candidates["PROB"]
     for cname in cnames:
-        z = zfitall[zfitall["CNAME"] == cname]["Z"].values[0]
+        z = zfitall[zfitall["CNAME"] == cname]["Z"]
     cols  = [
         fits.Column(name="CNAME",
                     format="20A",
@@ -977,6 +980,9 @@ def main(options=None, comm=None):
 
     args = parser.parse_args()
 
+    # manage verbosity
+    userprint = verboseprint if not args.quiet else quietprint
+
     comm_size = 1
     comm_rank = 0
     if comm is not None:
@@ -1201,14 +1207,14 @@ def main(options=None, comm=None):
 
     # here we format results according to the CS specifications
     # and save the catalogues
-    write_results(zfitall, candidates)
+    write_results(zfitall, candidates_df, args)
 
     # clean the directory
     if not args.debug and os.path.exists(priors):
         os.remove(priors)
     # TODO: clean redrock results if necessary
 
-    userprint("Done!")
+    userprint("Done")
 
 ##########################################################
 if __name__ == '__main__':
