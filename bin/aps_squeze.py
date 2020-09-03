@@ -1175,8 +1175,8 @@ def main(options=None, comm=None):
                         (candidates_df["PROB"] >= args.prob_cut)]
     columns = [
         fits.Column(name="TARGETID",
-                    format="15A",
-                    array=aux["TARGID"]),
+                    format="I",
+                    array=aux["APS_ID"]),
         fits.Column(name="Z",
                     format="D",
                     array=aux["Z_TRY"]),
