@@ -78,7 +78,7 @@ class TestApsWrapper(AbstractTest):
                     '--mask_aps_ids', 'None',
                     '--area', 'None',
                     '--mask_areas', 'None',
-                    '--wlranges', '4800.0,5000', '6000.0,6100',
+                    '--wlranges', '3676,6088.25', '5772,9594.25',
                     '--sens_corr', 'True',
                     '--mask_gaps', 'True',
                     '--tellurics', 'False',
@@ -100,7 +100,7 @@ class TestApsWrapper(AbstractTest):
                     '--overwrite', 'True',
                     '--mp' ,'2',
                     '--model', '{}/data/candidates_boss_test1_nopred_model.json'.format(THIS_DIR),
-                    '--prob_cut', '0.0',
+                    '--prob_cut', '0.3',
                     '--output_catalogue', self.out_file,
                    ]
         self.run_command(command)

@@ -570,6 +570,7 @@ def rrweave_worker(infiles, templates, srvyconf, zbest_fname= None, zall_fname =
     global_stop = elapsed(global_start, "Total run time", comm=comm)
 
     if debug:
+        continue
         import IPython
         IPython.embed()
 

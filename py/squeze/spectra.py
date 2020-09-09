@@ -85,7 +85,7 @@ class Spectra(object):
                 'TARGID': np.str(targs.targid),
                 'CNAME': np.str(targs.cname),
                 'TARGCLASS': np.str(targs.targclass),
-                'SPECID': np.str(targs.targid),
+                'SPECID': np.int(targs.id),
                 'APS_ID': np.int(targs.id)
             }
 
