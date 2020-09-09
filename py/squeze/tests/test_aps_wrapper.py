@@ -47,7 +47,7 @@ class TestApsWrapper(AbstractTest):
             userprint("Redrock templates not found; Skip ApS wrapper tests")
             self.skipTest("Redrock templates not found; Skip ApS wrapper tests")
 
-        self.redrock_archetypes = "{}/data/redrock-archetypes".format(THIS_DIR)
+        self.redrock_archetypes = "{}/data/redrock-quasar-archetypes".format(THIS_DIR)
         if not os.path.exists(self.redrock_archetypes):
             userprint("Redrock archetypes not found; Skip ApS wrapper tests")
             self.skipTest("Redrock archetypes not found; Skip ApS wrapper "
