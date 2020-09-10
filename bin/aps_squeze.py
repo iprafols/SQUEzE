@@ -691,7 +691,7 @@ def write_results(zbest, candidates_df, args):
     cnames = filtered_candidates["CNAME"]
     targids = filtered_candidates["TARGID"]
     targclasses = ["QSO"]*cnames.size
-    probs = candidates_df["PROB"]
+    probs = filtered_candidates["PROB"]
     z = [zbest[zbest["APS_ID"] == aps_id]["Z"][0] for aps_id in aps_ids]
     cols  = [
         fits.Column(name="CNAME",
