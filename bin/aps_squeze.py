@@ -99,7 +99,7 @@ from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
 ##########################################################
 
 
-def read_spectra(infiles, pack_2_redrock=False, aps_ids=None, targsrvy= None, targclass = None, mask_aps_ids = None , area=None, mask_areas=None, wlranges=None,
+def read_spectra(infiles, pack_2_redrock=True, aps_ids=None, targsrvy= None, targclass = None, mask_aps_ids = None , area=None, mask_areas=None, wlranges=None,
   cache_Rcsr=None, sens_corr=None, mask_gaps=None, vacuum=None,
    tellurics=None, fill_gap=None, arms_ratio=None, join_arms=None):
 
