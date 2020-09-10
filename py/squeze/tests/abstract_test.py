@@ -110,10 +110,11 @@ class AbstractTest(unittest.TestCase):
                 self.assertTrue(new_data is None)
             else:
                 for col in orig_data.dtype.names:
-                    print(col, orig_data[col][0], orig_data[col][1])
                     self.assertTrue(col in new_data.dtype.names)
                     self.assertTrue(((orig_data[col] == new_data[col]).all()) or
-                                    (np.allclose(orig_data[col], new_data[col])))
+                                    (np.allclose(orig_data[col],
+                                                 new_data[col],
+                                                 equal_nan=True)))
 
 if __name__ == '__main__':
     pass
