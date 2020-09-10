@@ -1217,8 +1217,16 @@ def main(options=None, comm=None):
 
     # clean the directory
     if args.clean_dir:
-        os.remove(priors)
-        os.remove(save_file)
+        if os.path.exists(priors):
+            os.remove(priors)
+        if os.path.exists(save_file):
+            os.remove(save_file)
+        if os.path.exists("{}/zall_test.fits".format(args.output_path)):
+            os.remove("{}/zall_test.fits".format(args.output_path))
+        if os.path.exists("{}/zbest_test.fits".format(args.output_path)):
+            os.remove("{}/zbest_test.fits".format(args.output_path))
+        if os.path.exists("{}/zspec_test.fits".format(args.output_path)):
+            os.remove("{}/zspec_test.fits".format(args.output_path))
     # TODO: clean redrock results if necessary
 
     userprint("Done")

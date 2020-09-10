@@ -57,8 +57,24 @@ class TestApsWrapper(AbstractTest):
                            "json").format(THIS_DIR)
 
         self.out_file = "{}/results/aps_results.fits.gz".format(THIS_DIR)
-        self.test_file = ("{}/data/candidates_boss_test1_nopred"
-                          ".fits.gz").format(THIS_DIR)
+        self.out_priors_file = self.out_file.replace("aps_results", "priors")
+        self.out_candidates_file = self.out_file.replace(".fits",
+                                                         "_squeze_candidates.fits")
+
+        self.test_file = "{}/data/aps_results.fits.gz".format(THIS_DIR)
+        if not os.path.exists(self.test_file):
+            userprint("Test file not found; Skip ApS wrapper tests")
+            self.skipTest("Test file not found; Skip ApS wrapper tests")
+        self.test_priors_file = self.test_file.replace("aps_results", "priors")
+        if not os.path.exists(self.test_priors_file):
+            userprint("Priors test file not found; Skip ApS wrapper tests")
+            self.skipTest("Priors test file not found; Skip ApS wrapper tests")
+        self.test_candidates_file = self.test_file.replace(".fits",
+                                                          "_squeze_candidates.fits")
+        if not os.path.exists(self.test_candidates_file):
+            userprint("Candidates test file not found; Skip ApS wrapper tests")
+            self.skipTest("Candidates test file not found; Skip ApS wrapper tests")
+
 
         self.srvyconf = "{}/data/weave_cls.json".format(THIS_DIR)
         if not os.path.exists(self.redrock_archetypes):
@@ -106,8 +122,15 @@ class TestApsWrapper(AbstractTest):
                     '--quiet', 'False',
                    ]
         self.run_command(command)
+        # check that files are created
         self.assertTrue(os.path.isfile(self.out_file))
-        #self.compare_data_frames(self.test_file, self.out_file)
+        self.assertTrue(os.path.isfile(self.out_priors_file))
+        self.assertTrue(os.path.isfile(self.out_candidates_file))
+
+        # compare the results
+        self.compare_fits(self.test_file, self.out_file)
+        self.compare_fits(self.test_priors_file, self.out_priors_file)
+        self.compare_fits(self.test_candidates_file, self.out_candidates_file)
 
 if __name__ == '__main__':
     unittest.main()
