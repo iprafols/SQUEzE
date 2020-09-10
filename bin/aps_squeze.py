@@ -96,34 +96,6 @@ from squeze.spectra import Spectra
 from squeze.candidates import Candidates
 from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
 
-##########################################################
-
-
-def read_spectra(infiles, pack_2_redrock=True, aps_ids=None, targsrvy= None, targclass = None, mask_aps_ids = None , area=None, mask_areas=None, wlranges=None,
-  cache_Rcsr=None, sens_corr=None, mask_gaps=None, vacuum=None,
-   tellurics=None, fill_gap=None, arms_ratio=None, join_arms=None):
-
-    """Read targets from a list of spectra files
-    Args:
-         infiles (list): input files
-    Returns:
-        tuple: (APStargets,APSmeta , setups) where targets is a list of Target objects and
-    This setups is the output setups, after checking for availibility of data in the requested arms.
-    """
-
-
-    # READ DATA and put them in the APSOBJ OBJECT
-    _APSOB = APSOB(infiles, aps_ids=aps_ids, targsrvy= targsrvy, targclass = targclass, mask_aps_ids = mask_aps_ids, area=area, mask_areas=mask_areas,
-        wlranges=wlranges, sens_corr=sens_corr, mask_gaps=mask_gaps, vacuum=vacuum, tellurics=tellurics,
-        fill_gap=fill_gap, arms_ratio=arms_ratio, join_arms=join_arms)
-
-    if pack_2_redrock:
-        return _APSOB.pack_2_redrock(cache_Rcsr=cache_Rcsr)
-    else:
-        return _APSOB
-
-##########################################################
-
 def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
                   area, mask_areas, wlranges, cache_Rcsr, sens_corr, mask_gaps,
                   vacuum, tellurics, fill_gap, arms_ratio, join_arms,
@@ -148,23 +120,14 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
 
     # load spectra
     userprint("Loading spectra")
-    weave_formatted_spectra = read_spectra(infiles,
-                                           aps_ids= aps_ids,
-                                           targsrvy= targsrvy,
-                                           targclass = targclass,
-                                           mask_aps_ids = mask_aps_ids,
-                                           area=area,
-                                           mask_areas=mask_areas,
-                                           wlranges=wlranges,
-                                           cache_Rcsr=cache_Rcsr,
-                                           sens_corr=sens_corr,
-                                           mask_gaps=mask_gaps,
-                                           vacuum=vacuum,
-                                           tellurics=tellurics,
-                                           fill_gap=fill_gap,
-                                           arms_ratio=arms_ratio,
-                                           join_arms=join_arms,
-                                           pack_2_redrock=False)
+    weave_formatted_spectra = APSOB(infiles, aps_ids=aps_ids,
+                                    targsrvy= targsrvy, targclass = targclass,
+                                    mask_aps_ids = mask_aps_ids, area=area,
+                                    mask_areas=mask_areas, wlranges=wlranges,
+                                    sens_corr=sens_corr, mask_gaps=mask_gaps,
+                                    vacuum=vacuum, tellurics=tellurics,
+                                    fill_gap=fill_gap, arms_ratio=arms_ratio,
+                                    join_arms=join_arms)
 
     userprint("Formatting spectra to be digested by SQUEzE")
     spectra = Spectra.from_weave(weave_formatted_spectra, userprint=userprint)
