@@ -96,12 +96,14 @@ class TestApsWrapper(AbstractTest):
                     '--nminima' , '3',
                     '--fig', 'False',
                     '--cache_Rcsr', 'False',
-                    '--debug', 'True',
+                    '--debug', 'False',
                     '--overwrite', 'True',
                     '--mp' ,'2',
                     '--model', '{}/data/candidates_boss_test1_nopred_model.json'.format(THIS_DIR),
                     '--prob_cut', '0.3',
                     '--output_catalogue', self.out_file,
+                    '--clean_dir', 'False',
+                    '--quiet', 'False',
                    ]
         self.run_command(command)
         self.assertTrue(os.path.isfile(self.out_file))

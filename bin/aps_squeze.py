@@ -51,7 +51,8 @@ cache_Rcsr  (Optional)    |     -           |  --cache_Rcsr       (Optional)    
                           |                 |  --model_fits       (Optional)      |        False      |                               |
                           |                 |  --prob_cut         (Optional)      |          -        |                               |
                           |                 |  --output_catalogue (Required)      |        0.0        |                               |                   |                               |
-                          |                 |  --quiet            (Optional)      |        False      |                               |
+                          |                 |  --quiet            (Optional)      |        False      |
+                          |                 |  --clean_dir        (Optional)      |        True       |                               |
                           |                 |                                     |                   |                               |
 #######################################################################################################################################
 
@@ -980,8 +981,11 @@ def main(options=None, comm=None):
         help="Name of the fits file where the final catalogue will be stored. "
              "If a full path is not provided, then use --outpath")
 
-    parser.add_argument("--quiet", action="store_true",
+    parser.add_argument("--quiet", type=str2bool, default=False,
         help="Do not print messages")
+
+    parser.add_argument("--clean_dir", type=str2bool, default=True,
+        help="Clean the directory of intermediate files")
 
     args = parser.parse_args()
 
@@ -1147,18 +1151,15 @@ def main(options=None, comm=None):
         return
 
     # run SQUEzE
-    if args.debug:
-        assert (args.output_catalogue.endswith(".fit") or
-                args.output_catalogue.endswith(".fits") or
-                args.output_catalogue.endswith(".fits.gz")
-                ), "Invalid extension for output catalogue"
-        ext = args.output_catalogue[args.output_catalogue.rfind("fit")-1:]
-        save_file = args.output_catalogue.replace(ext,
-                                                  "_squeze_candidates{}".format(ext))
-        if not save_file.startswith("/"):
-            save_file = args.outpath + save_file
-    else:
-        save_file = None
+    assert (args.output_catalogue.endswith(".fit") or
+            args.output_catalogue.endswith(".fits") or
+            args.output_catalogue.endswith(".fits.gz")
+            ), "Invalid extension for output catalogue"
+    ext = args.output_catalogue[args.output_catalogue.rfind("fit")-1:]
+    save_file = args.output_catalogue.replace(ext,
+                                              "_squeze_candidates{}".format(ext))
+    if not save_file.startswith("/"):
+        save_file = args.outpath + save_file
 
     candidates_df, z_precision = squeze_worker(args.infiles, args.model,
                                                aps_ids, targsrvy, targclass,
@@ -1215,8 +1216,9 @@ def main(options=None, comm=None):
     write_results(zbest, candidates_df, args)
 
     # clean the directory
-    if not args.debug and os.path.exists(priors):
+    if args.clean_dir:
         os.remove(priors)
+        os.remove(save_file)
     # TODO: clean redrock results if necessary
 
     userprint("Done")
