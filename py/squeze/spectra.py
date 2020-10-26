@@ -8,9 +8,12 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
+import numpy as np
+
 from squeze.error import Error
 from squeze.spectrum import Spectrum
 from squeze.simple_spectrum import SimpleSpectrum
+from squeze.common_functions import quietprint
 
 class Spectra(object):
     """
@@ -55,6 +58,43 @@ class Spectra(object):
             serialized using the serialization method specified in `save_json` function
             present on `squeze_common_functions.py` """
         spectra_list = list(map(SimpleSpectrum.from_json, data.get("_Spectra__spectra_list")))
+        return cls(spectra_list)
+
+    @classmethod
+    def from_weave(cls, ob_data, userprint=quietprint):
+        """ This function builds a Spectra instance containing instances of SimpleSpectrum
+            from a WEAVE OB
+
+            Parameters
+            ----------
+            ob_data : aps.utils.APSOB
+            OB data loaded using the APS utils APSOB class
+
+            userprint : function - default: quietprint
+            Function to manage the printing with the correct level of verbosity
+            """
+
+        spectra_list = []
+        for targs in ob_data.data():
+            if targs.fib_status.upper() != 'A':
+                userprint(("***** Reject APS_ID = {} : "
+                           "FIB_STATUS={}").format(targs.aps_id, targs.fib_status))
+                continue
+
+            metadata = {
+                'TARGID': np.str(targs.targid),
+                'CNAME': np.str(targs.cname),
+                'TARGCLASS': np.str(targs.targclass),
+                'SPECID': np.int(targs.id),
+                'APS_ID': np.int(targs.id)
+            }
+
+            for specid in range(len(targs.spectra)):
+                spectra_list.append(SimpleSpectrum(targs.spectra[specid].flux,
+                                                   targs.spectra[specid].ivar,
+                                                   targs.spectra[specid].wave,
+                                                   metadata))
+
         return cls(spectra_list)
 
 if __name__ == "__main__":

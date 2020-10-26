@@ -10,8 +10,8 @@ __version__ = "0.1"
 
 import pandas as pd
 
-from squeze.squeze_error import Error
-from squeze.squeze_spectrum import Spectrum
+from squeze.error import Error
+from squeze.spectrum import Spectrum
 
 class WeaveSpectrum(Spectrum):
     """

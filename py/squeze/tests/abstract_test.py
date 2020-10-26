@@ -9,6 +9,7 @@ import unittest
 import os
 import subprocess
 import numpy as np
+import astropy.io.fits as fits
 
 from squeze.candidates import Candidates
 from squeze.common_functions import verboseprint as userprint
@@ -83,6 +84,37 @@ class AbstractTest(unittest.TestCase):
         else:
             are_similar = False
         self.assertTrue(equal_df or are_similar)
+
+    def compare_fits(self, orig_file, new_file):
+        """ Compares two fits files to check that they are equal """
+        # open fits files
+        orig_hdul = fits.open(orig_file)
+        new_hdul = fits.open(new_file)
+
+        # compare them
+        self.assertTrue(len(orig_hdul), len(new_hdul))
+        # loop over HDUs
+        for hdu_index in range(len(orig_hdul)):
+            # check header
+            orig_header = orig_hdul[1].header
+            new_header = new_hdul[1].header
+            for key in orig_header:
+                self.assertTrue(key in new_header)
+                if not key in ["CHECKSUM", "DATASUM"]:
+                    self.assertTrue((orig_header[key]==new_header[key]) or
+                                    (np.isclose(orig_header[key], new_header[key])))
+            # check data
+            orig_data = orig_hdul[hdu_index].data
+            new_data = new_hdul[hdu_index].data
+            if orig_data is None:
+                self.assertTrue(new_data is None)
+            else:
+                for col in orig_data.dtype.names:
+                    self.assertTrue(col in new_data.dtype.names)
+                    self.assertTrue(((orig_data[col] == new_data[col]).all()) or
+                                    (np.allclose(orig_data[col],
+                                                 new_data[col],
+                                                 equal_nan=True)))
 
 if __name__ == '__main__':
     pass
