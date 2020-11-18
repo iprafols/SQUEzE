@@ -211,7 +211,7 @@ def write_results(zbest, candidates_df, args):
                     array=targids,
                    ),
         fits.Column(name="TARGCLASS",
-                    format="7A",
+                    format="12A",
                     disp="A30",
                     array=targclasses,
                    ),
