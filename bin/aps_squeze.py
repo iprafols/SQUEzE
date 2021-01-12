@@ -7,6 +7,7 @@
 
     versions:
      1.0 By Ignasi Perez-Rafols (LPNHE, July 2020) - First version
+     1.1 Modified By Alireza Molaeinezhad (APS, DEC 2020) -  APS compability
 
 
 ########### BAISC APS PARAM ###########################################################################################################
@@ -25,7 +26,7 @@ vacuum (Optional)         |     False       |  --vacuum           (Optional)    
 tellurics (Optional)      |     False       |  --tellurics        (Optional)      |        False      |                               |
 fill_gap (Optional)       |     False       |  --fill_gap         (Optional)      |        False      |                               |
 arms_ratio (Optional)     |     None        |  --arms_ratio       (Optional)      |        None       | for R band in OPR3B  is 0.83  |
-join_arms (Optional)      |     False       |  --join_arms        (Optional)      |        False      |                               |
+join_arms (Optional)      |     False       |  --join_arms        (Optional)      |        True       |                               |
 funit (Optional)          |     1.0e18      |  USE DEFAULT APS value              |        AS APS     |                               |
 offset_gap_pix (Optional) |     10          |  USE DEFAULT APS value              |        AS APS     |                               |
                           |                 |                                     |                   |                               |
@@ -47,18 +48,38 @@ cache_Rcsr  (Optional)    |     -           |  --cache_Rcsr       (Optional)    
                           |                 |  --nminima          (Optional)      |        3          |                               |
                           |                 |                                     |                   |                               |
 ######### DEDICATED SQUEZE_WEAVE PARAM ################################################################################################
-                          |                 |  --model            (Required)      |          -        |                               |
-                          |                 |  --model_fits       (Optional)      |        False      |                               |
+                          |                 |  --model            (Required)      | '$HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json' |
                           |                 |  --prob_cut         (Optional)      |          -        |                               |
-                          |                 |  --output_catalogue (Required)      |        0.0        |                               |                   |                               |
-                          |                 |  --quiet            (Optional)      |        False      |
+                          |                 |  --output_catalogue (Required)      |'headname_SQ.fits' |                               |
+                          |                 |  --quiet            (Optional)      |        False      |                               |
                           |                 |  --clean_dir        (Optional)      |        True       |                               |
                           |                 |                                     |                   |                               |
 #######################################################################################################################################
 
-
+    '--model', '$HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json',
+    "--prob_cut", '0.0',
+    "--output_catalogue", 'headname_SQ.fits',
+    "--clean_dir", 'False',
 
 Example:
+
+python3 $HOME/PyAPS/CS/SQUEzE/bin/aps_squeze.py --infiles $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004074.fit $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004073.fit --outpath $HOME/PyAPS/PyAPS_results/20170930/4011/ --headname stacked_1004074__stacked_1004073 --wlranges 4200.0,6000.0 6000.0,8000.0 --aps_ids 1002,9,1007,1006 --targsrvy WL,WQ --targclass None --mask_aps_ids None --area None --mask_areas None --templates $HOME/PyAPS/PyAPS_templates/templates_SQ/ --srvyconf $HOME/PyAPS/configs/weave_cls.json --join_arms False --mp 2 --archetypes None --zall False --chi2_scan None --nminima 3 --cache_Rcsr False --debug False --overwrite True --fig True --sens_corr True --mask_gaps True --tellurics False --vacuum True --fill_gap False --arms_ratio 1.0,0.83 --model $HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json --prob_cut 0.0 --output_catalogue stacked_1004074__stacked_1004073_SQ.fits --clean_dir False
+
+
+
+
+
+
+
+History:
+
+28 Dec 2020: A.M: Bugs fixed (to be checked by Ignasi)
+28 Dec 2020: A.M: changed srvyconf from mandatory to optional parameter (given that for some cases we do not need it)
+28 Dec 2020: A.M: Example and Demo mode updated
+28 Dec 2020: A.M: Modified to be compatible with the new version of APS classifier
+
+
+
 
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
@@ -75,9 +96,10 @@ from collections import OrderedDict
 import json
 from datetime import datetime
 
-from aps_utils import APSOB, makeR, print_args, none_or_str, str2bool, aps_ids_class,l1_fileinfo, gen_targlist
-from aps_rr import write_ztable, gen_zfitall, gen_zbest, gen_zspec, rrweave_worker
-import aps_constants
+import PyAPS
+from PyAPS.aps_utils import APSOB, makeR, print_args, none_or_str, str2bool, aps_ids_class,l1_fileinfo, gen_targlist
+from PyAPS.aps_rr import write_ztable, gen_zfitall, gen_zbest, gen_zspec, rrweave_worker
+from PyAPS import aps_constants
 import warnings
 
 from redrock.utils import elapsed, get_mp, distribute_work
@@ -95,6 +117,10 @@ from squeze.model import Model
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
 from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
+
+
+__aps_squeze_version__=1.1
+
 
 def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
                   area, mask_areas, wlranges, cache_Rcsr, sens_corr, mask_gaps,
@@ -365,7 +391,7 @@ def write_results(zbest, candidates_df, args):
     if args.output_catalogue.startswith("/"):
         filename = args.output_catalogue
     else:
-        filename = args.output_path + args.output_catalogue
+        filename = args.outpath + args.output_catalogue
     hdul = fits.HDUList([primary_hdu, hdu, hdu2])
     hdul.writeto(filename,
                  overwrite=True, checksum=True)
@@ -431,7 +457,7 @@ def main(options=None, comm=None):
         required=False, help="Stitch two arms")
 
     parser.add_argument('--outpath',
-        help='Directory to keep WEAVE_REDROCK outputs', type=str, default=None, required=True)
+        help='Directory to keep WEAVE_REDROCK outputs', type=none_or_str, default=None, required=True)
 
     parser.add_argument("--srvyconf", type=none_or_str, default=None,
         required=True, help="json config file (Pre-defined class type, based on TARGSRVY)")
@@ -476,13 +502,13 @@ def main(options=None, comm=None):
     parser.add_argument("--cache_Rcsr", type=str2bool,  default=True,
         required=False, help="SCache Rcsr")
 
-    parser.add_argument("--model", type=str, required=True,
+    parser.add_argument("--model", type=none_or_str, required=True,
         help="File pointing to the trained classifier. Required if --mode is not 'training' or 'merge'.")
 
     parser.add_argument("--prob_cut", default=0.0, type=float,
         help="Only objects with probability >= PROB_CUT will be included in the catalogue")
 
-    parser.add_argument("--output_catalogue", required=True, type=str,
+    parser.add_argument("--output_catalogue", required=True, type=none_or_str,
         help="Name of the fits file where the final catalogue will be stored. "
              "If a full path is not provided, then use --outpath")
 
@@ -492,7 +518,21 @@ def main(options=None, comm=None):
     parser.add_argument("--clean_dir", type=str2bool, default=True,
         help="Clean the directory of intermediate files")
 
-    args = parser.parse_args()
+
+    ## Check if any command-line argument has been passed to the module. It counts the number of system arguments to check this.
+    args = None
+    if len(sys.argv) > 1:
+        args = parser.parse_args()
+    else:
+        print('---------------------------------------------------------------------------------')
+        print('No command-line argument has been passed to this module. Running DEMO/DEBUG mode!')
+        print('---------------------------------------------------------------------------------')
+
+        args = parser.parse_args(options)
+
+
+
+
 
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
@@ -525,6 +565,7 @@ def main(options=None, comm=None):
     if args.arms_ratio is not None:
         arms_ratio = [ float(x) for x in args.arms_ratio.split(",") ]
         assert len(arms_ratio) == len(args.infiles) , 'lenghtes of arms_ratio(s) and infiles must be identical'
+
 
     ### Now we have both infiles and wlranges array. We use  l1_fileinfo function to update these two parameters and join_arms
     ### and puth them in the right order, if needed. However, we had similar test done by APSOB
@@ -607,22 +648,25 @@ def main(options=None, comm=None):
     assert (args.prob_cut >= 0.0 and args.prob_cut <= 1.0)
 
     # print args and assigned/default values on the screen
-    print_args(args, module='SQUEzE', version=aps_constants.__aps_squeze_version__, path=outpath, headname=args.headname)
+    print_args(args, module='SQUEzE', version=__aps_squeze_version__, path=outpath, headname=args.headname)
 
-    zbest_fname=os.path.join(args.outpath,'zbest_'+str(args.headname)+'.fits')
+    zbest_fname=os.path.join(args.outpath,'zbest_SQ_'+str(args.headname)+'.fits')
 
     zall_fname=None
     if args.zall:
-        zall_fname=os.path.join(args.outpath,'zall_'+str(args.headname)+'.fits')
+        zall_fname=os.path.join(args.outpath,'zall_SQ_'+str(args.headname)+'.fits')
         zall_fname=zall_fname.replace(' ', '')
 
 
-    zspec_fname=os.path.join(args.outpath,'zspec_'+str(args.headname)+'.fits')
+    zspec_fname=os.path.join(args.outpath,'zspec_SQ_'+str(args.headname)+'.fits')
     zspec_fname=zspec_fname.replace(' ', '')
 
     if (not args.overwrite) and os.path.exists(zbest_fname):
         print('skipping, products already exist. If this is a test run, change the --headname')
         sys.exit()
+
+
+    ######### PHASE 1: PREPARATION ############
 
 
     ### Before running the main worker, we first make sure eveyrthing is OK
@@ -655,99 +699,121 @@ def main(options=None, comm=None):
         print('ERROR : %s' %(sys.exc_info()[1]))
         return
 
-    # run SQUEzE
-    assert (args.output_catalogue.endswith(".fit") or
-            args.output_catalogue.endswith(".fits") or
-            args.output_catalogue.endswith(".fits.gz")
-            ), "Invalid extension for output catalogue"
-    ext = args.output_catalogue[args.output_catalogue.rfind("fit")-1:]
-    save_file = args.output_catalogue.replace(ext,
-                                              "_squeze_candidates{}".format(ext))
-    if not save_file.startswith("/"):
-        save_file = args.outpath + save_file
+    ######### PHASE 2: MAIN ALANLYSES ############
 
-    candidates_df, z_precision = squeze_worker(args.infiles, args.model,
-                                               aps_ids, targsrvy, targclass,
-                                               mask_aps_ids, area, mask_areas,
-                                               wlranges, args.cache_Rcsr,
-                                               args.sens_corr, args.mask_gaps,
-                                               args.vacuum, args.tellurics,
-                                               args.fill_gap, arms_ratio,
-                                               args.join_arms,
-                                               quiet=args.quiet,
-                                               save_file=save_file)
+    try:
+        # run SQUEzE
+        assert (args.output_catalogue.endswith(".fit") or
+                args.output_catalogue.endswith(".fits") or
+                args.output_catalogue.endswith(".fits.gz")
+                ), "Invalid extension for output catalogue"
+        ext = args.output_catalogue[args.output_catalogue.rfind("fit")-1:]
+        save_file = args.output_catalogue.replace(ext,
+                                                  "_squeze_candidates{}".format(ext))
+        if not save_file.startswith("/"):
+            save_file = args.outpath + save_file
 
-    # here is where we format SQUEzE output into priors
-    # we currently take a flat prior with SQUEzE preferred redshift solution
-    # and a width as specified in the redshift precision used to train
-    # SQUEzE model
-    priors = args.outpath + "/priors.fits.gz"
-    aux = candidates_df[(~candidates_df["DUPLICATED"]) &
-                                  (candidates_df["PROB"] >= args.prob_cut)]
-    columns = [
-        fits.Column(name="TARGETID",
-                    format="I",
-                    array=aux["APS_ID"]),
-        fits.Column(name="Z",
-                    format="D",
-                    array=aux["Z_TRY"]),
-        fits.Column(name="SIGMA",
-                    format="D",
-                    array=np.ones(aux.shape[0])*z_precision),
-    ]
-    hdu = fits.BinTableHDU.from_columns(columns, name="PRIORS")
-    hdu.writeto(priors, overwrite=args.overwrite)
-    # update aps_ids to only include objects with prior
-    if aps_ids is None:
+        candidates_df, z_precision = squeze_worker(args.infiles, args.model,
+                                                   aps_ids, targsrvy, targclass,
+                                                   mask_aps_ids, area, mask_areas,
+                                                   wlranges, args.cache_Rcsr,
+                                                   args.sens_corr, args.mask_gaps,
+                                                   args.vacuum, args.tellurics,
+                                                   args.fill_gap, arms_ratio,
+                                                   args.join_arms,
+                                                   quiet=args.quiet,
+                                                   save_file=save_file)
+
+        # here is where we format SQUEzE output into priors
+        # we currently take a flat prior with SQUEzE preferred redshift solution
+        # and a width as specified in the redshift precision used to train
+        # SQUEzE model
+        priors = args.outpath + "/priors.fits.gz"
+        aux = candidates_df[(~candidates_df["DUPLICATED"]) & (candidates_df["PROB"] >= args.prob_cut)]
+        
+        columns = [
+            fits.Column(name="TARGETID",
+                        format="I",
+                        array=aux["APS_ID"]),
+            fits.Column(name="Z",
+                        format="D",
+                        array=aux["Z_TRY"]),
+            fits.Column(name="SIGMA",
+                        format="D",
+                        array=np.ones(aux.shape[0])*z_precision),
+        ]
+        hdu = fits.BinTableHDU.from_columns(columns, name="PRIORS")
+        hdu.writeto(priors, overwrite=args.overwrite)
+
+
+
+        ### A. Molaeinezhad (Dec 2020): @Ignasi: ???
+        # update aps_ids to only include objects with prior
+        # if aps_ids is None:
+        #     aps_ids = list(aux["APS_ID"])
+        # else:
+        #     for aps_id in aps_ids:
+        #         if not aps_id in aux["APS_ID"]:
+        #             print(aps_id)
+        #             aps_ids.pop(aps_id)
+
+
+        ## update APS_IDS
         aps_ids = list(aux["APS_ID"])
-    else:
-        for aps_id in aps_ids:
-            if not apd_id in aux["APS_ID"]:
-                aps_ids.pop(aps_id)
-    del aux, columns, hdu
 
-    # now we run redrock
-    scandata, zbest, zspec, zfitall = rrweave_worker(
-        args.infiles, args.templates, args.srvyconf,
-        zbest_fname=zbest_fname, zall_fname =zall_fname,zspec_fname=zspec_fname, aps_ids=aps_ids,
-        targsrvy= targsrvy, targclass = targclass, mask_aps_ids=mask_aps_ids , area=area, mask_areas=mask_areas,
-        wlranges=wlranges, sens_corr=args.sens_corr, mask_gaps=args.mask_gaps, vacuum=args.vacuum, tellurics=args.tellurics,
-        fill_gap=args.fill_gap, arms_ratio=arms_ratio, join_arms=args.join_arms, ncpus= args.mp, comm=comm,
-        comm_rank=comm_rank, comm_size=comm_size,nminima=args.nminima, archetypes=args.archetypes,cache_Rcsr=args.cache_Rcsr,
-        priors=priors, chi2_scan=args.chi2_scan, figdir=figdir, debug=args.debug, return_outputs=True)
 
-    # here we format results according to the CS specifications
-    # and save the catalogues
-    write_results(zbest, candidates_df, args)
+        ### It is important to put fs (list of aps_ids) in increasing order to avoid any problem with redrock
+        aps_ids.sort()
 
-    # clean the directory
-    if args.clean_dir:
-        if os.path.exists(priors):
-            os.remove(priors)
-        if os.path.exists(save_file):
-            os.remove(save_file)
-        if os.path.exists("{}/zall_test.fits".format(args.output_path)):
-            os.remove("{}/zall_test.fits".format(args.output_path))
-        if os.path.exists("{}/zbest_test.fits".format(args.output_path)):
-            os.remove("{}/zbest_test.fits".format(args.output_path))
-        if os.path.exists("{}/zspec_test.fits".format(args.output_path)):
-            os.remove("{}/zspec_test.fits".format(args.output_path))
-    # TODO: clean redrock results if necessary
+        del aux, columns, hdu
 
-    userprint("Done")
+
+        # now we run redrock
+        scandata, zbest, zspec, zfitall = rrweave_worker(
+            args.infiles, args.templates, srvyconf=args.srvyconf,
+            zbest_fname=zbest_fname, zall_fname =zall_fname,zspec_fname=zspec_fname, aps_ids=aps_ids,
+            targsrvy= targsrvy, targclass = targclass, mask_aps_ids=mask_aps_ids , area=area, mask_areas=mask_areas,
+            wlranges=wlranges, sens_corr=args.sens_corr, mask_gaps=args.mask_gaps, vacuum=args.vacuum, tellurics=args.tellurics,
+            fill_gap=args.fill_gap, arms_ratio=arms_ratio, join_arms=args.join_arms, ncpus= args.mp, comm=comm,
+            comm_rank=comm_rank, comm_size=comm_size,nminima=args.nminima, archetypes=args.archetypes,cache_Rcsr=args.cache_Rcsr,
+            priors=priors, chi2_scan=args.chi2_scan, figdir=figdir, debug=args.debug, return_outputs=True)
+
+        # here we format results according to the CS specifications
+        # and save the catalogues
+        write_results(zbest, candidates_df, args)
+
+        # clean the directory
+        if args.clean_dir:
+            if os.path.exists(priors):
+                os.remove(priors)
+            if os.path.exists(save_file):
+                os.remove(save_file)
+            if os.path.exists("{}/zall_test.fits".format(args.outpath)):
+                os.remove("{}/zall_test.fits".format(args.outpath))
+            if os.path.exists("{}/zbest_test.fits".format(args.outpath)):
+                os.remove("{}/zbest_test.fits".format(args.outpath))
+            if os.path.exists("{}/zspec_test.fits".format(args.outpath)):
+                os.remove("{}/zspec_test.fits".format(args.outpath))
+        # TODO: clean redrock results if necessary
+
+        userprint("Done")
+    except:
+        print('ERROR : %s' %(sys.exc_info()[1]))
+        return
+
 
 ##########################################################
 if __name__ == '__main__':
 
     option = [
-    '--infiles', '/Users/iperezra/software/SQUEzE/py/squeze/tests/data/stacked_1004073.fit', '/Users/iperezra/software/SQUEzE/py/squeze/tests/data/stacked_1004073.fit',
-    '--aps_ids', '1004,1003, 1002,9,1007',
-    '--targsrvy', 'None',
+    '--infiles', '/Users/alireza/PyAPS/PyAPS_data/squeze/4011/stacked_1004074.fit','/Users/alireza/PyAPS/PyAPS_data/squeze/4011/stacked_1004073.fit',
+    '--aps_ids', '1004,1002,9,1003,1007',
+    '--targsrvy', 'WL',
     '--targclass', 'None',
     '--mask_aps_ids', 'None',
     '--area', 'None',
     '--mask_areas', 'None',
-    '--wlranges', '4800.0,5000', '6000.0,6100',
+    '--wlranges', '4300.0,5000', '6000.0,6800',
     '--sens_corr', 'True',
     '--mask_gaps', 'True',
     '--tellurics', 'False',
@@ -755,12 +821,12 @@ if __name__ == '__main__':
     '--fill_gap', 'False',
     '--arms_ratio', '1.0,0.83',
     '--join_arms', 'True',
-    '--templates', '/Users/iperezra/software/SQUEzE/py/squeze/tests/data/templates_RR/',
-    '--srvyconf', '/Users/alireza/PyAPS/config_files/weave_cls.json',
-    '--archetypes', '/Users/iperezra/software/SQUEzE/py/squeze/tests/data/redrock-archetypes/',
-    '--outpath', '/Users/alireza/PyAPS_results/20160907/3161/',
-    '--headname', 'test',
-    '--zall', 'True',
+    '--templates', '$HOME/PyAPS/PyAPS_templates/templates_SQ/',
+    '--srvyconf', '$HOME/PyAPS/configs/weave_cls.json',
+    '--archetypes', '$HOME/PyAPS/PyAPS_templates/templates_ARC_SQ/',
+    '--outpath', '$HOME/PyAPS/PyAPS_results/20170930/4011/',
+    '--headname', 'stacked_1004074__stacked_1004073',
+    '--zall', 'False',
     '--chi2_scan', 'None',
     '--nminima' , '3',
     '--fig', 'True',
@@ -768,13 +834,13 @@ if __name__ == '__main__':
     '--debug', 'False',
     '--overwrite', 'True',
     '--mp' ,'2',
-    '--model', '/Users/iperezra/software/SQUEzE/data/BOSS_train_64plates_model.json',
+    '--model', '$HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json',
     "--prob_cut", '0.0',
-    "--output_catalogue", '',
+    "--output_catalogue", 'stacked_1004074__stacked_1004073_SQ.fits',
+    "--clean_dir", 'False',
     ]
 
     # Set option to None to run the code through the command line
-    option = None
 
     main(options=option, comm=None)
 ##########################################################
