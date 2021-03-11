@@ -40,7 +40,7 @@ def main():
 
     # load lines
     userprint("Loading lines")
-    lines = LINES if args.lines is None else load_json(args.lines)
+    lines = LINES if args.lines is None else deserialize(load_json(args.lines))
 
     # load try_line
     try_line = TRY_LINES if args.try_lines is None else args.try_lines
