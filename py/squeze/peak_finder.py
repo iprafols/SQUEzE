@@ -1,7 +1,7 @@
 """
     SQUEzE
     ======
-    
+
     This file provides a peak finder to be used by SQUEzE
     """
 
@@ -9,7 +9,7 @@ import numpy as np
 
 class PeakFinder(object):
     """ Create and manage the peak finder used by SQUEzE
-        
+
         CLASS: PeakFinder
         PURPOSE: Create and manage the peak finder used by SQUEzE. This
         peak finder looks for peaks in a smoothed spectrum by looking for
@@ -17,8 +17,8 @@ class PeakFinder(object):
         the significance of the peaks and filters the results according to
         their significances.
         """
-    
-    def __init__(self, width, min_significance):
+
+    def __init__(self, width, min_significance, max_num_peaks):
         """ Initialize class instance
 
             Parameters
@@ -29,6 +29,9 @@ class PeakFinder(object):
 
             min_significance : float
             Minimum significance of the peak for it to be considered a valid peak
+
+            max_num_peaks : int
+            Maximum number of peaks to return, -1 for no maximum
             """
         self.__width = width
         if self.__width > 0:
@@ -37,6 +40,7 @@ class PeakFinder(object):
             self.__fwhm = 2
         self.__half_fwhm = int(self.__fwhm/2)
         self.__min_significance = min_significance
+        self.__max_num_peaks = max_num_peaks
 
     def __find_peak_significance(self, spectrum, index):
         """ Find the significance of the peak. The significance is computed by
@@ -46,13 +50,13 @@ class PeakFinder(object):
             full width half maximum of the Gaussian used in the smoothing.
             The continuum is measured using two windows of size FWHM/2 at each
             side of the peak.
-            
+
             Parameters
             ----------
             spectrum : Spectrum
             The spectrum where peaks are looked for
-            
-            
+
+
             """
         flux = spectrum.flux()
         ivar = spectrum.ivar()
@@ -75,12 +79,12 @@ class PeakFinder(object):
 
     def find_peaks(self, spectrum):
         """ Find significant peaks in a given spectrum.
-            
+
             Parameters
             ----------
             spectrum : Spectrum
             The spectrum where peaks are looked for
-            
+
             Returns
             -------
             An array with the position of the peaks
@@ -106,7 +110,13 @@ class PeakFinder(object):
         peak_indexs = np.array(peak_indexs, dtype=int)
         significances = np.array(significances, dtype=float)
 
+        # sort arrays
+        pos = np.argsort(significances)[::-1]
+        peak_indexs = peak_indexs[pos]
+        significances = significances[pos]
+
+        if self.__max_num_peaks > 0:
+            peak_indexs = peak_indexs[:self.__max_num_peaks]
+            significances = significances[:self.__max_num_peaks]
         # return
         return peak_indexs, significances
-
-
