@@ -87,6 +87,13 @@ on the module squeze_peak_finder for more details
 PEAKFIND_SIG = 6
 
 """
+This variable sets the maximum number of peaks per spectrum (-1 for no maximum).
+This parameter will be passed to the peak finding function. Check the documentation
+on the module squeze_peak_finder for more details
+""" # description of PEAKFIND_NPEAKS ... pylint: disable=pointless-string-statement
+PEAKFIND_NPEAKS = -1
+
+"""
 This variable sets the options to be passed to the random forest classifier
 """ # description of RANDOM_FOREST_OPTIONS ... pylint: disable=pointless-string-statement
 RANDOM_FOREST_OPTIONS = {"high": {"class_weight": "balanced_subsample",
