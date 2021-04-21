@@ -450,7 +450,7 @@ class Candidates(object):
 
         return
 
-    def classify_candidates(self):
+    def classify_candidates(self, save=True):
         """ Create a model instance and train it. Save the resulting model"""
         # consistency checks
         if self.__mode not in ["test", "operation"]:
@@ -461,7 +461,8 @@ class Candidates(object):
                          "but no candidates were found/loaded. Check your " +
                          "formatter")
         self.__candidates = self.__model.compute_probability(self.__candidates)
-        self.save_candidates()
+        if save:
+            self.save_candidates()
 
     def find_candidates(self, spectra, save=True):
         """ Find candidates for a given set of spectra, then integrate them in the

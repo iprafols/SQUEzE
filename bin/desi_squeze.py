@@ -18,11 +18,12 @@ import astropy.io.fits as fits
 from desispec.io import read_spectra
 
 from squeze.candidates import Candidates
-from squeze.common_functions import save_json
+from squeze.common_functions import save_json, load_json
 from squeze.common_functions import verboseprint, quietprint
 from squeze.error import Error
 from squeze.desi_spectrum import DesiSpectrum
 from squeze.spectra import Spectra
+from squeze.model import Model
 
 def convert_dtype(dtype):
      if dtype == "O":
@@ -39,27 +40,24 @@ def main():
     # load options
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("--input-filename", type=str, required=True,
+    parser.add_argument("-i", "--input-filename", type=str, required=True,
                         help="""Name of the filename to be loaded to be loaded.""")
-    parser.add_argument("--model", type=str, required=True,
+    parser.add_argument("-m", "--model", type=str, required=True,
                         help="""Name of the file containing the trained model.""")
-    parser.add_argument("--output-filename", type=str, required=True,
+    parser.add_argument("-o","--output-filename", type=str, required=True,
                         help="""Name of the output fits file.""")
-    parser.add_argument("--single-exp", action="store_true",
+    parser.add_argument("-e","--single-exp", action="store_true",
                         help="""Load only the first reobservation for each spectrum""")
     parser.add_argument("--metadata", nargs='+', required=False,
                         default=["TARGETID"],
                         help="""White-spaced list of the list of columns to keep as metadata""")
-    parser.add_argument("--keep-cols", nargs='+', required=False,
-                        default=["PROB", "Z_TRY", "TARGETID"],
-                        help="""Name of the columns kept in the final fits file.""")
-    parser.add_argument("--quiet", action="store_true",
-                        help="""Do not print messages""")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="""Print messages""")
     args = parser.parse_args()
 
     # prepare variables
     assert args.output_filename.endswith("fits") or args.output_filename.endswith("fits.gz")
-    if args.quiet:
+    if args.verbose:
         userprint = verboseprint
     else:
         userprint = quietprint
@@ -117,27 +115,25 @@ def main():
                             name=args.output_filename)
 
     # look for candidates
-    userprint("Looking for candidates")
-    if save_file is None:
-        candidates.find_candidates(spectra.spectra_list(), save=False)
-    else:
-        candidates.find_candidates(spectra.spectra_list(), save=True)
+    userprint('Looking for candidates')
+    candidates.find_candidates(squeze_spectra.spectra_list(), save=False)
 
     # compute probabilities
     userprint("Computing probabilities")
-    candidates.classify_candidates()
+    candidates.classify_candidates(save=False)
 
     # filter results
     data_frame = candidates.candidates()
-    data_frame = data_frame[~data_frame["DUPLICATED"]][args.keep_cols]
+    data_frame = data_frame[~data_frame["DUPLICATED"]]
 
     # save results
-    hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
-                                                     format=convert_dtype(dtype),
-                                                     array=data_frame[col])
-                                         for col, dtype in zip(data_frame.columns,
-                                                               data_frame.dtypes)])
-    hdu.writeto(args.output_filename, overwrite=True)
+    data_out = np.zeros(len(data_frame), dtype=[('TARGETID','int64'),('Z_SQ','float64'),('Z_SQ_CONF','float64')])
+    data_out['TARGETID'] = data_frame['TARGETID'].values
+    data_out['Z_SQ'] = data_frame['Z_TRY'].values
+    data_out['Z_SQ_CONF'] = data_frame['PROB'].values
+
+    data_hdu = fits.BinTableHDU.from_columns(data_out,name='SQZ_CAT')
+    data_hdu.writeto(args.output_filename)
 
 if __name__ == '__main__':
     main()
