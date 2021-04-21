@@ -25,7 +25,6 @@ from squeze.defaults import TRY_LINES
 from squeze.defaults import Z_PRECISION
 from squeze.defaults import PEAKFIND_WIDTH
 from squeze.defaults import PEAKFIND_SIG
-from squeze.defaults import PEAKFIND_NPEAKS
 from squeze.parsers import TRAINING_PARSER
 
 
@@ -52,20 +51,19 @@ def main():
     # load peakfinder options
     peakfind_width = PEAKFIND_WIDTH if args.peakfind_width is None else args.peakfind_width
     peakfind_sig = PEAKFIND_SIG if args.peakfind_sig is None else args.peakfind_sig
-    peakfind_npeaks = PEAKFIND_NPEAKS if args.peakfind_npeaks is None else args.peakfind_npeaks
 
     # initialize candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
-                                peakfind=(peakfind_width, peakfind_sig, peakfind_npeaks),
+                                peakfind=(peakfind_width, peakfind_sig),
                                 model=None)
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 name=args.output_candidates,
-                                peakfind=(peakfind_width, peakfind_sig, peakfind_npeaks),
+                                peakfind=(peakfind_width, peakfind_sig),
                                 model=None)
 
     # load candidates dataframe if they have previously looked for

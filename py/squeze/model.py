@@ -188,7 +188,6 @@ class Model(object):
         header["Z_PREC"] = self.__settings.get("Z_PRECISION")
         header["PF_WIDTH"] = self.__settings.get("PEAKFIND_WIDTH")
         header["PF_SIG"] = self.__settings.get("PEAKFIND_SIG")
-        header["PF_NPEAKS"] = self.__settings.get("PEAKFIND_NPEAKS")
         # now create the columns to store lines and try_lines.
         lines = self.__settings.get("LINES")
         try_lines = self.__settings.get("TRY_LINES")
@@ -438,9 +437,6 @@ class Model(object):
         selected_cols = [col.upper() for col in selected_cols]
         settings = {key.upper(): value
                     for key, value in data.get("_Model__settings").items()}
-        # TODO: deprecated bloc, to be removed
-        if "PEAKFIND_NPEAKS" not in settings:
-            settings["PEAKFIND_NPEAKS"] = -1
         lines = deserialize(settings.get("LINES"))
         lines.columns = [col.upper() for col in lines.columns]
         settings["LINES"] = lines
@@ -500,25 +496,14 @@ class Model(object):
         try_lines = [try_line.strip() for try_line in try_lines]
 
         # load settings used to find the candidates
-        try:
-            settings = {
-                "LINES": lines,
-                "TRY_LINES": try_lines,
-                "Z_PRECISION": hdul["SETTINGS"].header["Z_PREC"],
-                "PEAKFIND_WIDTH": hdul["SETTINGS"].header["PF_WIDTH"],
-                "PEAKFIND_SIG": hdul["SETTINGS"].header["PF_SIG"],
-                "PEAKFIND_NPEAKS": hdul["SETTINGS"].header["PF_NPEAKS"],
-            }
-        # TODO: try-except bloc is deprecated and should be removed soon
-        except KeyError:
-            settings = {
-                "LINES": lines,
-                "TRY_LINES": try_lines,
-                "Z_PRECISION": hdul["SETTINGS"].header["Z_PREC"],
-                "PEAKFIND_WIDTH": hdul["SETTINGS"].header["PF_WIDTH"],
-                "PEAKFIND_SIG": hdul["SETTINGS"].header["PF_SIG"],
-                "PEAKFIND_NPEAKS": -1,
-            }
+        settings = {
+            "LINES": lines,
+            "TRY_LINES": try_lines,
+            "Z_PRECISION": hdul["SETTINGS"].header["Z_PREC"],
+            "PEAKFIND_WIDTH": hdul["SETTINGS"].header["PF_WIDTH"],
+            "PEAKFIND_SIG": hdul["SETTINGS"].header["PF_SIG"],
+        }
+
         # now load model options
         # cas 1: highlow_split
         try:
