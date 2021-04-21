@@ -51,11 +51,8 @@ def main():
     parser.add_argument("--metadata", nargs='+', required=False,
                         default=["TARGETID"],
                         help="""White-spaced list of the list of columns to keep as metadata""")
-    parser.add_argument("--keep-cols", nargs='+', required=False,
-                        default=["PROB", "Z_TRY", "TARGETID"],
-                        help="""Name of the columns kept in the final fits file.""")
     parser.add_argument("-v", "--verbose", action="store_true",
-                        help="""Do not print messages""")
+                        help="""Print messages""")
     args = parser.parse_args()
 
     # prepare variables
@@ -117,14 +114,8 @@ def main():
     candidates = Candidates(mode="operation", model=model,
                             name=args.output_filename)
 
-    """
     # look for candidates
     userprint('Looking for candidates')
-    if save_file is None:
-        candidates.find_candidates(Spectra.spectra_list(), save=False)
-    else:
-        candidates.find_candidates(Spectra.spectra_list(), save=True)
-    """
     candidates.find_candidates(squeze_spectra.spectra_list(), save=False)
 
     # compute probabilities
@@ -133,8 +124,9 @@ def main():
 
     # filter results
     data_frame = candidates.candidates()
-    data_frame = data_frame[~data_frame["DUPLICATED"]][args.keep_cols]
+    data_frame = data_frame[~data_frame["DUPLICATED"]]
 
+    # save results
     data_out = np.zeros(len(data_frame), dtype=[('TARGETID','int64'),('Z_SQ','float64'),('Z_SQ_CONF','float64')])
     data_out['TARGETID'] = data_frame['TARGETID'].values
     data_out['Z_SQ'] = data_frame['Z_TRY'].values
