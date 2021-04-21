@@ -59,9 +59,6 @@ PEAKFIND_PARSER.add_argument("--peakfind-width", type=float, default=None,
 PEAKFIND_PARSER.add_argument("--peakfind-sig", type=float, default=None,
                              required=False,
                              help="""Minimum significance required to accept a peak""")
-PEAKFIND_PARSER.add_argument("--peakfind-npeaks", type=int, default=None,
-                             required=False,
-                             help="""Maximum number of peaks per spectrum""")
 
 
 """

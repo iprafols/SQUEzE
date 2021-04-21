@@ -28,7 +28,6 @@ from squeze.defaults import RANDOM_STATE
 from squeze.defaults import Z_PRECISION
 from squeze.defaults import PEAKFIND_WIDTH
 from squeze.defaults import PEAKFIND_SIG
-from squeze.defaults import PEAKFIND_NPEAKS
 from squeze.spectrum import Spectrum
 
 class Candidates(object):
@@ -45,7 +44,7 @@ class Candidates(object):
     # 12 is reasonable in this case.
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.fits.gz",
-                 peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG, PEAKFIND_NPEAKS),
+                 peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
                  model=None, model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
 
@@ -72,16 +71,6 @@ class Candidates(object):
             with the information of the database in a csv file with this name.
             If load is set to True, then the candidates sample will be loaded
             from this file. Recommended extension is fits.gz.
-
-            peakfind : (float, float, int) - Default:
-                       (PEAKFIND_WIDTH, PEAKFIND_SIG, PEAKFIND_NPEAKS)
-            A tuple with 3 values containing the Peak Finder options. First
-            value is a float specifying the width of the Gaussian used as a
-            kernel for the convolution (see method 'smooth' from module
-            'squeze_spectrum' for details). Second value is a float with the
-            minimum significance of the peak for it to be considered a valid peak.
-            Last value is an int with the maximum number of peaks to return,
-            -1 for no maximum.
 
             model : Model or None  - Default: None
             Instance of the Model class defined in squeze_model or None.
@@ -120,7 +109,6 @@ class Candidates(object):
         # options to be passed to the peak finder
         self.__peakfind_width = peakfind[0]
         self.__peakfind_sig = peakfind[1]
-        self.__peakfind_npeaks = peakfind[2]
 
         # model
         if model is None:
@@ -131,9 +119,7 @@ class Candidates(object):
         self.__model_opt = model_opt
 
         # initialize peak finder
-        self.__peak_finder = PeakFinder(self.__peakfind_width,
-                                        self.__peakfind_sig,
-                                        self.__peakfind_npeaks)
+        self.__peak_finder = PeakFinder(self.__peakfind_width, self.__peakfind_sig)
 
     def __compute_line_ratio(self, spectrum, index, z_try):
         """ Compute the peak-to-continuum ratio for a specified line.
@@ -213,7 +199,6 @@ class Candidates(object):
                 "Z_PRECISION": self.__z_precision,
                 "PEAKFIND_WIDTH": self.__peakfind_width,
                 "PEAKFIND_SIG": self.__peakfind_sig,
-                "PEAKFIND_NPEAKS": self.__peakfind_npeaks,
                }
 
     def __is_correct(self, row):
@@ -424,7 +409,6 @@ class Candidates(object):
         self.__z_precision = settings.get("Z_PRECISION")
         self.__peakfind_width = settings.get("PEAKFIND_WIDTH")
         self.__peakfind_sig = settings.get("PEAKFIND_SIG")
-        self.__peakfind_npeaks = settings.get("PEAKFIND_NPEAKS")
 
     def save_candidates(self):
         """ Save the candidates DataFrame. """
