@@ -50,6 +50,9 @@ def main():
     parser.add_argument("--filters-info", type=str, required=True,
                         help="""Name of the file containing the filters
                         information""")
+    parser.add_argument("--filter-wave", type=str, required=False,
+                        default="Filter.effective_wavelength",
+                        help="""Name of the field containing the wavelength""")
     parser.add_argument("--mag-col", type=str, required=True,
                         help="""Name of the magnitude system to be used. For example,
                         type PSFCOR to use the column FLambdaDualObj.FLUX_PSFCOR for them
@@ -59,12 +62,10 @@ def main():
     parser.add_argument("--keep-cols", nargs='+', default=None, required=False,
                         help="""White-spaced list of the columns to be kept in the
                         formatted spectra""")
-    parser.add_argument("--trays-t1-t2mod", action="store_true", required=False,
-                        help="""If passed, load only filters in trays T1 and T2
-                        modified. Ignored if --trayts-T1-T2 is also passed""")
     parser.add_argument("--trays-t1-t2", action="store_true", required=False,
                         help="""If passed, load only filters in trays T1 and
                         T2.""")
+
 
 
     args = parser.parse_args()
@@ -73,18 +74,14 @@ def main():
     hdu_filters = fits.open(args.filters_info)
     filter_names = hdu_filters[1].data["Filter.name"]
 
-    if args.trays_t1_t2mod:
+    if args.trays_t1_t2:
         select_filters = np.array([0,  3,  5,  7,  9, 11, 14, 16, 18, 19, 20,
-                                   21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32,
-                                   33, 34, 35, 36, 37, 38])
-    elif args.trays_t1_t2:
-        select_filters = np.array([0,  2,  5,  6,  9, 10, 14, 15, 18, 19, 20,
                                    21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32,
                                    33, 34, 35, 36, 37, 38])
     else:
         select_filters = np.array([i for i, name in enumerate(filter_names)
                                    if name.startswith("J")])
-    wave = hdu_filters[1].data["Filter.wavelength"][select_filters]
+    wave = hdu_filters[1].data[args.filter_wave][select_filters]
 
     hdu_filters.close()
 
@@ -105,7 +102,6 @@ def main():
         # select the filters in select_filters
         flux = flux[select_filters]
         ivar = ivar[select_filters]
-
 
         # prepare metadata
         metadata = {col.upper(): row[col] for col in args.keep_cols}
