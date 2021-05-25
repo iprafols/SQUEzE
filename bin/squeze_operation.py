@@ -54,7 +54,7 @@ def main():
         t2 = time.time()
         candidates.load_candidates(args.input_candidates)
         t3 = time.time()
-        userprint("INFO: time elapsed to load candidates", (t3-t2)/60.0, 'minutes')
+        userprint(f"INFO: time elapsed to load candidates: {(t3-t2)/60.0} minutes")
 
     # load spectra
     if args.input_spectra is not None:
@@ -74,24 +74,24 @@ def main():
             candidates.find_candidates(spectra.spectra_list())
 
             t41 = time.time()
-            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}",
-                      (t41-t40)/60.0, 'minutes')
+            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
+                      f" {(t41-t40)/60.0} minutes")
         t5 = time.time()
-        userprint("INFO: time elapsed to find candidates", (t5-t4)/60.0, 'minutes')
+        userprint("INFO: time elapsed to find candidates: {(t5-t4)/60.0} minutes")
 
     # compute probabilities
     userprint("Computing probabilities")
     t6 = time.time()
     candidates.classify_candidates()
     t7 = time.time()
-    userprint("INFO: time elapsed to classify candidates", (t7-t6)/60.0, 'minutes')
+    userprint("INFO: time elapsed to classify candidates: {(t7-t6)/60.0} minutes")
 
     # save the catalogue as a fits file
     if not args.no_save_catalogue:
         candidates.save_catalogue(args.output_catalogue, args.prob_cut)
 
     t8 = time.time()
-    userprint("INFO: total elapsed time", (t8-t0)/60.0, 'minutes')
+    userprint("INFO: total elapsed time: {(t8-t0)/60.0} minutes")
     userprint("Done")
 
 if __name__ == '__main__':

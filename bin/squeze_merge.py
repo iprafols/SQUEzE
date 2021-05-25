@@ -44,7 +44,7 @@ def main():
     candidates.merge(args.input_candidates[1:], userprint=userprint)
 
     t1 = time.time()
-    userprint("INFO: total elapsed time", (t1-t0)/60.0, 'minutes')
+    userprint(f"INFO: total elapsed time: {(t1-t0)/60.0} minutes")
     userprint("Done")
 
 if __name__ == '__main__':

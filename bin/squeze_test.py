@@ -49,8 +49,7 @@ def main():
                                                args.qso_hdu).quasar_catalogue()
             quasar_catalogue["LOADED"] = False
         t1 = time.time()
-        userprint("INFO: time elapsed to load quasar catalogue", (t1-t0)/60.0,
-                  'minutes')
+        userprint(f"INFO: time elapsed to load quasar catalogue: {(t1-t0)/60.0} minutes")
 
     # load model
     userprint("Loading model")
@@ -60,7 +59,7 @@ def main():
     else:
         model = Model.from_fits(args.model)
     t3 = time.time()
-    userprint("INFO: time elapsed to load model", (t3-t2)/60.0, 'minutes')
+    userprint("INFO: time elapsed to load model: {(t3-t2)/60.0} minutes")
 
     # initialize candidates object
     userprint("Initializing candidates object")
@@ -76,7 +75,7 @@ def main():
         t4 = time.time()
         candidates.load_candidates(args.input_candidates)
         t5 = time.time()
-        userprint("INFO: time elapsed to load candidates", (t5-t4)/60.0, 'minutes')
+        userprint("INFO: time elapsed to load candidates: {(t5-t4)/60.0} minutes")
 
     # load spectra
     if args.input_spectra is not None:
@@ -105,17 +104,17 @@ def main():
             candidates.find_candidates(spectra.spectra_list())
 
             t61 = time.time()
-            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}",
-                      (t61-t60)/60.0, 'minutes')
+            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
+                      f" {(t61-t60)/60.0} minutes")
         t7 = time.time()
-        userprint("INFO: time elapsed to find candidates", (t7-t6)/60.0, 'minutes')
+        userprint("INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
 
     # compute probabilities
     userprint("Computing probabilities")
     t8 = time.time()
     candidates.classify_candidates()
     t9 = time.time()
-    userprint("INFO: time elapsed to classify candidates", (t9-t8)/60.0, 'minutes')
+    userprint("INFO: time elapsed to classify candidates: {(t9-t8)/60.0} minutes")
 
     # check completeness
     if args.check_statistics:
@@ -139,7 +138,7 @@ def main():
         candidates.save_catalogue(args.output_catalogue, args.prob_cut)
 
     t8 = time.time()
-    userprint("INFO: total elapsed time", (t8-t0)/60.0, 'minutes')
+    userprint("INFO: total elapsed time: {(t8-t0)/60.0} minutes")
     userprint("Done")
 
 if __name__ == '__main__':

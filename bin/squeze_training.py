@@ -74,7 +74,7 @@ def main():
         t1 = time.time()
         candidates.load_candidates(args.input_candidates)
         t2 = time.time()
-        userprint("INFO: time elapsed to load candidates", (t2-t1)/60.0, 'minutes')
+        userprint(f"INFO: time elapsed to load candidates: {(t2-t1)/60.0} minutes")
 
     # load spectra
     if args.input_spectra is not None:
@@ -94,20 +94,20 @@ def main():
             candidates.find_candidates(spectra.spectra_list())
 
             t31 = time.time()
-            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}",
-                      (t31-t30)/60.0, 'minutes')
+            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
+                      f"{(t31-t30)/60.0} minutes")
 
         t4 = time.time()
-        userprint("INFO: time elapsed to find candidates", (t4-t3)/60.0, 'minutes')
+        userprint(f"INFO: time elapsed to find candidates: {(t4-t3)/60.0} minutes")
 
     # train model
     userprint("Training model")
     t5 = time.time()
     candidates.train_model(args.model_fits)
     t6 = time.time()
-    userprint("INFO: time elapsed to train model", (t6-t5)/60.0, 'minutes')
+    userprint(f"INFO: time elapsed to train model: {(t6-t5)/60.0} minutes")
 
-    userprint("INFO: total elapsed time", (t6-t0)/60.0, 'minutes')
+    userprint(f"INFO: total elapsed time: {(t6-t0)/60.0} minutes")
     userprint("Done")
 if __name__ == '__main__':
     main()

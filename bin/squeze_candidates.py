@@ -44,7 +44,7 @@ def main():
     model = None if args.model is None else Model.from_json(load_json(args.model))
     t1 = time.time()
     if args.model is not None:
-        userprint("INFO: time elapsed to load model", (t1-t0)/60.0, 'minutes')
+        userprint(f"INFO: time elapsed to load model: {(t1-t0)/60.0} minutes")
 
     # load lines
     userprint("Loading lines")
@@ -80,7 +80,7 @@ def main():
         t2 = time.time()
         candidates.load_candidates(args.input_candidates)
         t3 = time.time()
-        userprint("INFO: time elapsed to load candidates", (t3-t2)/60.0, 'minutes')")
+        userprint(f"INFO: time elapsed to load candidates: {(t3-t2)/60.0} minutes")
 
     # load spectra
     if args.input_spectra is not None:
@@ -99,12 +99,12 @@ def main():
             userprint("Looking for candidates")
             candidates.find_candidates(spectra.spectra_list())
             t41 = time.time()
-            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}",
-                      (t41-t40)/60.0, 'minutes')
+            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
+                      f" {(t41-t40)/60.0} minutes")
         t5 = time.time()
-        userprint("INFO: time elapsed to find candidates", (t5-t4)/60.0, 'minutes')
+        userprint(f"INFO: time elapsed to find candidates: {(t5-t4)/60.0} minutes")
 
-    userprint("INFO: total elapsed time", (t5-t0)/60.0, 'minutes')
+    userprint(f"INFO: total elapsed time: {(t5-t0)/60.0} minutes")
     userprint("Done")
 
 if __name__ == '__main__':
