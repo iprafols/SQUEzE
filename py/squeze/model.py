@@ -277,7 +277,7 @@ class Model(object):
             header = fits.Header()
             for key, value in self.__clf_options.get(name).items():
                 header[key] = value
-            if name is not "all":
+            if name != "all":
                 header["COMMENT"] = ("Options passed to the classifier for"
                                      "{} redshift quasars. Redshifts are"
                                      "split at 2.1"
