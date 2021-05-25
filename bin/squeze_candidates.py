@@ -10,6 +10,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import time
 
 from squeze.common_functions import load_json
 from squeze.common_functions import deserialize
@@ -36,10 +37,14 @@ def main():
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
 
+    t0 = time.time()
     # load model
     if args.model is not None:
         userprint("Loading model")
     model = None if args.model is None else Model.from_json(load_json(args.model))
+    t1 = time.time()
+    if args.model is not None:
+        userprint("INFO: time elapsed to load model", (t1-t0)/60.0, 'minutes')
 
     # load lines
     userprint("Loading lines")
@@ -56,7 +61,7 @@ def main():
     peakfind_sig = PEAKFIND_SIG if args.peakfind_sig is None else args.peakfind_sig
 
     # initialize candidates object
-    userprint("Looking for candidates")
+    userprint("Initializing candidates object")
     if args.output_candidates is None:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="candidates",
@@ -72,15 +77,20 @@ def main():
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
         userprint("Loading existing candidates")
+        t2 = time.time()
         candidates.load_candidates(args.input_candidates)
+        t3 = time.time()
+        userprint("INFO: time elapsed to load candidates", (t3-t2)/60.0, 'minutes')")
 
     # load spectra
     if args.input_spectra is not None:
         userprint("Loading spectra")
+        t4 = time.time()
         userprint("There are {} files with spectra to be loaded".format(len(args.input_spectra)))
         for index, spectra_filename in enumerate(args.input_spectra):
             userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
                                                                len(args.input_spectra)))
+            t40 = time.time()
             spectra = Spectra.from_json(load_json(spectra_filename))
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
@@ -88,7 +98,14 @@ def main():
             # look for candidates
             userprint("Looking for candidates")
             candidates.find_candidates(spectra.spectra_list())
+            t41 = time.time()
+            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}",
+                      (t41-t40)/60.0, 'minutes')
+        t5 = time.time()
+        userprint("INFO: time elapsed to find candidates", (t5-t4)/60.0, 'minutes')
 
+    userprint("INFO: total elapsed time", (t5-t0)/60.0, 'minutes')
     userprint("Done")
+
 if __name__ == '__main__':
     main()

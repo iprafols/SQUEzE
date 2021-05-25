@@ -10,6 +10,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import time
 
 from squeze.common_functions import load_json
 from squeze.common_functions import verboseprint, quietprint
@@ -29,15 +30,18 @@ def main():
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
 
+    t0 = time.time()
     # load model
     userprint("Loading model")
     if args.model.endswith(".json"):
         model = Model.from_json(load_json(args.model))
     else:
         model = Model.from_fits(args.model)
+    t1 = time.time()
+    userprint("INFO: time elapsed to load model", (t1-t0)/60.0, 'minutes')
 
     # initialize candidates object
-    userprint("Looking for candidates")
+    userprint("Initializing candidates object")
     if args.output_candidates is None:
         candidates = Candidates(mode="operation", model=model)
     else:
@@ -47,15 +51,20 @@ def main():
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
         userprint("Loading existing candidates")
+        t2 = time.time()
         candidates.load_candidates(args.input_candidates)
+        t3 = time.time()
+        userprint("INFO: time elapsed to load candidates", (t3-t2)/60.0, 'minutes')
 
     # load spectra
     if args.input_spectra is not None:
         userprint("Loading spectra")
+        t4 = time.time()
         userprint("There are {} files with spectra to be loaded".format(len(args.input_spectra)))
         for index, spectra_filename in enumerate(args.input_spectra):
             userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
                                                                len(args.input_spectra)))
+            t40 = time.time()
             spectra = Spectra.from_json(load_json(spectra_filename))
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
@@ -64,14 +73,25 @@ def main():
             userprint("Looking for candidates")
             candidates.find_candidates(spectra.spectra_list())
 
+            t41 = time.time()
+            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}",
+                      (t41-t40)/60.0, 'minutes')
+        t5 = time.time()
+        userprint("INFO: time elapsed to find candidates", (t5-t4)/60.0, 'minutes')
+
     # compute probabilities
     userprint("Computing probabilities")
+    t6 = time.time()
     candidates.classify_candidates()
+    t7 = time.time()
+    userprint("INFO: time elapsed to classify candidates", (t7-t6)/60.0, 'minutes')
 
     # save the catalogue as a fits file
     if not args.no_save_catalogue:
         candidates.save_catalogue(args.output_catalogue, args.prob_cut)
 
+    t8 = time.time()
+    userprint("INFO: total elapsed time", (t8-t0)/60.0, 'minutes')
     userprint("Done")
 
 if __name__ == '__main__':
