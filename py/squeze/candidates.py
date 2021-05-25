@@ -298,7 +298,7 @@ class Candidates(object):
 
             Returns
             -------
-            A DataFrame with the candidates for the given spectrum.
+            A list with the candidates for the given spectrum.
             """
         if not isinstance(spectrum, Spectrum):
             raise Error("The given spectrum is not of the correct type. It should " +
@@ -375,31 +375,7 @@ class Candidates(object):
                     candidate_info.append(try_line)
                     candidates.append(candidate_info)
 
-        columns_candidates = spectrum.metadata_names()
-        for i in range(self.__lines.shape[0]):
-            columns_candidates.append("{}_RATIO".format(self.__lines.iloc[i].name.upper()))
-            columns_candidates.append("{}_RATIO_SN".format(self.__lines.iloc[i].name.upper()))
-            columns_candidates.append("{}_RATIO2".format(self.__lines.iloc[i].name.upper()))
-        columns_candidates.append("Z_TRY")
-        columns_candidates.append("PEAK_SIGNIFICANCE")
-        columns_candidates.append("ASSUMED_LINE")
-        candidates_df = pd.DataFrame(candidates, columns=columns_candidates)
-
-        # add truth table if running in training or test modes
-        if (self.__mode in ["training", "test"] or
-            (self.__mode == "candidates" and
-            "Z_TRUE" in candidates_df.columns)):
-            candidates_df["DELTA_Z"] = candidates_df["Z_TRY"] - candidates_df["Z_TRUE"]
-            if candidates_df.shape[0] > 0:
-                candidates_df["IS_CORRECT"] = candidates_df.apply(self.__is_correct, axis=1)
-                candidates_df["IS_LINE"] = candidates_df.apply(self.__is_line, axis=1)
-                candidates_df["CORRECT_REDSHIFT"] = candidates_df.apply(self.__is_correct_redshift, axis=1)
-            else:
-                candidates_df["IS_CORRECT"] = pd.Series(dtype=bool)
-                candidates_df["IS_LINE"] = pd.Series(dtype=bool)
-                candidates_df["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
-
-        return candidates_df
+        return candidates
 
     def __load_model_settings(self):
         """ Overload the settings with those stored in self.__model """
@@ -480,15 +456,34 @@ class Candidates(object):
             raise Error("The function find_candidates is not available in " +
                         "merge mode.")
 
+        candidates = []
         for spectrum in spectra:
             # locate candidates in this spectrum
-            candidates_df = self.__find_candidates(spectrum)
+            candidates += self.__find_candidates(spectrum)
 
-            # integrate them in the candidates catalogue
-            if self.__candidates is None:
-                self.__candidates = candidates_df.copy()
+        columns_candidates = spectrum.metadata_names()
+        for i in range(self.__lines.shape[0]):
+            columns_candidates.append("{}_RATIO".format(self.__lines.iloc[i].name.upper()))
+            columns_candidates.append("{}_RATIO_SN".format(self.__lines.iloc[i].name.upper()))
+            columns_candidates.append("{}_RATIO2".format(self.__lines.iloc[i].name.upper()))
+        columns_candidates.append("Z_TRY")
+        columns_candidates.append("PEAK_SIGNIFICANCE")
+        columns_candidates.append("ASSUMED_LINE")
+        self.__candidates = pd.DataFrame(candidates, columns=columns_candidates)
+
+        # add truth table if running in training or test modes
+        if (self.__mode in ["training", "test"] or
+            (self.__mode == "candidates" and
+            "Z_TRUE" in self.__candidates.columns)):
+            self.__candidates["DELTA_Z"] = self.__candidates["Z_TRY"] - self.__candidates["Z_TRUE"]
+            if self.__candidates.shape[0] > 0:
+                self.__candidates["IS_CORRECT"] = self.__candidates.apply(self.__is_correct, axis=1)
+                self.__candidates["IS_LINE"] = self.__candidates.apply(self.__is_line, axis=1)
+                self.__candidates["CORRECT_REDSHIFT"] = self.__candidates.apply(self.__is_correct_redshift, axis=1)
             else:
-                self.__candidates = self.__candidates.append(candidates_df, ignore_index=True)
+                self.__candidates["IS_CORRECT"] = pd.Series(dtype=bool)
+                self.__candidates["IS_LINE"] = pd.Series(dtype=bool)
+                self.__candidates["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
 
         # save the new version of the catalogue
         if save:

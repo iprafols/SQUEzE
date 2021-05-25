@@ -10,6 +10,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import time
 
 from squeze.common_functions import verboseprint, quietprint
 from squeze.candidates import Candidates
@@ -25,6 +26,7 @@ def main():
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
 
+    t0 = time.time()
     # load candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
@@ -41,6 +43,8 @@ def main():
     userprint("Merging with the other candidate objects")
     candidates.merge(args.input_candidates[1:], userprint=userprint)
 
+    t1 = time.time()
+    userprint(f"INFO: total elapsed time: {(t1-t0)/60.0} minutes")
     userprint("Done")
 
 if __name__ == '__main__':
