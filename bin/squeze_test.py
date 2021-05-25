@@ -10,6 +10,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import time
 import numpy as np
 
 from squeze.common_functions import load_json
@@ -35,6 +36,7 @@ def main():
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
 
+    t0 = time.time()
     # load quasar catalogue (only if --check-statistics is passed)
     if args.check_statistics:
         userprint("Loading quasar catalogue")
@@ -46,16 +48,21 @@ def main():
                                                args.qso_specid, args.qso_ztrue,
                                                args.qso_hdu).quasar_catalogue()
             quasar_catalogue["LOADED"] = False
+        t1 = time.time()
+        userprint(f"INFO: time elapsed to load quasar catalogue: {(t1-t0)/60.0} minutes")
 
     # load model
     userprint("Loading model")
+    t2 = time.time()
     if args.model.endswith(".json"):
         model = Model.from_json(load_json(args.model))
     else:
         model = Model.from_fits(args.model)
+    t3 = time.time()
+    userprint("INFO: time elapsed to load model: {(t3-t2)/60.0} minutes")
 
     # initialize candidates object
-    userprint("Looking for candidates")
+    userprint("Initializing candidates object")
     if args.output_candidates is None:
         candidates = Candidates(mode="test", model=model)
     else:
@@ -65,15 +72,20 @@ def main():
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
         userprint("Loading existing candidates")
+        t4 = time.time()
         candidates.load_candidates(args.input_candidates)
+        t5 = time.time()
+        userprint("INFO: time elapsed to load candidates: {(t5-t4)/60.0} minutes")
 
     # load spectra
     if args.input_spectra is not None:
         userprint("Loading spectra")
+        t6 = time.time()
         userprint("There are {} files with spectra to be loaded".format(len(args.input_spectra)))
         for index, spectra_filename in enumerate(args.input_spectra):
             userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
                                                                len(args.input_spectra)))
+            t60 = time.time()
             spectra = Spectra.from_json(load_json(spectra_filename))
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
@@ -91,9 +103,18 @@ def main():
             userprint("Looking for candidates")
             candidates.find_candidates(spectra.spectra_list())
 
+            t61 = time.time()
+            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
+                      f" {(t61-t60)/60.0} minutes")
+        t7 = time.time()
+        userprint("INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
+
     # compute probabilities
     userprint("Computing probabilities")
+    t8 = time.time()
     candidates.classify_candidates()
+    t9 = time.time()
+    userprint("INFO: time elapsed to classify candidates: {(t9-t8)/60.0} minutes")
 
     # check completeness
     if args.check_statistics:
@@ -116,6 +137,8 @@ def main():
     if not args.no_save_catalogue:
         candidates.save_catalogue(args.output_catalogue, args.prob_cut)
 
+    t8 = time.time()
+    userprint("INFO: total elapsed time: {(t8-t0)/60.0} minutes")
     userprint("Done")
 
 if __name__ == '__main__':
