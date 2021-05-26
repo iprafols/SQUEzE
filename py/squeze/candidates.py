@@ -460,7 +460,7 @@ class Candidates(object):
         if (self.__mode in ["training", "test"] or
             (self.__mode == "candidates" and
             "Z_TRUE" in self.__candidates.columns)):
-            aux["DELTA_Z"] = self.__candidates["Z_TRY"] - aux["Z_TRUE"]
+            self.__candidates["DELTA_Z"] = self.__candidates["Z_TRY"] - self.__candidates["Z_TRUE"]
             if self.__candidates.shape[0] > 0:
                 self.__candidates["IS_CORRECT"] = self.__candidates.apply(self.__is_correct, axis=1)
                 self.__candidates["IS_LINE"] = self.__candidates.apply(self.__is_line, axis=1)
