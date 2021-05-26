@@ -97,17 +97,27 @@ def main():
             userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
                       f"{(t31-t30)/60.0} minutes")
 
+            if index == 0:
+                columns_candidates = spectra.spectra_list()[0].metadata_names()
+
         t4 = time.time()
         userprint(f"INFO: time elapsed to find candidates: {(t4-t3)/60.0} minutes")
 
+    # convert to dataframe
+    userprint("Converting candidates to dataframe")
+    t5 = time.time()
+    candidates.candidates_list_to_dataframe(columns_candidates)
+    t6 = time.time()
+    userprint(f"INFO: time elapsed to find candidates: {(t6-t5)/60.0} minutes")
+
     # train model
     userprint("Training model")
-    t5 = time.time()
+    t7 = time.time()
     candidates.train_model(args.model_fits)
-    t6 = time.time()
-    userprint(f"INFO: time elapsed to train model: {(t6-t5)/60.0} minutes")
+    t8 = time.time()
+    userprint(f"INFO: time elapsed to train model: {(t8-t7)/60.0} minutes")
 
-    userprint(f"INFO: total elapsed time: {(t6-t0)/60.0} minutes")
+    userprint(f"INFO: total elapsed time: {(t8-t0)/60.0} minutes")
     userprint("Done")
 if __name__ == '__main__':
     main()

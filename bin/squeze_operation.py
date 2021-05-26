@@ -76,22 +76,32 @@ def main():
             t41 = time.time()
             userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
                       f" {(t41-t40)/60.0} minutes")
+
+            if index == 0:
+                columns_candidates = spectra.spectra_list()[0].metadata_names()
         t5 = time.time()
         userprint("INFO: time elapsed to find candidates: {(t5-t4)/60.0} minutes")
 
+    # convert to dataframe
+    userprint("Converting candidates to dataframe")
+    t6 = time.time()
+    candidates.candidates_list_to_dataframe(columns_candidates)
+    t7 = time.time()
+    userprint(f"INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
+
     # compute probabilities
     userprint("Computing probabilities")
-    t6 = time.time()
+    t8 = time.time()
     candidates.classify_candidates()
-    t7 = time.time()
-    userprint("INFO: time elapsed to classify candidates: {(t7-t6)/60.0} minutes")
+    t9 = time.time()
+    userprint(f"INFO: time elapsed to classify candidates: {(t8-t9)/60.0} minutes")
 
     # save the catalogue as a fits file
     if not args.no_save_catalogue:
         candidates.save_catalogue(args.output_catalogue, args.prob_cut)
 
-    t8 = time.time()
-    userprint("INFO: total elapsed time: {(t8-t0)/60.0} minutes")
+    t10 = time.time()
+    userprint(f"INFO: total elapsed time: {(t10-t0)/60.0} minutes")
     userprint("Done")
 
 if __name__ == '__main__':

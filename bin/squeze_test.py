@@ -106,15 +106,26 @@ def main():
             t61 = time.time()
             userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
                       f" {(t61-t60)/60.0} minutes")
+
+            if index == 0:
+                columns_candidates = spectra.spectra_list()[0].metadata_names()
+
         t7 = time.time()
         userprint("INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
 
+    # convert to dataframe
+    userprint("Converting candidates to dataframe")
+    t8 = time.time()
+    candidates.candidates_list_to_dataframe(columns_candidates)
+    t9 = time.time()
+    userprint(f"INFO: time elapsed to find candidates: {(t8-t9)/60.0} minutes")
+
     # compute probabilities
     userprint("Computing probabilities")
-    t8 = time.time()
+    t10 = time.time()
     candidates.classify_candidates()
-    t9 = time.time()
-    userprint("INFO: time elapsed to classify candidates: {(t9-t8)/60.0} minutes")
+    t11 = time.time()
+    userprint(f"INFO: time elapsed to classify candidates: {(t10-t11)/60.0} minutes")
 
     # check completeness
     if args.check_statistics:
@@ -137,8 +148,8 @@ def main():
     if not args.no_save_catalogue:
         candidates.save_catalogue(args.output_catalogue, args.prob_cut)
 
-    t8 = time.time()
-    userprint("INFO: total elapsed time: {(t8-t0)/60.0} minutes")
+    t12 = time.time()
+    userprint(f"INFO: total elapsed time: {(t12-t0)/60.0} minutes")
     userprint("Done")
 
 if __name__ == '__main__':

@@ -169,10 +169,13 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
 
     # look for candidates
     userprint("Looking for candidates")
+    candidates.find_candidates(spectra.spectra_list())
+
+    columns_candidates = spectra.spectra_list()[0].metadata_names()
     if save_file is None:
-        candidates.find_candidates(spectra.spectra_list(), save=False)
+        candidates.candidates_list_to_dataframe(columns_candidates, save=False)
     else:
-        candidates.find_candidates(spectra.spectra_list(), save=True)
+        candidates.candidates_list_to_dataframe(columns_candidates, save=True)
 
     # compute probabilities
     userprint("Computing probabilities")
@@ -730,7 +733,7 @@ def main(options=None, comm=None):
         # SQUEzE model
         priors = args.outpath + "/priors.fits.gz"
         aux = candidates_df[(~candidates_df["DUPLICATED"]) & (candidates_df["PROB"] >= args.prob_cut)]
-        
+
         columns = [
             fits.Column(name="TARGETID",
                         format="I",

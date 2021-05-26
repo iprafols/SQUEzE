@@ -99,7 +99,9 @@ class Candidates(object):
             message += "Given name was {}".format(name)
             raise Error(message)
 
-        self.__candidates = None # initialize empty catalogue
+        # initialize empty catalogue
+        self.__candidates_list = []
+        self.__candidates = None
 
         # main settings
         self.__lines = lines_settings[0]
@@ -426,6 +428,54 @@ class Candidates(object):
 
         return
 
+    def candidates_list_to_dataframe(self, columns_candidates, save=True):
+        """ Format existing candidates list into a dataframe
+
+            Parameters
+            ----------
+            columns_candidates : list of str
+            The column names of the spectral metadata
+
+            save : bool - default: True
+            If True, then save the catalogue file after candidates are found
+            """
+        if len(self.__candidates_list) == 0:
+            return
+
+        for i in range(self.__lines.shape[0]):
+            columns_candidates.append("{}_RATIO".format(self.__lines.iloc[i].name.upper()))
+            columns_candidates.append("{}_RATIO_SN".format(self.__lines.iloc[i].name.upper()))
+            columns_candidates.append("{}_RATIO2".format(self.__lines.iloc[i].name.upper()))
+        columns_candidates.append("Z_TRY")
+        columns_candidates.append("PEAK_SIGNIFICANCE")
+        columns_candidates.append("ASSUMED_LINE")
+
+        if self.__candidates is None:
+            self.__candidates = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
+        else:
+            aux = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
+            self.__candidates = pd.concat([self.__candidates, aux], ignore_index=True)
+
+        # add truth table if running in training or test modes
+        if (self.__mode in ["training", "test"] or
+            (self.__mode == "candidates" and
+            "Z_TRUE" in self.__candidates.columns)):
+            aux["DELTA_Z"] = self.__candidates["Z_TRY"] - aux["Z_TRUE"]
+            if self.__candidates.shape[0] > 0:
+                self.__candidates["IS_CORRECT"] = self.__candidates.apply(self.__is_correct, axis=1)
+                self.__candidates["IS_LINE"] = self.__candidates.apply(self.__is_line, axis=1)
+                self.__candidates["CORRECT_REDSHIFT"] = self.__candidates.apply(self.__is_correct_redshift, axis=1)
+            else:
+                self.__candidates["IS_CORRECT"] = pd.Series(dtype=bool)
+                self.__candidates["IS_LINE"] = pd.Series(dtype=bool)
+                self.__candidates["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
+
+        self.__candidates_list = []
+
+        # save the new version of the catalogue
+        if save:
+            self.save_candidates()
+
     def classify_candidates(self, save=True):
         """ Create a model instance and train it. Save the resulting model"""
         # consistency checks
@@ -440,7 +490,7 @@ class Candidates(object):
         if save:
             self.save_candidates()
 
-    def find_candidates(self, spectra, save=True):
+    def find_candidates(self, spectra):
         """ Find candidates for a given set of spectra, then integrate them in the
             candidates catalogue and save the new version of the catalogue.
 
@@ -448,46 +498,14 @@ class Candidates(object):
             ----------
             spectra : list of Spectrum
             The spectra in which candidates will be looked for.
-
-            save : bool - default: True
-            If True, then save the catalogue file after candidates are found
             """
         if self.__mode == "merge":
             raise Error("The function find_candidates is not available in " +
                         "merge mode.")
 
-        candidates = []
         for spectrum in spectra:
             # locate candidates in this spectrum
-            candidates += self.__find_candidates(spectrum)
-
-        columns_candidates = spectrum.metadata_names()
-        for i in range(self.__lines.shape[0]):
-            columns_candidates.append("{}_RATIO".format(self.__lines.iloc[i].name.upper()))
-            columns_candidates.append("{}_RATIO_SN".format(self.__lines.iloc[i].name.upper()))
-            columns_candidates.append("{}_RATIO2".format(self.__lines.iloc[i].name.upper()))
-        columns_candidates.append("Z_TRY")
-        columns_candidates.append("PEAK_SIGNIFICANCE")
-        columns_candidates.append("ASSUMED_LINE")
-        self.__candidates = pd.DataFrame(candidates, columns=columns_candidates)
-
-        # add truth table if running in training or test modes
-        if (self.__mode in ["training", "test"] or
-            (self.__mode == "candidates" and
-            "Z_TRUE" in self.__candidates.columns)):
-            self.__candidates["DELTA_Z"] = self.__candidates["Z_TRY"] - self.__candidates["Z_TRUE"]
-            if self.__candidates.shape[0] > 0:
-                self.__candidates["IS_CORRECT"] = self.__candidates.apply(self.__is_correct, axis=1)
-                self.__candidates["IS_LINE"] = self.__candidates.apply(self.__is_line, axis=1)
-                self.__candidates["CORRECT_REDSHIFT"] = self.__candidates.apply(self.__is_correct_redshift, axis=1)
-            else:
-                self.__candidates["IS_CORRECT"] = pd.Series(dtype=bool)
-                self.__candidates["IS_LINE"] = pd.Series(dtype=bool)
-                self.__candidates["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
-
-        # save the new version of the catalogue
-        if save:
-            self.save_candidates()
+            self.__candidates_list += self.__find_candidates(spectrum)
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None,
                                  get_results=False, userprint=verboseprint):
