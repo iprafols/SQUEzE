@@ -96,9 +96,9 @@ def main():
                 for spec in spectra.spectra_list():
                     if quasar_catalogue[
                             quasar_catalogue["SPECID"] == spec.metadata_by_key("SPECID")].shape[0] > 0:
-                        index = quasar_catalogue.index[
+                        index2 = quasar_catalogue.index[
                             quasar_catalogue["SPECID"] == spec.metadata_by_key("SPECID")].tolist()[0]
-                        quasar_catalogue.at[index, "LOADED"] = True
+                        quasar_catalogue.at[index2, "LOADED"] = True
 
             # look for candidates
             userprint("Looking for candidates")
@@ -112,12 +112,11 @@ def main():
                 columns_candidates += spectra.spectra_list()[0].metadata_names()
 
         t7 = time.time()
-        userprint("INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
+        userprint(f"INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
 
         # convert to dataframe
         userprint("Converting candidates to dataframe")
         t8 = time.time()
-        print(columns_candidates)
         candidates.candidates_list_to_dataframe(columns_candidates)
         t9 = time.time()
         userprint(f"INFO: time elapsed to find candidates: {(t8-t9)/60.0} minutes")
