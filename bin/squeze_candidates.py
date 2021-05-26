@@ -107,12 +107,12 @@ def main():
         t5 = time.time()
         userprint(f"INFO: time elapsed to find candidates: {(t5-t4)/60.0} minutes")
 
-    # convert to dataframe
-    userprint("Converting candidates to dataframe")
-    t6 = time.time()
-    candidates.candidates_list_to_dataframe(columns_candidates)
-    t7 = time.time()
-    userprint(f"INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
+        # convert to dataframe
+        userprint("Converting candidates to dataframe")
+        t6 = time.time()
+        candidates.candidates_list_to_dataframe(columns_candidates)
+        t7 = time.time()
+        userprint(f"INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
 
 
     userprint(f"INFO: total elapsed time: {(t7-t0)/60.0} minutes")
