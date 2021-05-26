@@ -86,6 +86,7 @@ def main():
     if args.input_spectra is not None:
         userprint("Loading spectra")
         t4 = time.time()
+        columns_candidates = []
         userprint("There are {} files with spectra to be loaded".format(len(args.input_spectra)))
         for index, spectra_filename in enumerate(args.input_spectra):
             userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
@@ -103,7 +104,7 @@ def main():
                       f" {(t41-t40)/60.0} minutes")
 
             if index == 0:
-                columns_candidates = spectra.spectra_list()[0].metadata_names()
+                columns_candidates += spectra.spectra_list()[0].metadata_names()
         t5 = time.time()
         userprint(f"INFO: time elapsed to find candidates: {(t5-t4)/60.0} minutes")
 
