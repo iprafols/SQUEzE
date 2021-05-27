@@ -88,7 +88,7 @@ def main():
         t6 = time.time()
         candidates.candidates_list_to_dataframe(columns_candidates)
         t7 = time.time()
-        userprint(f"INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
+        userprint(f"INFO: time elapsed to convert candidates to dataframe: {(t7-t6)/60.0} minutes")
 
     # compute probabilities
     userprint("Computing probabilities")

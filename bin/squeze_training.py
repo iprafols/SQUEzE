@@ -109,7 +109,7 @@ def main():
         t5 = time.time()
         candidates.candidates_list_to_dataframe(columns_candidates)
         t6 = time.time()
-        userprint(f"INFO: time elapsed to find candidates: {(t6-t5)/60.0} minutes")
+        userprint(f"INFO: time elapsed to convert candidates to dataframe: {(t6-t5)/60.0} minutes")
 
     # train model
     userprint("Training model")
