@@ -148,13 +148,14 @@ class Candidates(object):
         flux = spectrum.flux()
         ivar = spectrum.ivar()
 
+        oneplusz = (1.0+z_try)
         # compute intervals
-        pix_peak = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["START"])
-                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["END"]))[0]
-        pix_blue = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["BLUE_START"])
-                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["BLUE_END"]))[0]
-        pix_red = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["RED_START"])
-                           & (wave <= (1.0+z_try)*self.__lines.iloc[index]["RED_END"]))[0]
+        pix_peak = np.where((wave >= oneplusz*self.__lines.iloc[index]["START"])
+                            & (wave <= oneplusz*self.__lines.iloc[index]["END"]))[0]
+        pix_blue = np.where((wave >= oneplusz*self.__lines.iloc[index]["BLUE_START"])
+                            & (wave <= oneplusz*self.__lines.iloc[index]["BLUE_END"]))[0]
+        pix_red = np.where((wave >= oneplusz*self.__lines.iloc[index]["RED_START"])
+                           & (wave <= oneplusz*self.__lines.iloc[index]["RED_END"]))[0]
 
         # compute peak and continuum values
         compute_ratio = True
@@ -169,18 +170,19 @@ class Candidates(object):
             cont_red_and_blue = cont_red + cont_blue
             if cont_red_and_blue == 0.0:
                 compute_ratio = False
-            peak_ivar_sum = ivar[pix_peak].sum()
-            if peak_ivar_sum == 0.0:
-                peak_err_squared = np.nan
             else:
-                peak_err_squared = 1.0/peak_ivar_sum
-            blue_ivar_sum = ivar[pix_blue].sum()
-            red_ivar_sum = ivar[pix_red].sum()
-            if blue_ivar_sum == 0.0 or red_ivar_sum == 0.0:
-                cont_err_squared = np.nan
-            else:
-                cont_err_squared = (1.0/blue_ivar_sum +
-                                    1.0/red_ivar_sum)/4.0
+                peak_ivar_sum = ivar[pix_peak].sum()
+                if peak_ivar_sum == 0.0:
+                    peak_err_squared = np.nan
+                else:
+                    peak_err_squared = 1.0/peak_ivar_sum
+                blue_ivar_sum = ivar[pix_blue].sum()
+                red_ivar_sum = ivar[pix_red].sum()
+                if blue_ivar_sum == 0.0 or red_ivar_sum == 0.0:
+                    cont_err_squared = np.nan
+                else:
+                    cont_err_squared = (1.0/blue_ivar_sum +
+                                        1.0/red_ivar_sum)/4.0
         # compute ratios
         if compute_ratio:
             ratio = 2.0*peak/cont_red_and_blue
@@ -329,7 +331,6 @@ class Candidates(object):
         peak_indexs, significances = self.__peak_finder.find_peaks(spectrum)
 
         # keep peaks in the spectrum
-        candidates = []
         # if there are no peaks, include the spectrum with redshift np.nan
         # assumed_line='none', significance is set to np.nan
         # and all the metrics set to np.nan
@@ -348,7 +349,7 @@ class Candidates(object):
             candidate_info.append(z_try)
             candidate_info.append(significance)
             candidate_info.append(try_line)
-            candidates.append(candidate_info)
+            self.__candidates_list.append(candidate_info)
         # if there are peaks, compute the metrics and keep the info
         else:
             for peak_index, significance in zip(peak_indexs, significances):
@@ -358,24 +359,22 @@ class Candidates(object):
                     if z_try < 0.0:
                         continue
 
-                    # compute peak ratio for the different lines
-                    ratios = np.zeros(self.__lines.shape[0], dtype=float)
-                    ratios_sn = np.zeros_like(ratios)
-                    ratios2 = np.zeros_like(ratios)
-                    for i in range(self.__lines.shape[0]):
-                        ratios[i], ratios_sn[i], ratios2[i] = \
-                            self.__compute_line_ratio(spectrum, i, z_try)
-
-                    # add candidate to the list
                     candidate_info = spectrum.metadata()
-                    for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
+
+                    # compute peak ratio for the different lines
+                    for i in range(self.__lines.shape[0]):
+                        ratio, ratios_sn, ratios2 = \
+                            self.__compute_line_ratio(spectrum, i, z_try)
                         candidate_info.append(ratio)
                         candidate_info.append(ratio_sn)
                         candidate_info.append(ratio2)
+
                     candidate_info.append(z_try)
                     candidate_info.append(significance)
                     candidate_info.append(try_line)
-                    candidates.append(candidate_info)
+
+                    # add candidate to the list
+                    self.__candidates_list.append(candidate_info)
 
         return candidates
 
@@ -505,7 +504,8 @@ class Candidates(object):
 
         for spectrum in spectra:
             # locate candidates in this spectrum
-            self.__candidates_list += self.__find_candidates(spectrum)
+            # candidates are appended to self.__candidates_list
+            self.__find_candidates(spectrum)
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None,
                                  get_results=False, userprint=verboseprint):
