@@ -38,7 +38,7 @@ class TestSquezeCandidates(AbstractTest):
         self.compare_data_frames(test_file, out_file)
 
     def test_squeze_test_stats(self):
-        """ Run squeze_test.py computing stastics"""
+        """ Run squeze_test.py computing statistics"""
 
         in_file = "{}/data/formatted_boss_test2.json".format(THIS_DIR)
         out_file = "{}/results/test_boss_test2_stats.fits.gz".format(THIS_DIR)
