@@ -363,7 +363,7 @@ class Candidates(object):
 
                     # compute peak ratio for the different lines
                     for i in range(self.__lines.shape[0]):
-                        ratio, ratios_sn, ratios2 = \
+                        ratio, ratio_sn, ratio2 = \
                             self.__compute_line_ratio(spectrum, i, z_try)
                         candidate_info.append(ratio)
                         candidate_info.append(ratio_sn)
