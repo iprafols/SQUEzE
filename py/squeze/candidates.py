@@ -376,8 +376,6 @@ class Candidates(object):
                     # add candidate to the list
                     self.__candidates_list.append(candidate_info)
 
-        return candidates
-
     def __load_model_settings(self):
         """ Overload the settings with those stored in self.__model """
         settings = self.__model.get_settings()
