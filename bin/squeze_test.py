@@ -59,7 +59,7 @@ def main():
     else:
         model = Model.from_fits(args.model)
     t3 = time.time()
-    userprint("INFO: time elapsed to load model: {(t3-t2)/60.0} minutes")
+    userprint(f"INFO: time elapsed to load model: {(t3-t2)/60.0} minutes")
 
     # initialize candidates object
     userprint("Initializing candidates object")
@@ -75,7 +75,7 @@ def main():
         t4 = time.time()
         candidates.load_candidates(args.input_candidates)
         t5 = time.time()
-        userprint("INFO: time elapsed to load candidates: {(t5-t4)/60.0} minutes")
+        userprint(f"INFO: time elapsed to load candidates: {(t5-t4)/60.0} minutes")
 
     # load spectra
     if args.input_spectra is not None:

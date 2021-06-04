@@ -38,7 +38,7 @@ def main():
     else:
         model = Model.from_fits(args.model)
     t1 = time.time()
-    userprint("INFO: time elapsed to load model", (t1-t0)/60.0, 'minutes')
+    userprint(f"INFO: time elapsed to load model", (t1-t0)/60.0, 'minutes')
 
     # initialize candidates object
     userprint("Initializing candidates object")
@@ -81,7 +81,7 @@ def main():
             if index == 0:
                 columns_candidates += spectra.spectra_list()[0].metadata_names()
         t5 = time.time()
-        userprint("INFO: time elapsed to find candidates: {(t5-t4)/60.0} minutes")
+        userprint(f"INFO: time elapsed to find candidates: {(t5-t4)/60.0} minutes")
 
         # convert to dataframe
         userprint("Converting candidates to dataframe")

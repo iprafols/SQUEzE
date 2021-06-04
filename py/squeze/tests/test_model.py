@@ -87,6 +87,7 @@ class TestModel(AbstractTest):
         self.assertTrue(os.path.isfile(out_file))
         self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
                                                         "_model.json")))
+        self.compare_data_frames(test_file, out_file)
 
         # now test the model
         model_file = out_file.replace(".fits.gz", "_model.json")

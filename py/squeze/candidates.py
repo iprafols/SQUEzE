@@ -168,7 +168,10 @@ class Candidates(object):
             cont_red = np.average(flux[pix_red])
             cont_blue = np.average(flux[pix_blue])
             cont_red_and_blue = cont_red + cont_blue
-            if cont_red_and_blue == 0.0:
+            if (cont_red_and_blue == 0.0 or
+                    isinstance(cont_red, np.ma.core.MaskedConstant) or
+                    isinstance(cont_blue, np.ma.core.MaskedConstant) or
+                    isinstance(peak, np.ma.core.MaskedConstant)):
                 compute_ratio = False
             else:
                 peak_ivar_sum = ivar[pix_peak].sum()
