@@ -9,6 +9,7 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
+from math import sqrt
 import numpy as np
 
 import pandas as pd
@@ -123,7 +124,7 @@ class Candidates(object):
         # initialize peak finder
         self.__peak_finder = PeakFinder(self.__peakfind_width, self.__peakfind_sig)
 
-    def __compute_line_ratio(self, spectrum, index, z_try):
+    def __compute_line_ratio(self, spectrum, index, oneplusz):
         """ Compute the peak-to-continuum ratio for a specified line.
 
             Parameters
@@ -148,7 +149,6 @@ class Candidates(object):
         flux = spectrum.flux()
         ivar = spectrum.ivar()
 
-        oneplusz = (1.0+z_try)
         # compute intervals
         pix_peak = np.where((wave >= oneplusz*self.__lines.iloc[index]["START"])
                             & (wave <= oneplusz*self.__lines.iloc[index]["END"]))[0]
@@ -164,9 +164,9 @@ class Candidates(object):
                 or (pix_red.size < pix_peak.size//2)):
             compute_ratio = False
         else:
-            peak = np.average(flux[pix_peak])
-            cont_red = np.average(flux[pix_red])
-            cont_blue = np.average(flux[pix_blue])
+            peak = np.mean(flux[pix_peak])
+            cont_red = np.mean(flux[pix_red])
+            cont_blue = np.mean(flux[pix_blue])
             cont_red_and_blue = cont_red + cont_blue
             if (cont_red_and_blue == 0.0 or
                     isinstance(cont_red, np.ma.core.MaskedConstant) or
@@ -189,8 +189,8 @@ class Candidates(object):
         # compute ratios
         if compute_ratio:
             ratio = 2.0*peak/cont_red_and_blue
-            ratio2 = np.abs((cont_red - cont_blue)/cont_red_and_blue)
-            err_ratio = np.sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/np.abs(cont_red_and_blue)
+            ratio2 = abs((cont_red - cont_blue)/cont_red_and_blue)
+            err_ratio = sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/abs(cont_red_and_blue)
             ratio_sn = (ratio - 1.0)/err_ratio
         else:
             ratio = np.nan
@@ -289,6 +289,7 @@ class Candidates(object):
                     is_line = True
         return is_line
 
+
     def __find_candidates(self, spectrum):
         """
             Given a Spectrum, locate peaks in the flux. Then assume these peaks
@@ -307,28 +308,17 @@ class Candidates(object):
             -------
             A list with the candidates for the given spectrum.
             """
-        if not isinstance(spectrum, Spectrum):
-            raise Error("The given spectrum is not of the correct type. It should " +
-                        "be an instance of class Spectrum (see squeze_spectrum.py " +
-                        "for details).")
+        #if not isinstance(spectrum, Spectrum):
+        #    raise Error("The given spectrum is not of the correct type. It should " +
+        #                "be an instance of class Spectrum (see squeze_spectrum.py " +
+        #                "for details).")
 
-        if not (spectrum.flux().size == spectrum.wave().size and
-                spectrum.flux().size == spectrum.ivar().size):
-            raise Error("The flux, ivar and wave matrixes do not have the same size, but " +
-                        "have sizes {flux_size}, ".format(flux_size=spectrum.flux().size,) +
-                        "{ivar_size}, and {wave_size}.".format(wave_size=spectrum.wave().size,
-                                                               ivar_size=spectrum.ivar().size))
-
-        if self.__mode == "training" and "Z_TRUE" not in spectrum.metadata_names():
-            raise Error("Mode is set to 'training', but spectrum have does not " +
-                        "have the property 'Z_TRUE'.")
-
-        if self.__mode == "test" and "Z_TRUE" not in spectrum.metadata_names():
-            raise Error("Mode is set to 'test', but spectrum have does not " +
-                        "have the property 'Z_TRUE'.")
-
-        if self.__mode == "merge":
-            raise Error("Mode 'merge' is not valid for function __find_candidates.")
+        #if not (spectrum.flux().size == spectrum.wave().size and
+        #        spectrum.flux().size == spectrum.ivar().size):
+        #    raise Error("The flux, ivar and wave matrixes do not have the same size, but " +
+        #                "have sizes {flux_size}, ".format(flux_size=spectrum.flux().size,) +
+        #                "{ivar_size}, and {wave_size}.".format(wave_size=spectrum.wave().size,
+        #                                                       ivar_size=spectrum.ivar().size))
 
         # find peaks
         peak_indexs, significances = self.__peak_finder.find_peaks(spectrum)
@@ -361,13 +351,14 @@ class Candidates(object):
                     z_try = spectrum.wave()[peak_index]/self.__lines["WAVE"][try_line] - 1.0
                     if z_try < 0.0:
                         continue
+                    oneplusz = (1.0 + z_try)
 
                     candidate_info = spectrum.metadata()
 
                     # compute peak ratio for the different lines
                     for i in range(self.__lines.shape[0]):
                         ratio, ratio_sn, ratio2 = \
-                            self.__compute_line_ratio(spectrum, i, z_try)
+                            self.__compute_line_ratio(spectrum, i, oneplusz)
                         candidate_info.append(ratio)
                         candidate_info.append(ratio_sn)
                         candidate_info.append(ratio2)
@@ -499,7 +490,15 @@ class Candidates(object):
             spectra : list of Spectrum
             The spectra in which candidates will be looked for.
             """
-        if self.__mode == "merge":
+        if self.__mode == "training" and "Z_TRUE" not in spectrum.metadata_names():
+            raise Error("Mode is set to 'training', but spectrum have does not " +
+                        "have the property 'Z_TRUE'.")
+
+        elif self.__mode == "test" and "Z_TRUE" not in spectrum.metadata_names():
+            raise Error("Mode is set to 'test', but spectrum have does not " +
+                        "have the property 'Z_TRUE'.")
+
+        elif self.__mode == "merge":
             raise Error("The function find_candidates is not available in " +
                         "merge mode.")
 
@@ -507,6 +506,7 @@ class Candidates(object):
             # locate candidates in this spectrum
             # candidates are appended to self.__candidates_list
             self.__find_candidates(spectrum)
+
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None,
                                  get_results=False, userprint=verboseprint):

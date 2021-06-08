@@ -126,7 +126,7 @@ def main():
     t10 = time.time()
     candidates.classify_candidates()
     t11 = time.time()
-    userprint(f"INFO: time elapsed to classify candidates: {(t10-t11)/60.0} minutes")
+    userprint(f"INFO: time elapsed to classify candidates: {(t11-t10)/60.0} minutes")
 
     # check completeness
     if args.check_statistics:

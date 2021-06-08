@@ -95,7 +95,7 @@ def main():
     t8 = time.time()
     candidates.classify_candidates()
     t9 = time.time()
-    userprint(f"INFO: time elapsed to classify candidates: {(t8-t9)/60.0} minutes")
+    userprint(f"INFO: time elapsed to classify candidates: {(t9-t8)/60.0} minutes")
 
     # save the catalogue as a fits file
     if not args.no_save_catalogue:
