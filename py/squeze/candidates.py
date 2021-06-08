@@ -9,6 +9,7 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
+from math import sqrt
 import numpy as np
 
 import pandas as pd
@@ -99,7 +100,9 @@ class Candidates(object):
             message += "Given name was {}".format(name)
             raise Error(message)
 
-        self.__candidates = None # initialize empty catalogue
+        # initialize empty catalogue
+        self.__candidates_list = []
+        self.__candidates = None
 
         # main settings
         self.__lines = lines_settings[0]
@@ -121,7 +124,7 @@ class Candidates(object):
         # initialize peak finder
         self.__peak_finder = PeakFinder(self.__peakfind_width, self.__peakfind_sig)
 
-    def __compute_line_ratio(self, spectrum, index, z_try):
+    def __compute_line_ratio(self, spectrum, index, oneplusz):
         """ Compute the peak-to-continuum ratio for a specified line.
 
             Parameters
@@ -147,12 +150,12 @@ class Candidates(object):
         ivar = spectrum.ivar()
 
         # compute intervals
-        pix_peak = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["START"])
-                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["END"]))[0]
-        pix_blue = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["BLUE_START"])
-                            & (wave <= (1.0+z_try)*self.__lines.iloc[index]["BLUE_END"]))[0]
-        pix_red = np.where((wave >= (1.0+z_try)*self.__lines.iloc[index]["RED_START"])
-                           & (wave <= (1.0+z_try)*self.__lines.iloc[index]["RED_END"]))[0]
+        pix_peak = np.where((wave >= oneplusz*self.__lines.iloc[index]["START"])
+                            & (wave <= oneplusz*self.__lines.iloc[index]["END"]))[0]
+        pix_blue = np.where((wave >= oneplusz*self.__lines.iloc[index]["BLUE_START"])
+                            & (wave <= oneplusz*self.__lines.iloc[index]["BLUE_END"]))[0]
+        pix_red = np.where((wave >= oneplusz*self.__lines.iloc[index]["RED_START"])
+                           & (wave <= oneplusz*self.__lines.iloc[index]["RED_END"]))[0]
 
         # compute peak and continuum values
         compute_ratio = True
@@ -161,29 +164,33 @@ class Candidates(object):
                 or (pix_red.size < pix_peak.size//2)):
             compute_ratio = False
         else:
-            peak = np.average(flux[pix_peak])
-            cont_red = np.average(flux[pix_red])
-            cont_blue = np.average(flux[pix_blue])
+            peak = np.mean(flux[pix_peak])
+            cont_red = np.mean(flux[pix_red])
+            cont_blue = np.mean(flux[pix_blue])
             cont_red_and_blue = cont_red + cont_blue
-            if cont_red_and_blue == 0.0:
+            if (cont_red_and_blue == 0.0 or
+                    isinstance(cont_red, np.ma.core.MaskedConstant) or
+                    isinstance(cont_blue, np.ma.core.MaskedConstant) or
+                    isinstance(peak, np.ma.core.MaskedConstant)):
                 compute_ratio = False
-            peak_ivar_sum = ivar[pix_peak].sum()
-            if peak_ivar_sum == 0.0:
-                peak_err_squared = np.nan
             else:
-                peak_err_squared = 1.0/peak_ivar_sum
-            blue_ivar_sum = ivar[pix_blue].sum()
-            red_ivar_sum = ivar[pix_red].sum()
-            if blue_ivar_sum == 0.0 or red_ivar_sum == 0.0:
-                cont_err_squared = np.nan
-            else:
-                cont_err_squared = (1.0/blue_ivar_sum +
-                                    1.0/red_ivar_sum)/4.0
+                peak_ivar_sum = ivar[pix_peak].sum()
+                if peak_ivar_sum == 0.0:
+                    peak_err_squared = np.nan
+                else:
+                    peak_err_squared = 1.0/peak_ivar_sum
+                blue_ivar_sum = ivar[pix_blue].sum()
+                red_ivar_sum = ivar[pix_red].sum()
+                if blue_ivar_sum == 0.0 or red_ivar_sum == 0.0:
+                    cont_err_squared = np.nan
+                else:
+                    cont_err_squared = (1.0/blue_ivar_sum +
+                                        1.0/red_ivar_sum)/4.0
         # compute ratios
         if compute_ratio:
             ratio = 2.0*peak/cont_red_and_blue
-            ratio2 = np.abs((cont_red - cont_blue)/cont_red_and_blue)
-            err_ratio = np.sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/np.abs(cont_red_and_blue)
+            ratio2 = abs((cont_red - cont_blue)/cont_red_and_blue)
+            err_ratio = sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/abs(cont_red_and_blue)
             ratio_sn = (ratio - 1.0)/err_ratio
         else:
             ratio = np.nan
@@ -282,6 +289,7 @@ class Candidates(object):
                     is_line = True
         return is_line
 
+
     def __find_candidates(self, spectrum):
         """
             Given a Spectrum, locate peaks in the flux. Then assume these peaks
@@ -300,34 +308,10 @@ class Candidates(object):
             -------
             A list with the candidates for the given spectrum.
             """
-        if not isinstance(spectrum, Spectrum):
-            raise Error("The given spectrum is not of the correct type. It should " +
-                        "be an instance of class Spectrum (see squeze_spectrum.py " +
-                        "for details).")
-
-        if not (spectrum.flux().size == spectrum.wave().size and
-                spectrum.flux().size == spectrum.ivar().size):
-            raise Error("The flux, ivar and wave matrixes do not have the same size, but " +
-                        "have sizes {flux_size}, ".format(flux_size=spectrum.flux().size,) +
-                        "{ivar_size}, and {wave_size}.".format(wave_size=spectrum.wave().size,
-                                                               ivar_size=spectrum.ivar().size))
-
-        if self.__mode == "training" and "Z_TRUE" not in spectrum.metadata_names():
-            raise Error("Mode is set to 'training', but spectrum have does not " +
-                        "have the property 'Z_TRUE'.")
-
-        if self.__mode == "test" and "Z_TRUE" not in spectrum.metadata_names():
-            raise Error("Mode is set to 'test', but spectrum have does not " +
-                        "have the property 'Z_TRUE'.")
-
-        if self.__mode == "merge":
-            raise Error("Mode 'merge' is not valid for function __find_candidates.")
-
         # find peaks
         peak_indexs, significances = self.__peak_finder.find_peaks(spectrum)
 
         # keep peaks in the spectrum
-        candidates = []
         # if there are no peaks, include the spectrum with redshift np.nan
         # assumed_line='none', significance is set to np.nan
         # and all the metrics set to np.nan
@@ -346,7 +330,7 @@ class Candidates(object):
             candidate_info.append(z_try)
             candidate_info.append(significance)
             candidate_info.append(try_line)
-            candidates.append(candidate_info)
+            self.__candidates_list.append(candidate_info)
         # if there are peaks, compute the metrics and keep the info
         else:
             for peak_index, significance in zip(peak_indexs, significances):
@@ -355,27 +339,24 @@ class Candidates(object):
                     z_try = spectrum.wave()[peak_index]/self.__lines["WAVE"][try_line] - 1.0
                     if z_try < 0.0:
                         continue
+                    oneplusz = (1.0 + z_try)
+
+                    candidate_info = spectrum.metadata()
 
                     # compute peak ratio for the different lines
-                    ratios = np.zeros(self.__lines.shape[0], dtype=float)
-                    ratios_sn = np.zeros_like(ratios)
-                    ratios2 = np.zeros_like(ratios)
                     for i in range(self.__lines.shape[0]):
-                        ratios[i], ratios_sn[i], ratios2[i] = \
-                            self.__compute_line_ratio(spectrum, i, z_try)
-
-                    # add candidate to the list
-                    candidate_info = spectrum.metadata()
-                    for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
+                        ratio, ratio_sn, ratio2 = \
+                            self.__compute_line_ratio(spectrum, i, oneplusz)
                         candidate_info.append(ratio)
                         candidate_info.append(ratio_sn)
                         candidate_info.append(ratio2)
+
                     candidate_info.append(z_try)
                     candidate_info.append(significance)
                     candidate_info.append(try_line)
-                    candidates.append(candidate_info)
 
-        return candidates
+                    # add candidate to the list
+                    self.__candidates_list.append(candidate_info)
 
     def __load_model_settings(self):
         """ Overload the settings with those stored in self.__model """
@@ -426,42 +407,20 @@ class Candidates(object):
 
         return
 
-    def classify_candidates(self, save=True):
-        """ Create a model instance and train it. Save the resulting model"""
-        # consistency checks
-        if self.__mode not in ["test", "operation"]:
-            raise  Error("The function classify_candidates is available in the " +
-                         "test mode only. Detected mode is {}".format(self.__mode))
-        if self.__candidates is None:
-            raise  Error("Attempting to run the function classify_candidates " +
-                         "but no candidates were found/loaded. Check your " +
-                         "formatter")
-        self.__candidates = self.__model.compute_probability(self.__candidates)
-        if save:
-            self.save_candidates()
-
-    def find_candidates(self, spectra, save=True):
-        """ Find candidates for a given set of spectra, then integrate them in the
-            candidates catalogue and save the new version of the catalogue.
+    def candidates_list_to_dataframe(self, columns_candidates, save=True):
+        """ Format existing candidates list into a dataframe
 
             Parameters
             ----------
-            spectra : list of Spectrum
-            The spectra in which candidates will be looked for.
+            columns_candidates : list of str
+            The column names of the spectral metadata
 
             save : bool - default: True
             If True, then save the catalogue file after candidates are found
             """
-        if self.__mode == "merge":
-            raise Error("The function find_candidates is not available in " +
-                        "merge mode.")
+        if len(self.__candidates_list) == 0:
+            return
 
-        candidates = []
-        for spectrum in spectra:
-            # locate candidates in this spectrum
-            candidates += self.__find_candidates(spectrum)
-
-        columns_candidates = spectrum.metadata_names()
         for i in range(self.__lines.shape[0]):
             columns_candidates.append("{}_RATIO".format(self.__lines.iloc[i].name.upper()))
             columns_candidates.append("{}_RATIO_SN".format(self.__lines.iloc[i].name.upper()))
@@ -469,7 +428,12 @@ class Candidates(object):
         columns_candidates.append("Z_TRY")
         columns_candidates.append("PEAK_SIGNIFICANCE")
         columns_candidates.append("ASSUMED_LINE")
-        self.__candidates = pd.DataFrame(candidates, columns=columns_candidates)
+
+        if self.__candidates is None:
+            self.__candidates = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
+        else:
+            aux = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
+            self.__candidates = pd.concat([self.__candidates, aux], ignore_index=True)
 
         # add truth table if running in training or test modes
         if (self.__mode in ["training", "test"] or
@@ -485,9 +449,52 @@ class Candidates(object):
                 self.__candidates["IS_LINE"] = pd.Series(dtype=bool)
                 self.__candidates["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
 
+        self.__candidates_list = []
+
         # save the new version of the catalogue
         if save:
             self.save_candidates()
+
+    def classify_candidates(self, save=True):
+        """ Create a model instance and train it. Save the resulting model"""
+        # consistency checks
+        if self.__mode not in ["test", "operation"]:
+            raise  Error("The function classify_candidates is available in the " +
+                         "test mode only. Detected mode is {}".format(self.__mode))
+        if self.__candidates is None:
+            raise  Error("Attempting to run the function classify_candidates " +
+                         "but no candidates were found/loaded. Check your " +
+                         "formatter")
+        self.__candidates = self.__model.compute_probability(self.__candidates)
+        if save:
+            self.save_candidates()
+
+    def find_candidates(self, spectra):
+        """ Find candidates for a given set of spectra, then integrate them in the
+            candidates catalogue and save the new version of the catalogue.
+
+            Parameters
+            ----------
+            spectra : list of Spectrum
+            The spectra in which candidates will be looked for.
+            """
+        if self.__mode == "training" and "Z_TRUE" not in spectra[0].metadata_names():
+            raise Error("Mode is set to 'training', but spectra do not " +
+                        "have the property 'Z_TRUE'.")
+
+        elif self.__mode == "test" and "Z_TRUE" not in spectra[0].metadata_names():
+            raise Error("Mode is set to 'test', but spectra do not " +
+                        "have the property 'Z_TRUE'.")
+
+        elif self.__mode == "merge":
+            raise Error("The function find_candidates is not available in " +
+                        "merge mode.")
+
+        for spectrum in spectra:
+            # locate candidates in this spectrum
+            # candidates are appended to self.__candidates_list
+            self.__find_candidates(spectrum)
+
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None,
                                  get_results=False, userprint=verboseprint):

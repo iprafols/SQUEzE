@@ -59,7 +59,7 @@ def main():
     else:
         model = Model.from_fits(args.model)
     t3 = time.time()
-    userprint("INFO: time elapsed to load model: {(t3-t2)/60.0} minutes")
+    userprint(f"INFO: time elapsed to load model: {(t3-t2)/60.0} minutes")
 
     # initialize candidates object
     userprint("Initializing candidates object")
@@ -75,12 +75,13 @@ def main():
         t4 = time.time()
         candidates.load_candidates(args.input_candidates)
         t5 = time.time()
-        userprint("INFO: time elapsed to load candidates: {(t5-t4)/60.0} minutes")
+        userprint(f"INFO: time elapsed to load candidates: {(t5-t4)/60.0} minutes")
 
     # load spectra
     if args.input_spectra is not None:
         userprint("Loading spectra")
         t6 = time.time()
+        columns_candidates = []
         userprint("There are {} files with spectra to be loaded".format(len(args.input_spectra)))
         for index, spectra_filename in enumerate(args.input_spectra):
             userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
@@ -95,9 +96,9 @@ def main():
                 for spec in spectra.spectra_list():
                     if quasar_catalogue[
                             quasar_catalogue["SPECID"] == spec.metadata_by_key("SPECID")].shape[0] > 0:
-                        index = quasar_catalogue.index[
+                        index2 = quasar_catalogue.index[
                             quasar_catalogue["SPECID"] == spec.metadata_by_key("SPECID")].tolist()[0]
-                        quasar_catalogue.at[index, "LOADED"] = True
+                        quasar_catalogue.at[index2, "LOADED"] = True
 
             # look for candidates
             userprint("Looking for candidates")
@@ -106,15 +107,26 @@ def main():
             t61 = time.time()
             userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
                       f" {(t61-t60)/60.0} minutes")
+
+            if index == 0:
+                columns_candidates += spectra.spectra_list()[0].metadata_names()
+
         t7 = time.time()
-        userprint("INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
+        userprint(f"INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
+
+        # convert to dataframe
+        userprint("Converting candidates to dataframe")
+        t8 = time.time()
+        candidates.candidates_list_to_dataframe(columns_candidates)
+        t9 = time.time()
+        userprint(f"INFO: time elapsed to convert candidates to dataframe: {(t9-t8)/60.0} minutes")
 
     # compute probabilities
     userprint("Computing probabilities")
-    t8 = time.time()
+    t10 = time.time()
     candidates.classify_candidates()
-    t9 = time.time()
-    userprint("INFO: time elapsed to classify candidates: {(t9-t8)/60.0} minutes")
+    t11 = time.time()
+    userprint(f"INFO: time elapsed to classify candidates: {(t11-t10)/60.0} minutes")
 
     # check completeness
     if args.check_statistics:
@@ -137,8 +149,8 @@ def main():
     if not args.no_save_catalogue:
         candidates.save_catalogue(args.output_catalogue, args.prob_cut)
 
-    t8 = time.time()
-    userprint("INFO: total elapsed time: {(t8-t0)/60.0} minutes")
+    t12 = time.time()
+    userprint(f"INFO: total elapsed time: {(t12-t0)/60.0} minutes")
     userprint("Done")
 
 if __name__ == '__main__':
