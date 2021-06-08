@@ -308,18 +308,6 @@ class Candidates(object):
             -------
             A list with the candidates for the given spectrum.
             """
-        #if not isinstance(spectrum, Spectrum):
-        #    raise Error("The given spectrum is not of the correct type. It should " +
-        #                "be an instance of class Spectrum (see squeze_spectrum.py " +
-        #                "for details).")
-
-        #if not (spectrum.flux().size == spectrum.wave().size and
-        #        spectrum.flux().size == spectrum.ivar().size):
-        #    raise Error("The flux, ivar and wave matrixes do not have the same size, but " +
-        #                "have sizes {flux_size}, ".format(flux_size=spectrum.flux().size,) +
-        #                "{ivar_size}, and {wave_size}.".format(wave_size=spectrum.wave().size,
-        #                                                       ivar_size=spectrum.ivar().size))
-
         # find peaks
         peak_indexs, significances = self.__peak_finder.find_peaks(spectrum)
 
@@ -490,12 +478,12 @@ class Candidates(object):
             spectra : list of Spectrum
             The spectra in which candidates will be looked for.
             """
-        if self.__mode == "training" and "Z_TRUE" not in spectrum.metadata_names():
-            raise Error("Mode is set to 'training', but spectrum have does not " +
+        if self.__mode == "training" and "Z_TRUE" not in spectra[0].metadata_names():
+            raise Error("Mode is set to 'training', but spectra do not " +
                         "have the property 'Z_TRUE'.")
 
-        elif self.__mode == "test" and "Z_TRUE" not in spectrum.metadata_names():
-            raise Error("Mode is set to 'test', but spectrum have does not " +
+        elif self.__mode == "test" and "Z_TRUE" not in spectra[0].metadata_names():
+            raise Error("Mode is set to 'test', but spectra do not " +
                         "have the property 'Z_TRUE'.")
 
         elif self.__mode == "merge":
