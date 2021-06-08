@@ -95,7 +95,7 @@ def main():
             candidates.find_candidates(spectra.spectra_list())
 
             t31 = time.time()
-            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
+            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}: "
                       f"{(t31-t30)/60.0} minutes")
 
             if index == 0:
