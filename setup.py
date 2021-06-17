@@ -16,14 +16,7 @@ setup(name="squeze",
     author="Ignasi Pérez-Ràfols",
     author_email="iprafols@gmail.com",
     packages=['squeze', 'squeze.tests'],
-    package_dir = {'': 'py'},
     package_data = {},
     test_suite ="squeze.tests",
-    install_requires=['numpy','pandas','argparse','astropy'],
-    extras_require={
-        'train': ['sklearn'],
-        'plot': ['matplotlib'],
-        'test': ['unittest']
-    },
     scripts = scripts
     )
