@@ -17,6 +17,8 @@ from squeze.common_functions import deserialize, load_json
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+SQUEZE_BIN = THIS_DIR.split("py/squeze")[0]+"bin/"
+
 class AbstractTest(unittest.TestCase):
     """Test the training mode
 
@@ -40,7 +42,8 @@ class AbstractTest(unittest.TestCase):
         Examples
         --------
         Assuming test is an instance inheriting from AbstractTest:
-        `test.run_command(["squeze_training.py",
+        `test.run_command(["python"
+                           f"{SQUEZE_BIN}/squeze_training.py",
                            "--output-candidates",
                            out_file,
                            "--input-spectra",
