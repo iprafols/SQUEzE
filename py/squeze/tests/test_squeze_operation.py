@@ -27,7 +27,7 @@ class TestSquezeOperation(AbstractTest):
         model_file = "{}/data/candidates_boss_test1_nopred_model.json".format(THIS_DIR)
 
         command = ["python",
-                   f"{SQUEZE_BIN}/queze_operation.py",
+                   f"{SQUEZE_BIN}/squeze_operation.py",
                    "--model", model_file,
                    "--output-candidates",
                    out_file,
