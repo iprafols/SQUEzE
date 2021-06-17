@@ -7,7 +7,7 @@
 import unittest
 import os
 
-from squeze.tests.abstract_test import AbstractTest
+from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
 from squeze.common_functions import deserialize, load_json
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,7 +26,8 @@ class TestSquezeMerge(AbstractTest):
         out_file = "{}/results/merge_boss_test1_test2.fits.gz".format(THIS_DIR)
         test_file = "{}/data/candidates_merge_boss_test1_test2_nopred.fits.gz".format(THIS_DIR)
 
-        command = ["squeze_merge.py",
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_merge.py",
                    "--input-candidates",
                    in_file1, in_file2,
                    "--output-candidates",

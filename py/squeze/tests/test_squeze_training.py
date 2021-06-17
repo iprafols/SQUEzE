@@ -7,7 +7,7 @@
 import unittest
 import os
 
-from squeze.tests.abstract_test import AbstractTest
+from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
 from squeze.common_functions import verboseprint as userprint
 from squeze.common_functions import deserialize, load_json
 
@@ -34,7 +34,8 @@ class TestSquezeTraining(AbstractTest):
         out_file = "{}/results/training_boss_test1.fits.gz".format(THIS_DIR)
         test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
 
-        command = ["squeze_training.py",
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_training.py",
                    "--peakfind-width", "70",
                    "--peakfind-sig", "6",
                    "--z-precision", "0.15",

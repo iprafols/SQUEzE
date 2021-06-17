@@ -13,7 +13,7 @@ try:
 except ModuleNotFoundError:
     module_not_found = True
 
-from squeze.tests.abstract_test import AbstractTest
+from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
 from squeze.common_functions import deserialize, load_json
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +34,8 @@ class TestModel(AbstractTest):
         out_file = "{}/results/training_boss_test1.fits.gz".format(THIS_DIR)
         test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
 
-        command = ["squeze_training.py",
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_training.py",
                    "--peakfind-width", "70",
                    "--peakfind-sig", "6",
                    "--z-precision", "0.15",
@@ -55,7 +56,8 @@ class TestModel(AbstractTest):
         out_file = "{}/results/test_boss_test2_nostats.fits.gz".format(THIS_DIR)
         test_file = "{}/data/candidates_boss_test2_pred.fits.gz".format(THIS_DIR)
 
-        command = ["squeze_test.py",
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_test.py",
                    "--model", model_file,
                    "--output-candidates",
                    out_file,
@@ -74,7 +76,8 @@ class TestModel(AbstractTest):
         out_file = "{}/results/training_boss_test1.fits.gz".format(THIS_DIR)
         test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
 
-        command = ["squeze_training.py",
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_training.py",
                    "--peakfind-width", "70",
                    "--peakfind-sig", "6",
                    "--z-precision", "0.15",
@@ -95,7 +98,8 @@ class TestModel(AbstractTest):
         out_file = "{}/results/test_boss_test2_nostats.fits.gz".format(THIS_DIR)
         test_file = "{}/data/candidates_boss_test2_pred.fits.gz".format(THIS_DIR)
 
-        command = ["squeze_test.py",
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_test.py",
                    "--model", model_file,
                    "--output-candidates",
                    out_file,

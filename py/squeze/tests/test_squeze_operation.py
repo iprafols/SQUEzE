@@ -7,7 +7,7 @@
 import unittest
 import os
 
-from squeze.tests.abstract_test import AbstractTest
+from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
 from squeze.common_functions import deserialize, load_json
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,7 +26,8 @@ class TestSquezeOperation(AbstractTest):
         test_file = "{}/data/candidates_operation_boss_test2_pred.fits.gz".format(THIS_DIR)
         model_file = "{}/data/candidates_boss_test1_nopred_model.json".format(THIS_DIR)
 
-        command = ["squeze_operation.py",
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_operation.py",
                    "--model", model_file,
                    "--output-candidates",
                    out_file,

@@ -7,7 +7,7 @@
 import unittest
 import os
 
-from squeze.tests.abstract_test import AbstractTest
+from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
 from squeze.common_functions import verboseprint as userprint
 from squeze.common_functions import deserialize, load_json
 
@@ -27,7 +27,8 @@ class TestSquezeCandidates(AbstractTest):
         test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
         model_file = "{}/data/candidates_boss_test1_nopred_model.json".format(THIS_DIR)
 
-        command = ["squeze_candidates.py",
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_candidates.py",
                    "--model", model_file,
                    "--output-candidates",
                    out_file,
@@ -45,7 +46,8 @@ class TestSquezeCandidates(AbstractTest):
         out_file = "{}/results/candidates_boss_test2_fromsettings.fits.gz".format(THIS_DIR)
         test_file = "{}/data/candidates_boss_test2_nopred.fits.gz".format(THIS_DIR)
 
-        command = ["squeze_candidates.py",
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_candidates.py",
                    "--peakfind-width", "70",
                    "--peakfind-sig", "6",
                    "--z-precision", "0.15",
