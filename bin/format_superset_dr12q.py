@@ -228,8 +228,12 @@ def main():
         # save spectra in the current plate
         save_json("{}_plate{:04d}.json".format(args.out, plate), spectra)
 
-    for item in missing_files:
-        userprint(item)
+    if len(missing_files) > 0:
+        print("Missing files:")
+        for item in missing_files:
+            userprint(item)
+
+    print("Done")
 
 if __name__ == '__main__':
     main()
