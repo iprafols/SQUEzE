@@ -11,6 +11,7 @@ __version__ = "0.1"
 
 from math import sqrt
 import numpy as np
+from numba import prange, jit
 
 import pandas as pd
 
@@ -30,6 +31,91 @@ from squeze.defaults import Z_PRECISION
 from squeze.defaults import PEAKFIND_WIDTH
 from squeze.defaults import PEAKFIND_SIG
 from squeze.spectrum import Spectrum
+
+@jit(nopython=True)
+def compute_line_ratios(wave, flux, ivar, peak_indexs, significances,
+                        try_lines, lines):
+    new_candidates = []
+    for i in prange(peak_indexs.size):
+    #for peak_index, significance in zip(peak_indexs, significances):
+
+        for j in prange(len(try_lines)):
+        #for try_line in try_lines:
+
+            # compute redshift
+            # 0=WAVE
+            z_try = wave[peak_indexs[i]]
+            z_try = z_try/lines[try_lines[j], 0]
+            z_try = z_try - 1.0
+            if z_try < 0.0:
+                continue
+            oneplusz = (1.0 + z_try)
+
+            candidate_info = []
+
+            # compute peak ratio for the different lines
+            for k in prange(lines.shape[0]):
+                # compute intervals
+                # 1=START, 2=END
+                pix_peak = np.where((wave >= oneplusz*lines[k, 1])
+                                    & (wave <= oneplusz*lines[k, 2]))[0]
+                # 3=BLUE_START, 4=BLUE_END
+                pix_blue = np.where((wave >= oneplusz*lines[k, 3])
+                                    & (wave <= oneplusz*lines[k, 4]))[0]
+                # 5=RED_START, 6=RED_END
+                pix_red = np.where((wave >= oneplusz*lines[k, 5])
+                                   & (wave <= oneplusz*lines[k, 6]))[0]
+
+                # compute peak and continuum values
+                compute_ratio = True
+                if ((pix_blue.size == 0) or (pix_peak.size == 0) or (pix_red.size == 0)
+                        or (pix_blue.size < pix_peak.size//2)
+                        or (pix_red.size < pix_peak.size//2)):
+                    compute_ratio = False
+                else:
+                    peak = np.mean(flux[pix_peak])
+                    cont_red = np.mean(flux[pix_red])
+                    cont_blue = np.mean(flux[pix_blue])
+                    cont_red_and_blue = cont_red + cont_blue
+                    if (cont_red_and_blue == 0.0):
+                        compute_ratio = False
+                    else:
+                        peak_ivar_sum = ivar[pix_peak].sum()
+                        if peak_ivar_sum == 0.0:
+                            peak_err_squared = np.nan
+                        else:
+                            peak_err_squared = 1.0/peak_ivar_sum
+                        blue_ivar_sum = ivar[pix_blue].sum()
+                        red_ivar_sum = ivar[pix_red].sum()
+                        if blue_ivar_sum == 0.0 or red_ivar_sum == 0.0:
+                            cont_err_squared = np.nan
+                        else:
+                            cont_err_squared = (1.0/blue_ivar_sum +
+                                                1.0/red_ivar_sum)/4.0
+                # compute ratios
+                if compute_ratio:
+                    ratio = 2.0*peak/cont_red_and_blue
+                    ratio2 = abs((cont_red - cont_blue)/cont_red_and_blue)
+                    err_ratio = sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/abs(cont_red_and_blue)
+                    ratio_sn = (ratio - 1.0)/err_ratio
+                else:
+                    ratio = np.nan
+                    ratio2 = np.nan
+                    ratio_sn = np.nan
+
+                candidate_info.append(ratio)
+                candidate_info.append(ratio_sn)
+                candidate_info.append(ratio2)
+
+            candidate_info.append(z_try)
+            candidate_info.append(significances[i])
+            candidate_info.append(float(j))
+
+            # add candidate to the list
+            new_candidates.append(candidate_info)
+
+    return new_candidates
+
 
 class Candidates(object):
     """ Create and manage the candidates catalogue
@@ -123,6 +209,14 @@ class Candidates(object):
 
         # initialize peak finder
         self.__peak_finder = PeakFinder(self.__peakfind_width, self.__peakfind_sig)
+
+        # make sure fields in self.__lines are properly sorted
+        self.__lines = self.__lines[['WAVE', 'START', 'END', 'BLUE_START',
+                                     'BLUE_END', 'RED_START', 'RED_END']]
+
+        # compute convert try_lines strings to indexs in self.__lines array
+        self.__try_lines_indexs = np.array([np.where(LINES.index == item)[0][0]
+                                            for item in TRY_LINES])
 
     def __compute_line_ratio(self, spectrum, index, oneplusz):
         """ Compute the peak-to-continuum ratio for a specified line.
@@ -333,8 +427,29 @@ class Candidates(object):
             self.__candidates_list.append(candidate_info)
         # if there are peaks, compute the metrics and keep the info
         else:
+            # THIS IS NEW
+            wave = spectrum.wave()
+            flux = spectrum.flux()
+            ivar = spectrum.ivar()
+            metadata = spectrum.metadata()
+
+            new_candidates = compute_line_ratios(wave, flux, ivar,
+                                                 peak_indexs, significances,
+                                                 self.__try_lines_indexs,
+                                                 self.__lines.values)
+
+            new_candidates = [metadata + item[:-1] + [self.__try_lines[int(item[-1])]]
+                              for item in new_candidates]
+            self.__candidates_list += new_candidates
+            # OLD WAY OF DOING THINGS
+            """
             for peak_index, significance in zip(peak_indexs, significances):
+
+
                 for try_line in self.__try_lines:
+
+
+
                     # compute redshift
                     z_try = spectrum.wave()[peak_index]/self.__lines["WAVE"][try_line] - 1.0
                     if z_try < 0.0:
@@ -357,6 +472,7 @@ class Candidates(object):
 
                     # add candidate to the list
                     self.__candidates_list.append(candidate_info)
+                    """
 
     def __load_model_settings(self):
         """ Overload the settings with those stored in self.__model """

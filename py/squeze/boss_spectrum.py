@@ -84,10 +84,12 @@ class BossSpectrum(Spectrum):
         if forbidden_wavelenghts is not None:
             self.__filter_wavelengths(forbidden_wavelenghts)
 
-        # store the wavelength, flux and inverse variance as masked arrays
-        #self._wave = np.ma.array(self._wave, mask=self.__skymask)
-        self._flux = spectrum_hdu[1].data["FLUX"]
-        self._ivar = spectrum_hdu[1].data["IVAR"]
+        # store the wavelength, flux and inverse variance as arrays
+        # The 1.0 mulitplying is added to change type from >4f to np.float
+        # this is required by numba later on
+        self._flux = 1.0*spectrum_hdu[1].data["FLUX"].copy()
+        self._ivar = 1.0*spectrum_hdu[1].data["IVAR"].copy()
+        # mask pixels
         self._ivar[self.__skymask] = 0.0
         self._metadata = metadata
         if noise_increase > 1:

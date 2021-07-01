@@ -205,7 +205,8 @@ def main():
                     continue
             metadata = {}
             for column in quasar_catalogue.columns:
-                metadata[column] = entry[column]
+                if column != "LOADED":
+                    metadata[column] = entry[column]
             spectrum_file = "spec-{:04d}-{:05d}-{:04d}.fits".format(plate,
                                                                     entry["MJD"].astype(int),
                                                                     entry["FIBERID"].astype(int))
