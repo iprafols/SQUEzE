@@ -81,7 +81,9 @@ def main():
     else:
         select_filters = np.array([i for i, name in enumerate(filter_names)
                                    if name.startswith("J")])
-    wave = hdu_filters[1].data[args.filter_wave][select_filters]
+    # The 1.0 mulitplying is added to change type from >4f to np.float
+    # this is required by numba later on
+    wave = 1.0*hdu_filters[1].data[args.filter_wave][select_filters]
 
     hdu_filters.close()
 
@@ -93,10 +95,12 @@ def main():
     for row in hdu[1].data:
 
         # load data
+        # The 1.0 mulitplying is added to change type from >4f to np.float
+        # this is required by numba later on
         mask = ((row["FLambdaDualObj.FLAGS"] > 0) |
                 (row["FLambdaDualObj.MASK_FLAGS"] > 0))
-        flux = row["FLambdaDualObj.FLUX_{}".format(args.mag_col)]
-        relerr = row["FLambdaDualObj.FLUX_RELERR_{}".format(args.mag_col)]
+        flux = 1.0*row["FLambdaDualObj.FLUX_{}".format(args.mag_col)]
+        relerr = 1.0*row["FLambdaDualObj.FLUX_RELERR_{}".format(args.mag_col)]
         ivar = 1/(flux*relerr)**2
         ivar[mask] = 0.0
 
