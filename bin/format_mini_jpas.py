@@ -95,9 +95,10 @@ def main():
         # load data
         mask = ((row["FLambdaDualObj.FLAGS"] > 0) |
                 (row["FLambdaDualObj.MASK_FLAGS"] > 0))
-        flux = np.ma.array(row["FLambdaDualObj.FLUX_{}".format(args.mag_col)], mask=mask)
-        relerr = np.ma.array(row["FLambdaDualObj.FLUX_RELERR_{}".format(args.mag_col)], mask=mask)
+        flux = row["FLambdaDualObj.FLUX_{}".format(args.mag_col)]
+        relerr = row["FLambdaDualObj.FLUX_RELERR_{}".format(args.mag_col)]
         ivar = 1/(flux*relerr)**2
+        ivar[mask] = 0.0
 
         # select the filters in select_filters
         flux = flux[select_filters]

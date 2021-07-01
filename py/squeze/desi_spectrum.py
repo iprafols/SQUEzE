@@ -60,8 +60,9 @@ class DesiSpectrum(Spectrum):
 
         # first set arrays as masked arrays
         for key in flux:
-            self._flux[key] = np.ma.array(flux.get(key), mask=mask.get(key))
-            self._ivar[key] = np.ma.array(ivar.get(key), mask=mask.get(key))
+            self._flux[key] = flux.get(key)
+            self._ivar[key] = ivar.get(key)
+            self._ivar[key][mask.get(key)] = 0.0
 
         # keep metadata
         self._metadata = metadata

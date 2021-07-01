@@ -77,18 +77,20 @@ class BossSpectrum(Spectrum):
         self._wave = 10**spectrum_hdu[1].data["LOGLAM"].copy()
         masklambda = sky_mask[0]
         margin = sky_mask[1]
+        self.__skymask = None
         self.__find_skymask(masklambda, margin)
 
         # mask forbidden lines
         if forbidden_wavelenghts is not None:
             self.__filter_wavelengths(forbidden_wavelenghts)
 
-        # store the wavelength, flux and inverse variance as masked arrays
-        #self._wave = np.ma.array(self._wave, mask=self.__skymask)
-        self._flux = np.ma.array(spectrum_hdu[1].data["FLUX"].copy(),
-                                 mask=self.__skymask)
-        self._ivar = np.ma.array(spectrum_hdu[1].data["IVAR"].copy(),
-                                 mask=self.__skymask)
+        # store the wavelength, flux and inverse variance as arrays
+        # The 1.0 mulitplying is added to change type from >4f to np.float
+        # this is required by numba later on
+        self._flux = 1.0*spectrum_hdu[1].data["FLUX"].copy()
+        self._ivar = 1.0*spectrum_hdu[1].data["IVAR"].copy()
+        # mask pixels
+        self._ivar[self.__skymask] = 0.0
         self._metadata = metadata
         if noise_increase > 1:
             self.__add_noise(noise_increase)
@@ -129,16 +131,16 @@ class BossSpectrum(Spectrum):
             fabs(1e4*log10(lambda/maskLambda)) > margin
             Sky mask is 0 if pixel doesn't have to be masked and 1 otherwise
             """
-        self.__skymask = np.zeros_like(self._wave)
+        self.__skymask = np.zeros_like(self._wave, dtype=bool)
         for wave in masklambda:
-            self.__skymask[np.where(np.abs(np.log10(self._wave/wave)) <= margin)] = 1
+            self.__skymask[np.where(np.abs(np.log10(self._wave/wave)) <= margin)] = True
 
     def __filter_wavelengths(self, forbidden_wavelenghts):
         """ Mask the wavelengths in the ranges specified by the tuples in
             forbidden_wavelenghts
             """
         for item in forbidden_wavelenghts:
-            self.__skymask[np.where((self._wave >= item[0]) & (self._wave <= item[1]))] = 1
+            self.__skymask[np.where((self._wave >= item[0]) & (self._wave <= item[1]))] = True
 
 
 if __name__ == "__main__":
