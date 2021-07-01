@@ -14,6 +14,8 @@ import astropy.io.fits as fits
 from squeze.candidates import Candidates
 from squeze.common_functions import verboseprint as userprint
 from squeze.common_functions import deserialize, load_json
+from squeze.spectra import Spectra
+
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -118,6 +120,23 @@ class AbstractTest(unittest.TestCase):
                                     (np.allclose(orig_data[col],
                                                  new_data[col],
                                                  equal_nan=True)))
+
+    def compare_json_spectra(self, orig_file, new_file):
+        """Compares two sets of spectra saved in a json file"""
+        orig_spectra = Spectra.from_json(load_json(orig_file))
+        orig_spectra_list = orig_spectra.spectra_list()
+        new_spectra = Spectra.from_json(load_json(new_file))
+        new_spectra_list = new_spectra.spectra_list()
+
+        self.assertTrue(orig_spectra.size(), new_spectra.size())
+        for index in range(orig_spectra.size()):
+            self.assertTrue(np.allclose(orig_spectra_list[index].wave(),
+                                        new_spectra_list[index].wave()))
+            self.assertTrue(np.allclose(orig_spectra_list[index].flux(),
+                                        new_spectra_list[index].flux()))
+            self.assertTrue(np.allclose(orig_spectra_list[index].ivar(),
+                                        new_spectra_list[index].ivar()))
+
 
 if __name__ == '__main__':
     pass

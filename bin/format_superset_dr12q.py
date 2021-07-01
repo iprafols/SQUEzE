@@ -205,7 +205,8 @@ def main():
                     continue
             metadata = {}
             for column in quasar_catalogue.columns:
-                metadata[column] = entry[column]
+                if column != "LOADED":
+                    metadata[column] = entry[column]
             spectrum_file = "spec-{:04d}-{:05d}-{:04d}.fits".format(plate,
                                                                     entry["MJD"].astype(int),
                                                                     entry["FIBERID"].astype(int))
@@ -228,8 +229,12 @@ def main():
         # save spectra in the current plate
         save_json("{}_plate{:04d}.json".format(args.out, plate), spectra)
 
-    for item in missing_files:
-        userprint(item)
+    if len(missing_files) > 0:
+        print("Missing files:")
+        for item in missing_files:
+            userprint(item)
+
+    print("Done")
 
 if __name__ == '__main__':
     main()
