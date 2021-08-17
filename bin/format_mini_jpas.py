@@ -35,6 +35,7 @@ from squeze.common_functions import verboseprint, quietprint
 from squeze.error import Error
 from squeze.simple_spectrum import SimpleSpectrum
 from squeze.spectra import Spectra
+from squeze.parsers import PARENT_PARSER
 
 def main():
     """ Load DESI spectra using the Spectra and DESISpectrum Classes
@@ -43,7 +44,8 @@ def main():
         """
 
     # load options
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                     parents=[PARENT_PARSER])
 
     parser.add_argument("--input-filename", type=str, required=True,
                         help="""Name of the fits file to be loaded.""")
@@ -66,11 +68,13 @@ def main():
                         help="""If passed, load only filters in trays T1 and
                         T2.""")
 
-
-
     args = parser.parse_args()
 
+    # manage verbosity
+    userprint = verboseprint if not args.quiet else quietprint
+
     # load filters information
+    userprint("Loading filters")
     hdu_filters = fits.open(args.filters_info)
     filter_names = hdu_filters[1].data["Filter.name"]
 
@@ -91,6 +95,7 @@ def main():
     squeze_spectra = Spectra()
 
     # loop over spectra
+    userprint("Loading spectra")
     hdu = fits.open(args.input_filename)
     for row in hdu[1].data:
 
@@ -120,7 +125,10 @@ def main():
         squeze_spectra.append(spectrum)
 
     # save formated spectra
+    userprint(f"Saving to file: {args.output_filename}")
     save_json(args.output_filename, squeze_spectra)
+
+    userprint("Done")
 
 if __name__ == '__main__':
     main()
