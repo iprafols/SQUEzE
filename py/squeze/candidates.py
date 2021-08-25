@@ -11,10 +11,10 @@ __version__ = "0.1"
 
 from math import sqrt
 import numpy as np
-from numba import prange, jit
+from numba import prange, jit, vectorize
+import time
 
 import pandas as pd
-
 import astropy.io.fits as fits
 from astropy.table import Table
 
@@ -23,6 +23,7 @@ from squeze.common_functions import deserialize
 from squeze.error import Error
 from squeze.model import Model
 from squeze.peak_finder import PeakFinder
+from squeze.defaults import MAX_CANDIDATES_TO_CONVERT
 from squeze.defaults import LINES
 from squeze.defaults import TRY_LINES
 from squeze.defaults import RANDOM_FOREST_OPTIONS
@@ -116,6 +117,92 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances,
 
     return new_candidates
 
+@vectorize
+def is_correct(correct_redshift, class_person):
+    """ Returns True if a candidate is a true quasar and False otherwise.
+        A true candidate is defined as a candidate having an absolute value
+        of Delta_z is lower or equal than self.__z_precision.
+        This function should be called using the .apply method of the candidates
+        data frame with the option axis=1
+
+        Parameters
+        ----------
+        row : pd.Series
+        A row in the candidates data frame
+
+        Returns
+        -------
+        True if a candidate is a true quasar and False otherwise
+        """
+    correct = bool(correct_redshift
+                and ((class_person == 3) or (class_person == 30)))
+    return correct
+
+@vectorize
+def is_correct_redshift(delta_z, class_person, z_precision):
+    """ Returns True if a candidate has a correct redshift and False otherwise.
+        A candidate is assumed to have a correct redshift if it has an absolute
+        value of Delta_z is lower or equal than self.__z_precision.
+        If the object is a star (class_person = 1), then return False.
+        This function should be called using the .apply method of the candidates
+        data frame with the option axis=1
+
+        Parameters
+        ----------
+        row : pd.Series
+        A row in the candidates data frame
+
+        Returns
+        -------
+        True if a candidate is a true quasar and False otherwise
+        """
+    correct_redshift = bool((class_person != 1)
+                            and (delta_z <= z_precision)
+                            and (delta_z >= -z_precision))
+    return correct_redshift
+
+@jit(nopython=True)
+def is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
+            z_precision, lines):
+    """ Returns True if a candidate is a quasar line and False otherwise.
+        A quasar line is defined as a candidate where its redshift assuming
+        it was any of the specified lines is off the true redshift by at
+        most self.__z_precision.
+        This function should be called using the .apply method of the candidates
+        data frame with the option axis=1
+
+        Parameters
+        ----------
+        row : pd.Series
+        A row in the candidates data frame
+
+        Returns
+        -------
+        Returns True if a candidate is a quasar line and False otherwise.
+        """
+    is_line = np.zeros_like(is_correct)
+
+    # correct identification
+    for i in prange(is_correct.size):
+        if is_correct[i]:
+            is_line[i] = True
+        # not a quasar
+        elif not ((class_person[i] == 3) or (class_person[i] == 30)):
+            continue
+        # not a peak
+        elif assumed_line_index[i] == -1:
+            continue
+        else:
+            for j in prange(lines.shape[0]):
+            #for line in self.__lines.index:
+                if j == assumed_line_index[i]:
+                    continue
+                # 0=WAVE
+                z_try_line = (lines[j][0]/lines[assumed_line_index[i]][0])*(1 + z_try[i]) - 1
+                if ((z_try_line - z_true[i] <= z_precision) and
+                        (z_try_line - z_true[i] >= -z_precision)):
+                    is_line[i] = True
+    return is_line
 
 class Candidates(object):
     """ Create and manage the candidates catalogue
@@ -132,7 +219,8 @@ class Candidates(object):
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.fits.gz",
                  peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
-                 model=None, model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
+                 model=None, model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE),
+                 userprint=verboseprint):
         """ Initialize class instance.
 
             Parameters
@@ -173,6 +261,9 @@ class Candidates(object):
             corresponding values must be dictionaries with the options for each
             of the classifiers. In training mode, they're passed to the model
             instance before training. Otherwise it's ignored.
+
+            userprint : function - Default: verboseprint
+            Print function to use
             """
         if mode in ["training", "test", "operation", "candidates", "merge"]:
             self.__mode = mode
@@ -185,6 +276,9 @@ class Candidates(object):
             message = "Candidates name should have .fits or .fits.gz extensions."
             message += "Given name was {}".format(name)
             raise Error(message)
+
+        # printing function
+        self.__userprint = userprint
 
         # initialize empty catalogue
         self.__candidates_list = []
@@ -215,8 +309,12 @@ class Candidates(object):
                                      'BLUE_END', 'RED_START', 'RED_END']]
 
         # compute convert try_lines strings to indexs in self.__lines array
-        self.__try_lines_indexs = np.array([np.where(LINES.index == item)[0][0]
-                                            for item in TRY_LINES])
+        self.__try_lines_indexs = np.array([np.where(self.__lines.index == item)[0][0]
+                                            for item in self.__try_lines])
+        self.__try_lines_dict = {key: value
+                                 for key, value in zip(self.__try_lines,
+                                                       self.__try_lines_indexs)}
+        self.__try_lines_dict["none"] = -1
 
     def __compute_line_ratio(self, spectrum, index, oneplusz):
         """ Compute the peak-to-continuum ratio for a specified line.
@@ -537,39 +635,66 @@ class Candidates(object):
         if len(self.__candidates_list) == 0:
             return
 
-        for i in range(self.__lines.shape[0]):
-            columns_candidates.append("{}_RATIO".format(self.__lines.iloc[i].name.upper()))
-            columns_candidates.append("{}_RATIO_SN".format(self.__lines.iloc[i].name.upper()))
-            columns_candidates.append("{}_RATIO2".format(self.__lines.iloc[i].name.upper()))
-        columns_candidates.append("Z_TRY")
-        columns_candidates.append("PEAK_SIGNIFICANCE")
-        columns_candidates.append("ASSUMED_LINE")
+        if "Z_TRY" not in columns_candidates:
+            for i in range(self.__lines.shape[0]):
+                columns_candidates.append("{}_RATIO".format(self.__lines.iloc[i].name.upper()))
+                columns_candidates.append("{}_RATIO_SN".format(self.__lines.iloc[i].name.upper()))
+                columns_candidates.append("{}_RATIO2".format(self.__lines.iloc[i].name.upper()))
+            columns_candidates.append("Z_TRY")
+            columns_candidates.append("PEAK_SIGNIFICANCE")
+            columns_candidates.append("ASSUMED_LINE")
 
-        if self.__candidates is None:
-            self.__candidates = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
-        else:
-            aux = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
-            self.__candidates = pd.concat([self.__candidates, aux], ignore_index=True)
+        # create dataframe
+        aux = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
 
         # add truth table if running in training or test modes
         if (self.__mode in ["training", "test"] or
             (self.__mode == "candidates" and
             "Z_TRUE" in self.__candidates.columns)):
-            self.__candidates["DELTA_Z"] = self.__candidates["Z_TRY"] - self.__candidates["Z_TRUE"]
-            if self.__candidates.shape[0] > 0:
-                self.__candidates["IS_CORRECT"] = self.__candidates.apply(self.__is_correct, axis=1)
-                self.__candidates["IS_LINE"] = self.__candidates.apply(self.__is_line, axis=1)
-                self.__candidates["CORRECT_REDSHIFT"] = self.__candidates.apply(self.__is_correct_redshift, axis=1)
+            self.__userprint("Adding control variables from truth table")
+            aux["DELTA_Z"] = aux["Z_TRY"] - aux["Z_TRUE"]
+            if aux.shape[0] > 0:
+                self.__userprint("    is_correct_redshift")
+                aux["CORRECT_REDSHIFT"] = is_correct_redshift(aux["DELTA_Z"].values,
+                                                              aux["CLASS_PERSON"].values,
+                                                              self.__z_precision)
+                self.__userprint("    is_correct")
+                aux["IS_CORRECT"] = is_correct(aux["CORRECT_REDSHIFT"].values,
+                                               aux["CLASS_PERSON"].values)
+                self.__userprint("    is_line")
+                aux["IS_LINE"] = is_line(aux["IS_CORRECT"].values,
+                                         aux["CLASS_PERSON"].values,
+                                         np.array([self.__try_lines_dict.get(assumed_line)
+                                                   for assumed_line in aux["ASSUMED_LINE"]]),
+                                         aux["Z_TRUE"].values,
+                                         aux["Z_TRY"].values,
+                                         self.__z_precision,
+                                         self.__lines.values)
+                #aux["IS_LINE"] = aux.apply(self.__is_line,
+                #                           axis=1)
             else:
-                self.__candidates["IS_CORRECT"] = pd.Series(dtype=bool)
-                self.__candidates["IS_LINE"] = pd.Series(dtype=bool)
-                self.__candidates["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
+                self.__userprint("    is_correct_redshift")
+                aux["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
+                self.__userprint("    is_correct")
+                aux["IS_CORRECT"] = pd.Series(dtype=bool)
+                self.__userprint("    is_line")
+                aux["IS_LINE"] = pd.Series(dtype=bool)
+            self.__userprint("Done")
 
+        # keep the results
+        if self.__candidates is None:
+            self.__candidates = aux
+        else:
+            self.__userprint("Concatenating dataframe with previouly exisiting candidates")
+            self.__candidates = pd.concat([self.__candidates, aux], ignore_index=True)
+            self.__userprint("Done")
         self.__candidates_list = []
 
         # save the new version of the catalogue
         if save:
+            self.__userprint("Saving candidates")
             self.save_candidates()
+            self.__userprint("Done")
 
     def classify_candidates(self, save=True):
         """ Create a model instance and train it. Save the resulting model"""
@@ -585,7 +710,7 @@ class Candidates(object):
         if save:
             self.save_candidates()
 
-    def find_candidates(self, spectra):
+    def find_candidates(self, spectra, columns_candidates):
         """ Find candidates for a given set of spectra, then integrate them in the
             candidates catalogue and save the new version of the catalogue.
 
@@ -593,6 +718,9 @@ class Candidates(object):
             ----------
             spectra : list of Spectrum
             The spectra in which candidates will be looked for.
+
+            columns_candidates : list of str
+            The column names of the spectral metadata
             """
         if self.__mode == "training" and "Z_TRUE" not in spectra[0].metadata_names():
             raise Error("Mode is set to 'training', but spectra do not " +
@@ -611,9 +739,17 @@ class Candidates(object):
             # candidates are appended to self.__candidates_list
             self.__find_candidates(spectrum)
 
+            if len(self.__candidates_list) > MAX_CANDIDATES_TO_CONVERT:
+                self.__userprint("Converting candidates to dataframe")
+                t0 = time.time()
+                self.candidates_list_to_dataframe(columns_candidates, save=False)
+                t1 = time.time()
+                self.__userprint(f"INFO: time elapsed to convert candidates to dataframe: {(t1-t0)/60.0} minutes")
+
+
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None,
-                                 get_results=False, userprint=verboseprint):
+                                 get_results=False):
         """
             Given a DataFrame with candidates and another one with the catalogued
             quasars, compute the completeness and the purity. Upon error, return
@@ -632,9 +768,6 @@ class Candidates(object):
             get_results : boolean - Default: False
             If True, return the computed purity, the completeness, and the total number
             of found quasars. Otherwise, return None.
-
-            userprint : function - Default: verboseprint
-            Print function to use
 
             Returns
             -------
@@ -707,19 +840,17 @@ class Candidates(object):
             #purity_to_quasars = np.nan
             quasar_spectra_fraction = np.nan
 
-        userprint("There are {} candidates ".format(data_frame.shape[0]),)
-        userprint("for {} catalogued quasars".format(num_quasars))
-        userprint("number of quasars = {}".format(num_quasars))
-        userprint("found quasars = {}".format(found_quasars))
-        userprint("completeness = {:.2%}".format(completeness))
-        userprint("completeness z>=1 = {:.2%}".format(completeness_zge1))
-        userprint("completeness z>=2.1 = {:.2%}".format(completeness_zge2_1))
-        userprint("purity = {:.2%}".format(purity))
-        userprint("purity z >=1 = {:.2%}".format(purity_zge1))
-        userprint("purity z >=2.1 = {:.2%}".format(purity_zge2_1))
-        userprint("line purity = {:.2%}".format(line_purity))
-        #print "purity to quasars = {:.2%}".format(purity_to_quasars)
-        #print "fraction of quasars = {:.2%}".format(quasar_spectra_fraction)
+        self.__userprint("There are {} candidates ".format(data_frame.shape[0]),)
+        self.__userprint("for {} catalogued quasars".format(num_quasars))
+        self.__userprint("number of quasars = {}".format(num_quasars))
+        self.__userprint("found quasars = {}".format(found_quasars))
+        self.__userprint("completeness = {:.2%}".format(completeness))
+        self.__userprint("completeness z>=1 = {:.2%}".format(completeness_zge1))
+        self.__userprint("completeness z>=2.1 = {:.2%}".format(completeness_zge2_1))
+        self.__userprint("purity = {:.2%}".format(purity))
+        self.__userprint("purity z >=1 = {:.2%}".format(purity_zge1))
+        self.__userprint("purity z >=2.1 = {:.2%}".format(purity_zge2_1))
+        self.__userprint("line purity = {:.2%}".format(line_purity))
         if get_results:
             return purity, completeness, found_quasars
 
@@ -741,7 +872,7 @@ class Candidates(object):
         self.__candidates = candidates
         del data, candidates
 
-    def merge(self, others_list, userprint=verboseprint, save=True):
+    def merge(self, others_list, save=True):
         """
             Merge self.__candidates with another candidates object
 
@@ -749,9 +880,6 @@ class Candidates(object):
             ----------
             others_list : pd.DataFrame
             The other candidates object to merge
-
-            userprint : function - Default: verboseprint
-            Print function to use
 
             save : bool - Defaut: True
             If True, save candidates before exiting
@@ -761,7 +889,7 @@ class Candidates(object):
                          "merge mode only. Detected mode is {}".format(self.__mode))
 
         for index, candidates_filename in enumerate(others_list):
-            userprint("Merging... {} of {}".format(index, len(others_list)))
+            self.__userprint("Merging... {} of {}".format(index, len(others_list)))
 
             try:
                 # load candidates
@@ -773,8 +901,8 @@ class Candidates(object):
                 self.__candidates = self.__candidates.append(other, ignore_index=True)
 
             except TypeError:
-                userprint("Error occured when loading file {}.".format(candidates_filename))
-                userprint("Ignoring file")
+                self.__userprint("Error occured when loading file {}.".format(candidates_filename))
+                self.__userprint("Ignoring file")
 
         if save:
             self.save_candidates()

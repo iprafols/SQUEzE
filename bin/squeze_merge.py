@@ -30,10 +30,11 @@ def main():
     # load candidates object
     userprint("Looking for candidates")
     if args.output_candidates is None:
-        candidates = Candidates(mode="merge")
+        candidates = Candidates(mode="merge", userprint=userprint)
     else:
         candidates = Candidates(mode="merge",
-                                name=args.output_candidates)
+                                name=args.output_candidates,
+                                userprint=userprint))
 
     # load the first candidates object
     userprint("Loading first candidate object")
@@ -41,7 +42,7 @@ def main():
 
     # merge the other candidates objects
     userprint("Merging with the other candidate objects")
-    candidates.merge(args.input_candidates[1:], userprint=userprint)
+    candidates.merge(args.input_candidates[1:])
 
     t1 = time.time()
     userprint(f"INFO: total elapsed time: {(t1-t0)/60.0} minutes")

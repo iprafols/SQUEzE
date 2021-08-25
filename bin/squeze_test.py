@@ -64,10 +64,10 @@ def main():
     # initialize candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is None:
-        candidates = Candidates(mode="test", model=model)
+        candidates = Candidates(mode="test", model=model, userprint=userprint)
     else:
         candidates = Candidates(mode="test", name=args.output_candidates,
-                                model=model)
+                                model=model, userprint=userprint)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
@@ -91,6 +91,9 @@ def main():
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
 
+            if index == 0:
+                columns_candidates += spectra.spectra_list()[0].metadata_names()
+
             # flag loaded quasars as such
             if args.check_statistics:
                 for spec in spectra.spectra_list():
@@ -102,14 +105,13 @@ def main():
 
             # look for candidates
             userprint("Looking for candidates")
-            candidates.find_candidates(spectra.spectra_list())
+            candidates.find_candidates(spectra.spectra_list(), columns_candidates)
 
             t61 = time.time()
             userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
                       f" {(t61-t60)/60.0} minutes")
 
-            if index == 0:
-                columns_candidates += spectra.spectra_list()[0].metadata_names()
+
 
         t7 = time.time()
         userprint(f"INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
@@ -143,7 +145,7 @@ def main():
                                                 data_frame[(data_frame["PROB"] > prob) &
                                                            ~(data_frame["DUPLICATED"]) &
                                                            (data_frame["Z_CONF_PERSON"] == 3)],
-                                                userprint=userprint)
+                                                )
 
     # save the catalogue as a fits file
     if not args.no_save_catalogue:

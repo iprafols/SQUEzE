@@ -115,6 +115,11 @@ CLASS_PREDICTED = {"star": 1,
                    "galaxy, wrong z": 45,
                   }
 
+"""
+This variable sets the maximum number of candidates allowed before a partial
+conversion to dataframe is executed
+"""
+MAX_CANDIDATES_TO_CONVERT = 100000000
 
 if __name__ == '__main__':
     pass
