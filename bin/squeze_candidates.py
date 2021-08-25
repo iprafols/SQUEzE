@@ -66,13 +66,13 @@ def main():
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="candidates",
                                 peakfind=(peakfind_width, peakfind_sig),
-                                model=model, userprint=userprint))
+                                model=model, userprint=userprint)
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="candidates",
                                 name=args.output_candidates,
                                 peakfind=(peakfind_width, peakfind_sig),
-                                model=model, userprint=userprint))
+                                model=model, userprint=userprint)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:

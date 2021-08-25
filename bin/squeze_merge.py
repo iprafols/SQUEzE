@@ -34,7 +34,7 @@ def main():
     else:
         candidates = Candidates(mode="merge",
                                 name=args.output_candidates,
-                                userprint=userprint))
+                                userprint=userprint)
 
     # load the first candidates object
     userprint("Loading first candidate object")

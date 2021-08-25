@@ -650,7 +650,7 @@ class Candidates(object):
         # add truth table if running in training or test modes
         if (self.__mode in ["training", "test"] or
             (self.__mode == "candidates" and
-            "Z_TRUE" in self.__candidates.columns)):
+            "Z_TRUE" in aux.columns)):
             self.__userprint("Adding control variables from truth table")
             aux["DELTA_Z"] = aux["Z_TRY"] - aux["Z_TRUE"]
             if aux.shape[0] > 0:
