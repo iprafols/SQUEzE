@@ -21,7 +21,7 @@ def main():
     candidates = Candidates(mode="training", name="../data/BOSS_train_64plates.fits.gz")
     candidates.load_candidates("../data/BOSS_train_64plates.fits.gz")
     verboseprint("Training model")
-    candidates.train_model()
+    candidates.train_model(False)
 
     verboseprint("Done")
 
