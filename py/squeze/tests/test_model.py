@@ -18,6 +18,9 @@ from squeze.common_functions import deserialize, load_json
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+import squeze_training
+import squeze_test
+
 @unittest.skipIf(module_not_found, ("Skip training tests since sklearn was not"
                                     "installed"))
 class TestModel(AbstractTest):
@@ -45,7 +48,7 @@ class TestModel(AbstractTest):
                    in_file,
                    "--model-fits",
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_training)
         self.assertTrue(os.path.isfile(out_file))
         self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
                                                         "_model.fits.gz")))
@@ -64,7 +67,7 @@ class TestModel(AbstractTest):
                    "--input-spectra",
                    in_file,
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_test)
         self.assertTrue(os.path.isfile(out_file))
         self.compare_data_frames(test_file, out_file)
 
@@ -86,7 +89,7 @@ class TestModel(AbstractTest):
                    "--input-spectra",
                    in_file,
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_training)
         self.assertTrue(os.path.isfile(out_file))
         self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
                                                         "_model.json")))
@@ -106,7 +109,7 @@ class TestModel(AbstractTest):
                    "--input-spectra",
                    in_file,
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_test)
         self.assertTrue(os.path.isfile(out_file))
         self.compare_data_frames(test_file, out_file)
 

@@ -11,6 +11,8 @@ from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
 from squeze.common_functions import verboseprint as userprint
 from squeze.common_functions import deserialize, load_json
 
+import squeze_candidates
+
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class TestSquezeCandidates(AbstractTest):
@@ -35,7 +37,7 @@ class TestSquezeCandidates(AbstractTest):
                    "--input-spectra",
                    in_file,
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_candidates)
         self.assertTrue(os.path.isfile(out_file))
         self.compare_data_frames(test_file, out_file)
 
@@ -56,7 +58,7 @@ class TestSquezeCandidates(AbstractTest):
                    "--input-spectra",
                    in_file,
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_candidates)
         self.assertTrue(os.path.isfile(out_file))
         self.compare_data_frames(test_file, out_file)
 

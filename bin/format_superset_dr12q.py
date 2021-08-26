@@ -20,6 +20,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import sys
 
 from os import listdir
 from os.path import isfile, join
@@ -36,7 +37,7 @@ from squeze.boss_spectrum import BossSpectrum
 from squeze.spectra import Spectra
 from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
 
-def main():
+def main(cmdargs):
     """ Load BOSS spectra using the BossSpectrum Class defined in
         squeze_boss_spectrum.py.
 
@@ -97,7 +98,7 @@ def main():
                         of boss_target1 and bits 10, 11, 12, 13, 14, 15, 16, 17, 18, 20,
                         22, 30, 31, 33, 34, 35, 40 of eboss_target0""")
 
-    args = parser.parse_args()
+    args = parser.parse_args(cmdargs)
     # parsing --forbidden-wavelengths
     if args.forbidden_wavelengths is not None:
         aux = []
@@ -237,4 +238,5 @@ def main():
     print("Done")
 
 if __name__ == '__main__':
-    main()
+    cmdargs=sys.argv[1:]
+    main(cmdargs)

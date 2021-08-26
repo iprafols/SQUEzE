@@ -25,6 +25,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import sys
 
 import numpy as np
 
@@ -37,7 +38,7 @@ from squeze.simple_spectrum import SimpleSpectrum
 from squeze.spectra import Spectra
 from squeze.parsers import PARENT_PARSER
 
-def main():
+def main(cmdargs):
     """ Load DESI spectra using the Spectra and DESISpectrum Classes
         defined in squeze_boss_spectra.py and squeze_desi_spectrum.py
         respectively.
@@ -68,7 +69,7 @@ def main():
                         help="""If passed, load only filters in trays T1 and
                         T2.""")
 
-    args = parser.parse_args()
+    args = parser.parse_args(cmdargs)
 
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
@@ -131,4 +132,5 @@ def main():
     userprint("Done")
 
 if __name__ == '__main__':
-    main()
+    cmdargs=sys.argv[1:]
+    main(cmdargs)

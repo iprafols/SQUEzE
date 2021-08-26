@@ -19,6 +19,8 @@ except ModuleNotFoundError:
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+import squeze_training
+
 @unittest.skipIf(module_not_found, ("Skip training tests since sklearn was not"
                                     "installed"))
 class TestSquezeTraining(AbstractTest):
@@ -44,7 +46,7 @@ class TestSquezeTraining(AbstractTest):
                    "--input-spectra",
                    in_file,
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_training)
         self.assertTrue(os.path.isfile(out_file))
         self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
                                                         "_model.json")))

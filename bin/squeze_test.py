@@ -10,6 +10,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import sys
 import time
 import numpy as np
 
@@ -24,12 +25,12 @@ from squeze.candidates import Candidates
 from squeze.parsers import TEST_PARSER, quasar_parser_check
 
 
-def main():
+def main(cmdargs):
     """ Run SQUEzE in test mode """
     # load options
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      parents=[TEST_PARSER])
-    args = parser.parse_args()
+    args = parser.parse_args(cmdargs)
     if args.check_statistics:
         quasar_parser_check(parser, args)
 
@@ -156,4 +157,5 @@ def main():
     userprint("Done")
 
 if __name__ == '__main__':
-    main()
+    cmdargs=sys.argv[1:]
+    main(cmdargs)

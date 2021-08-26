@@ -6,21 +6,16 @@
 """
 import unittest
 import os
+import importlib
 
 from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
 from squeze.common_functions import verboseprint as userprint
 from squeze.common_functions import deserialize, load_json
 
-try:
-    import sklearn
-    module_not_found = False
-except ModuleNotFoundError:
-    module_not_found = True
+import format_superset_dr12q
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-@unittest.skipIf(module_not_found, ("Skip training tests since sklearn was not"
-                                    "installed"))
 class TestFormatSupersetDr12Q(AbstractTest):
     """Test format superset DR12Q
 
@@ -47,8 +42,7 @@ class TestFormatSupersetDr12Q(AbstractTest):
                    "--sky-mask", f"{THIS_DIR}/data/dr12-sky-mask.txt",
                    ]
 
-
-        self.run_command(command)
+        self.run_command(command, format_superset_dr12q)
         self.assertTrue(os.path.isfile(out_file))
         self.compare_json_spectra(test_file, out_file)
 
@@ -73,7 +67,7 @@ class TestFormatSupersetDr12Q(AbstractTest):
                    ]
 
 
-        self.run_command(command)
+        self.run_command(command, format_superset_dr12q)
         self.assertTrue(os.path.isfile(out_file))
         self.compare_json_spectra(test_file, out_file)
 

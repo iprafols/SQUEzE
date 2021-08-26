@@ -10,6 +10,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import sys
 import time
 
 from squeze.common_functions import load_json
@@ -27,12 +28,12 @@ from squeze.parsers import CANDIDATES_PARSER
 from squeze.model import Model
 
 
-def main():
+def main(cmdargs):
     """ Run SQUEzE in candidates mode """
     # load options
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      parents=[CANDIDATES_PARSER])
-    args = parser.parse_args()
+    args = parser.parse_args(cmdargs)
 
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
@@ -122,4 +123,5 @@ def main():
     userprint("Done")
 
 if __name__ == '__main__':
-    main()
+    cmdargs=sys.argv[1:]
+    main(cmdargs)

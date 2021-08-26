@@ -25,6 +25,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import sys
 
 import numpy as np
 
@@ -36,7 +37,7 @@ from squeze.error import Error
 from squeze.desi_spectrum import DesiSpectrum
 from squeze.spectra import Spectra
 
-def main():
+def main(cmdargs):
     """ Load DESI spectra using the Spectra and DESISpectrum Classes
         defined in squeze_boss_spectra.py and squeze_desi_spectrum.py
         respectively.
@@ -52,7 +53,7 @@ def main():
     parser.add_argument("--single-exp", action="store_true",
                         help="""Load only the first reobservation for each spectrum""")
 
-    args = parser.parse_args()
+    args = parser.parse_args(cmdargs)
 
     # read desi spectra
     desi_spectra = read_spectra(args.input_filename)
@@ -95,4 +96,5 @@ def main():
     save_json(args.output_filename, squeze_spectra)
 
 if __name__ == '__main__':
-    main()
+    cmdargs=sys.argv[1:]
+    main(cmdargs)

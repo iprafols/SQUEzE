@@ -7,7 +7,7 @@
 """
 import unittest
 import os
-import subprocess
+import sys
 import numpy as np
 import astropy.io.fits as fits
 
@@ -18,8 +18,10 @@ from squeze.spectra import Spectra
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-
 SQUEZE_BIN = THIS_DIR.split("py/squeze")[0]+"bin/"
+if SQUEZE_BIN not in sys.path:
+    sys.path.append(SQUEZE_BIN)
+
 
 class AbstractTest(unittest.TestCase):
     """Test the training mode
@@ -33,13 +35,16 @@ class AbstractTest(unittest.TestCase):
         if not os.path.exists("{}/results/".format(THIS_DIR)):
             os.makedirs("{}/results/".format(THIS_DIR))
 
-    def run_command(self, command):
+    def run_command(self, command, module):
         """ Run a specified command and check it is completed properly
 
         Parameters
         ----------
         command : list
         A list of items with the script to run and its options
+
+        module : package
+        A module with a function main that accepts a list of arguments
 
         Examples
         --------
@@ -50,16 +55,10 @@ class AbstractTest(unittest.TestCase):
                            out_file,
                            "--input-spectra",
                            in_file,
-                           ])`
+                           ], squeze_training)`
         """
         userprint("Running command: ", " ".join(command))
-
-        with subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
-                              universal_newlines=True) as process:
-            for line in process.stdout:
-                print(line, end="")
-
-        self.assertEqual(line.strip(), "Done")
+        module.main(command[2:])
 
     def compare_data_frames(self, orig_file, new_file):
         """ Compares two dataframes to check that they are equal """
