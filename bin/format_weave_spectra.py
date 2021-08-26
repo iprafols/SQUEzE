@@ -40,7 +40,7 @@ from squeze.weave_spectrum import WeaveSpectrum
 from squeze.spectra import Spectra
 from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
 
-def main():
+def main(cmdargs):
     """ Load WEAVE spectra using the WeaveSpectrum Class defined in
         squeze_weave_spectrum.py.
         """
@@ -66,7 +66,7 @@ def main():
                         help="""Name of the text file containing the measured magnitudes
                             for the observed spectra""")
 
-    args = parser.parse_args()
+    args = parser.parse_args(cmdargs)
 
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
@@ -147,4 +147,5 @@ def main():
     save_json(args.out, spectra)
 
 if __name__ == '__main__':
-    main()
+    cmdargs=sys.argv[1:]
+    main(cmdargs)

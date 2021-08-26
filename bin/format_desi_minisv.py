@@ -35,7 +35,7 @@ from squeze.error import Error
 from squeze.desi_spectrum import DesiSpectrum
 from squeze.spectra import Spectra
 
-def main():
+def main(cmdargs):
     """ Load DESI spectra using the Spectra and DESISpectrum Classes
         defined in squeze_boss_spectra.py and squeze_desi_spectrum.py
         respectively.
@@ -53,7 +53,7 @@ def main():
     parser.add_argument("--metadata", nargs='+', required=False,
                         default=["TARGETID", "TARGET_RA", "TARGET_DEC", "CMX_TARGET"],
                         help="""White-spaced list of the list of columns to keep as metadata""")
-    args = parser.parse_args()
+    args = parser.parse_args(cmdargs)
 
     # read desi spectra
     desi_spectra = read_spectra(args.input_filename)
@@ -97,4 +97,5 @@ def main():
     save_json(args.output_filename, squeze_spectra)
 
 if __name__ == '__main__':
-    main()
+    cmdargs=sys.argv[1:]
+    main(cmdargs)

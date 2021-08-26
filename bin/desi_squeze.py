@@ -31,7 +31,7 @@ def convert_dtype(dtype):
      else:
          return dtype
 
-def main():
+def main(cmdargs):
     """ Load DESI spectra using the Spectra and DESISpectrum Classes
         defined in squeze_boss_spectra.py and squeze_desi_spectrum.py
         respectively.
@@ -53,7 +53,7 @@ def main():
                         help="""White-spaced list of the list of columns to keep as metadata""")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="""Print messages""")
-    args = parser.parse_args()
+    args = parser.parse_args(cmdargs)
 
     # prepare variables
     assert args.output_filename.endswith("fits") or args.output_filename.endswith("fits.gz")
@@ -138,4 +138,5 @@ def main():
     data_hdu.writeto(args.output_filename)
 
 if __name__ == '__main__':
-    main()
+    cmdargs=sys.argv[1:]
+    main(cmdargs)

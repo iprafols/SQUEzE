@@ -10,6 +10,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import argparse
+import sys
 import time
 
 from squeze.common_functions import load_json
@@ -29,12 +30,12 @@ from squeze.defaults import PEAKFIND_SIG
 from squeze.parsers import TRAINING_PARSER
 
 
-def main():
+def main(cmdargs):
     """ Run SQUEzE in training mode """
     # load options
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      parents=[TRAINING_PARSER])
-    args = parser.parse_args()
+    args = parser.parse_args(cmdargs)
 
     # manage verbosity
     userprint = verboseprint if not args.quiet else quietprint
@@ -123,4 +124,5 @@ def main():
     userprint(f"INFO: total elapsed time: {(t8-t0)/60.0} minutes")
     userprint("Done")
 if __name__ == '__main__':
-    main()
+    cmdargs=sys.argv[1:]
+    main(cmdargs)
