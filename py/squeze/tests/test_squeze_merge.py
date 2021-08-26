@@ -12,6 +12,8 @@ from squeze.common_functions import deserialize, load_json
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+import squeze_merge
+
 class TestSquezeMerge(AbstractTest):
     """Test the merge mode
 
@@ -33,7 +35,7 @@ class TestSquezeMerge(AbstractTest):
                    "--output-candidates",
                    out_file,
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_merge)
         self.assertTrue(os.path.isfile(out_file))
         self.compare_data_frames(test_file, out_file)
 

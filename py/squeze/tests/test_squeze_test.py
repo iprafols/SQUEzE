@@ -12,6 +12,8 @@ from squeze.common_functions import deserialize, load_json
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+import squeze_test
+
 class TestSquezeTest(AbstractTest):
     """Test the test mode
 
@@ -34,7 +36,7 @@ class TestSquezeTest(AbstractTest):
                    "--input-spectra",
                    in_file,
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_test)
         self.assertTrue(os.path.isfile(out_file))
         self.compare_data_frames(test_file, out_file)
 
@@ -59,7 +61,7 @@ class TestSquezeTest(AbstractTest):
                    "--check-statistics",
                    "--check-probs", "0.0", "0.5", "0.9",
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_test)
         self.assertTrue(os.path.isfile(out_file))
         self.compare_data_frames(test_file, out_file)
 

@@ -12,6 +12,8 @@ from squeze.common_functions import deserialize, load_json
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+import squeze_operation
+
 class TestSquezeOperation(AbstractTest):
     """Test the operation mode
 
@@ -34,7 +36,7 @@ class TestSquezeOperation(AbstractTest):
                    "--input-spectra",
                    in_file,
                    ]
-        self.run_command(command)
+        self.run_command(command, squeze_operation)
         self.assertTrue(os.path.isfile(out_file))
         self.compare_data_frames(test_file, out_file)
 
