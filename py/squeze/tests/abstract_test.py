@@ -73,7 +73,9 @@ class AbstractTest(unittest.TestCase):
 
         # compare them
         equal_df = orig_df.equals(new_df)
-        if not equal_df and orig_df.columns.equals(new_df.columns):
+        orig_columns = sorted(orig_df.columns)
+        new_columns = sorted(orig_df.columns)
+        if not equal_df and all(orig_columns==new_columns):
             # this bit tests if they are equal within machine z_precision
             are_similar = True
             for col, dtype in zip(orig_df.columns, orig_df.dtypes):
