@@ -375,7 +375,7 @@ class Model(object):
             data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if not data_frame_nonpeaks.shape[0] == 0:
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.__clf_low.classes_):
+                for index, class_label in enumerate(self.__clf.classes_):
                     data_frame_nonpeaks["PROB_CLASS{:d}".format(int(class_label))] = np.nan
 
             # join datasets
