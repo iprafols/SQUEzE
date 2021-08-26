@@ -36,6 +36,50 @@ from squeze.spectrum import Spectrum
 @jit(nopython=True)
 def compute_line_ratios(wave, flux, ivar, peak_indexs, significances,
                         try_lines, lines):
+    """Compute the line ratios for the specified lines for a given spectrum
+
+        See equations 1 to 3 of Perez-Rafols et al. 2020 for a detailed
+        description of the metrics
+
+        Parameters
+        ----------
+        wave : array of float
+        The spectrum wavelength
+
+        flux : array of float
+        The spectrum flux
+
+        ivar : array of float
+        The spectrum inverse variance
+
+        peak indexs : array of int
+        The indexes on the wave array where peaks are found
+
+        significances : array of float
+        The significances of the peaks
+
+        try_lines : array of ints
+        Indexes of the lines to be considered as originators of the peaks
+
+        lines : array of arrays of floats
+        Information of the lines where the ratios need to be computed. Each
+        of the arrays must be organised as follows:
+        0 - wavelength of the line
+        1 - wavelength of the start of the peak interval
+        2 - wavelength of the end of the peak interval
+        3 - wavelength of the start of the blue interval
+        4 - wavelength of the end of the blue interval
+        5 - wavelength of the start of the red interval
+        6 - wavelength of the end of the red interval
+
+        Returns
+        -------
+        new_candidates : list
+        Each element of the list contains the ratios of the lines, the trial
+        redshift, the significance of the line and the index of the line
+        assumed to be originating the emission peak
+
+    """
     new_candidates = []
     for i in prange(peak_indexs.size):
     #for peak_index, significance in zip(peak_indexs, significances):
@@ -122,17 +166,21 @@ def is_correct(correct_redshift, class_person):
     """ Returns True if a candidate is a true quasar and False otherwise.
         A true candidate is defined as a candidate having an absolute value
         of Delta_z is lower or equal than self.__z_precision.
-        This function should be called using the .apply method of the candidates
-        data frame with the option axis=1
 
         Parameters
         ----------
-        row : pd.Series
-        A row in the candidates data frame
+        correct_redshift : array of bool
+        Array specifying if the redhsift is correct
+
+        class_person : array of int
+        Array specifying the actual classification. 3 and 30 stand for quasars
+        and BAL quasars respectively. 1 stands for stars and 4 stands for galaxies.
 
         Returns
         -------
-        True if a candidate is a true quasar and False otherwise
+        correct : array of bool
+        For each element in the arrays, returns True if the candidate is a
+        quasar and has the correct redshift assign to it
         """
     correct = bool(correct_redshift
                 and ((class_person == 3) or (class_person == 30)))
@@ -142,19 +190,27 @@ def is_correct(correct_redshift, class_person):
 def is_correct_redshift(delta_z, class_person, z_precision):
     """ Returns True if a candidate has a correct redshift and False otherwise.
         A candidate is assumed to have a correct redshift if it has an absolute
-        value of Delta_z is lower or equal than self.__z_precision.
+        value of Delta_z lower than or equal to z_precision.
         If the object is a star (class_person = 1), then return False.
-        This function should be called using the .apply method of the candidates
-        data frame with the option axis=1
 
         Parameters
         ----------
-        row : pd.Series
-        A row in the candidates data frame
+        delta_z : array of float
+        Differences between the trial redshift (Z_TRY) and the true redshift
+        (Z_TRUE)
+
+        class_person : array of int
+        Array specifying the actual classification. 3 and 30 stand for quasars
+        and BAL quasars respectively. 1 stands for stars and 4 stands for galaxies.
+
+        z_precision : float
+        Tolerance with which two redshifts are considerd equal
 
         Returns
         -------
-        True if a candidate is a true quasar and False otherwise
+        correct_redshift : array of bool
+        For each element, returns True if the candidate is not a star and the
+        trial redshift is equal to the true redshift.
         """
     correct_redshift = bool((class_person != 1)
                             and (delta_z <= z_precision)
@@ -164,21 +220,43 @@ def is_correct_redshift(delta_z, class_person, z_precision):
 @jit(nopython=True)
 def is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
             z_precision, lines):
-    """ Returns True if a candidate is a quasar line and False otherwise.
-        A quasar line is defined as a candidate where its redshift assuming
-        it was any of the specified lines is off the true redshift by at
-        most self.__z_precision.
-        This function should be called using the .apply method of the candidates
-        data frame with the option axis=1
+    """ Returns True if the candidates corresponds to a valid quasar emission
+        line and False otherwise. A quasar line is defined as a candidate whose
+        trial redshift is correct or where any of the redshifts obtained
+        assuming that the emission line is generated by any of the lines is
+        equal to the true redshift
 
         Parameters
         ----------
-        row : pd.Series
-        A row in the candidates data frame
+        is_correct : array of bool
+        Array specifying if the candidates with a correct trial redshift
+
+        class_person : array of int
+        Array specifying the actual classification. 3 and 30 stand for quasars
+        and BAL quasars respectively. 1 stands for stars and 4 stands for galaxies.
+
+        assumed_line_index : int
+        Index of the line considered as originating the peaks
+
+        z_true : float
+        True redshift
+
+        z_try : float
+        Trial redshift
+
+        z_precision : float
+        Tolerance with which two redshifts are considerd equal
+
+        lines : array of arrays of floats
+        Information of the lines that can be originating the emission line peaks.
+        Each of the arrays must be organised as follows:
+        0 - wavelength of the line
 
         Returns
         -------
-        Returns True if a candidate is a quasar line and False otherwise.
+        is_line : array of bool
+        For each element, returns True if thr candidate is a quasar line and
+        False otherwise.
         """
     is_line = np.zeros_like(is_correct)
 
@@ -316,81 +394,6 @@ class Candidates(object):
                                                        self.__try_lines_indexs)}
         self.__try_lines_dict["none"] = -1
 
-    def __compute_line_ratio(self, spectrum, index, oneplusz):
-        """ Compute the peak-to-continuum ratio for a specified line.
-
-            Parameters
-            ----------
-            spectrum : Spectrum
-            The spectrum where the ratio is computed.
-
-            index : int
-            The index of self.__lines that specifies which line to use.
-
-            z_try : float
-            Redshift of the candidate.
-
-            Returns
-            -------
-            np.nan for both the ratio and its error if any of the intervals
-            specified in self.__lines are outside the scope of the spectrum,
-            or if the sum of the values of ivar in one of the regions is zero.
-            Otherwise returns the peak-to-continuum ratio and its error.
-            """
-        wave = spectrum.wave()
-        flux = spectrum.flux()
-        ivar = spectrum.ivar()
-
-        # compute intervals
-        pix_peak = np.where((wave >= oneplusz*self.__lines.iloc[index]["START"])
-                            & (wave <= oneplusz*self.__lines.iloc[index]["END"]))[0]
-        pix_blue = np.where((wave >= oneplusz*self.__lines.iloc[index]["BLUE_START"])
-                            & (wave <= oneplusz*self.__lines.iloc[index]["BLUE_END"]))[0]
-        pix_red = np.where((wave >= oneplusz*self.__lines.iloc[index]["RED_START"])
-                           & (wave <= oneplusz*self.__lines.iloc[index]["RED_END"]))[0]
-
-        # compute peak and continuum values
-        compute_ratio = True
-        if ((pix_blue.size == 0) or (pix_peak.size == 0) or (pix_red.size == 0)
-                or (pix_blue.size < pix_peak.size//2)
-                or (pix_red.size < pix_peak.size//2)):
-            compute_ratio = False
-        else:
-            peak = np.mean(flux[pix_peak])
-            cont_red = np.mean(flux[pix_red])
-            cont_blue = np.mean(flux[pix_blue])
-            cont_red_and_blue = cont_red + cont_blue
-            if (cont_red_and_blue == 0.0 or
-                    isinstance(cont_red, np.ma.core.MaskedConstant) or
-                    isinstance(cont_blue, np.ma.core.MaskedConstant) or
-                    isinstance(peak, np.ma.core.MaskedConstant)):
-                compute_ratio = False
-            else:
-                peak_ivar_sum = ivar[pix_peak].sum()
-                if peak_ivar_sum == 0.0:
-                    peak_err_squared = np.nan
-                else:
-                    peak_err_squared = 1.0/peak_ivar_sum
-                blue_ivar_sum = ivar[pix_blue].sum()
-                red_ivar_sum = ivar[pix_red].sum()
-                if blue_ivar_sum == 0.0 or red_ivar_sum == 0.0:
-                    cont_err_squared = np.nan
-                else:
-                    cont_err_squared = (1.0/blue_ivar_sum +
-                                        1.0/red_ivar_sum)/4.0
-        # compute ratios
-        if compute_ratio:
-            ratio = 2.0*peak/cont_red_and_blue
-            ratio2 = abs((cont_red - cont_blue)/cont_red_and_blue)
-            err_ratio = sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/abs(cont_red_and_blue)
-            ratio_sn = (ratio - 1.0)/err_ratio
-        else:
-            ratio = np.nan
-            ratio2 = np.nan
-            ratio_sn = np.nan
-
-        return ratio, ratio_sn, ratio2
-
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """
         return {"LINES": self.__lines,
@@ -399,88 +402,6 @@ class Candidates(object):
                 "PEAKFIND_WIDTH": self.__peakfind_width,
                 "PEAKFIND_SIG": self.__peakfind_sig,
                }
-
-    def __is_correct(self, row):
-        """ Returns True if a candidate is a true quasar and False otherwise.
-            A true candidate is defined as a candidate having an absolute value
-            of Delta_z is lower or equal than self.__z_precision.
-            This function should be called using the .apply method of the candidates
-            data frame with the option axis=1
-
-            Parameters
-            ----------
-            row : pd.Series
-            A row in the candidates data frame
-
-            Returns
-            -------
-            True if a candidate is a true quasar and False otherwise
-            """
-        return bool((row["DELTA_Z"] <= self.__z_precision)
-                    and row["DELTA_Z"] >= -self.__z_precision
-                    and (np.isin(row["CLASS_PERSON"], [3, 30])))
-
-    def __is_correct_redshift(self, row):
-        """ Returns True if a candidate has a correct redshift and False otherwise.
-            A candidate is assumed to have a correct redshift if it has an absolute
-            value of Delta_z is lower or equal than self.__z_precision.
-            If the object is a star (class_person = 1), then return False.
-            This function should be called using the .apply method of the candidates
-            data frame with the option axis=1
-
-            Parameters
-            ----------
-            row : pd.Series
-            A row in the candidates data frame
-
-            Returns
-            -------
-            True if a candidate is a true quasar and False otherwise
-            """
-        correct_redshift = False
-        if row["CLASS_PERSON"] != 1:
-            correct_redshift = bool((row["DELTA_Z"] <= self.__z_precision)
-                                   and (row["DELTA_Z"] >= -self.__z_precision))
-        return correct_redshift
-
-    def __is_line(self, row):
-        """ Returns True if a candidate is a quasar line and False otherwise.
-            A quasar line is defined as a candidate where its redshift assuming
-            it was any of the specified lines is off the true redshift by at
-            most self.__z_precision.
-            This function should be called using the .apply method of the candidates
-            data frame with the option axis=1
-
-            Parameters
-            ----------
-            row : pd.Series
-            A row in the candidates data frame
-
-            Returns
-            -------
-            Returns True if a candidate is a quasar line and False otherwise.
-            """
-        is_line = False
-        # correct identification
-        if row["IS_CORRECT"]:
-            is_line = True
-        # not a quasar
-        elif not np.isin(row["CLASS_PERSON"], [3, 30]):
-            pass
-        # not a peak
-        elif row["ASSUMED_LINE"] == "none":
-            pass
-        else:
-            for line in self.__lines.index:
-                if line == row["ASSUMED_LINE"]:
-                    continue
-                z_try_line = (self.__lines["WAVE"][row["ASSUMED_LINE"]]/
-                              self.__lines["WAVE"][line])*(1 + row["Z_TRY"]) - 1
-                if ((z_try_line - row["Z_TRUE"] <= self.__z_precision) and
-                        (z_try_line - row["Z_TRUE"] >= -self.__z_precision)):
-                    is_line = True
-        return is_line
-
 
     def __find_candidates(self, spectrum):
         """
@@ -525,7 +446,6 @@ class Candidates(object):
             self.__candidates_list.append(candidate_info)
         # if there are peaks, compute the metrics and keep the info
         else:
-            # THIS IS NEW
             wave = spectrum.wave()
             flux = spectrum.flux()
             ivar = spectrum.ivar()
@@ -539,38 +459,6 @@ class Candidates(object):
             new_candidates = [metadata + item[:-1] + [self.__try_lines[int(item[-1])]]
                               for item in new_candidates]
             self.__candidates_list += new_candidates
-            # OLD WAY OF DOING THINGS
-            """
-            for peak_index, significance in zip(peak_indexs, significances):
-
-
-                for try_line in self.__try_lines:
-
-
-
-                    # compute redshift
-                    z_try = spectrum.wave()[peak_index]/self.__lines["WAVE"][try_line] - 1.0
-                    if z_try < 0.0:
-                        continue
-                    oneplusz = (1.0 + z_try)
-
-                    candidate_info = spectrum.metadata()
-
-                    # compute peak ratio for the different lines
-                    for i in range(self.__lines.shape[0]):
-                        ratio, ratio_sn, ratio2 = \
-                            self.__compute_line_ratio(spectrum, i, oneplusz)
-                        candidate_info.append(ratio)
-                        candidate_info.append(ratio_sn)
-                        candidate_info.append(ratio2)
-
-                    candidate_info.append(z_try)
-                    candidate_info.append(significance)
-                    candidate_info.append(try_line)
-
-                    # add candidate to the list
-                    self.__candidates_list.append(candidate_info)
-                    """
 
     def __load_model_settings(self):
         """ Overload the settings with those stored in self.__model """
@@ -670,8 +558,6 @@ class Candidates(object):
                                          aux["Z_TRY"].values,
                                          self.__z_precision,
                                          self.__lines.values)
-                #aux["IS_LINE"] = aux.apply(self.__is_line,
-                #                           axis=1)
             else:
                 self.__userprint("    is_correct_redshift")
                 aux["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
