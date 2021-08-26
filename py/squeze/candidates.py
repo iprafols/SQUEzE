@@ -198,7 +198,7 @@ def is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
                 if j == assumed_line_index[i]:
                     continue
                 # 0=WAVE
-                z_try_line = (lines[j][0]/lines[assumed_line_index[i]][0])*(1 + z_try[i]) - 1
+                z_try_line = (lines[assumed_line_index[i]][0]/lines[j][0])*(1 + z_try[i]) - 1
                 if ((z_try_line - z_true[i] <= z_precision) and
                         (z_try_line - z_true[i] >= -z_precision)):
                     is_line[i] = True
