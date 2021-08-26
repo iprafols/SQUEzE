@@ -74,7 +74,7 @@ class Model(object):
             self.__clf_low = RandomForestClassifier(**self.__clf_options.get("low"))
         else:
             self.__clf_options.get("all")["random_state"] = self.__random_state
-            self.__clf = RandomForestClassifier(**self.__clf_options)
+            self.__clf = RandomForestClassifier(**self.__clf_options.get("all"))
 
 
     def __find_class(self, row, train):
