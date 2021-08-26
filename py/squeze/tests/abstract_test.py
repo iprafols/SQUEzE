@@ -73,22 +73,18 @@ class AbstractTest(unittest.TestCase):
 
         # compare them
         equal_df = orig_df.equals(new_df)
-        if not equal_df and orig_df.columns.equals(new_df.columns):
+        if not equal_df:
             # this bit tests if they are equal within machine z_precision
             are_similar = True
             for col, dtype in zip(orig_df.columns, orig_df.dtypes):
+                self.assertTrue(col in new_df.columns)
                 if (dtype == "O"):
-                    if not orig_df[col].equals(new_df[col]):
-                        are_similar = False
-                        break
+                    self.assertTrue(orig_df[col].equals(new_df[col]))
                 else:
-                    if not np.allclose(orig_df[col], new_df[col],
-                                       equal_nan=True):
-                        are_similar = False
-                        break
-        else:
-            are_similar = False
-        self.assertTrue(equal_df or are_similar)
+                    self.assertTrue(np.allclose(orig_df[col], new_df[col],
+                                    equal_nan=True))
+            for col in new_df.columns:
+                self.assertTrue(col in orig_df.columns)
 
     def compare_fits(self, orig_file, new_file):
         """ Compares two fits files to check that they are equal """
@@ -99,15 +95,21 @@ class AbstractTest(unittest.TestCase):
         # compare them
         self.assertTrue(len(orig_hdul), len(new_hdul))
         # loop over HDUs
-        for hdu_index in range(len(orig_hdul)):
+        for hdu_index, _ in enumerate(orig_hdul):
             # check header
-            orig_header = orig_hdul[1].header
-            new_header = new_hdul[1].header
+            orig_header = orig_hdul[hdu_index].header
+            new_header = new_hdul[hdu_index].header
             for key in orig_header:
                 self.assertTrue(key in new_header)
                 if not key in ["CHECKSUM", "DATASUM"]:
                     self.assertTrue((orig_header[key]==new_header[key]) or
                                     (np.isclose(orig_header[key], new_header[key])))
+
+            for key in new_header:
+                if key not in orig_header:
+                    print(f"key {key} missing in orig header")
+                self.assertTrue(key in orig_header)
+
             # check data
             orig_data = orig_hdul[hdu_index].data
             new_data = new_hdul[hdu_index].data
@@ -120,6 +122,10 @@ class AbstractTest(unittest.TestCase):
                                     (np.allclose(orig_data[col],
                                                  new_data[col],
                                                  equal_nan=True)))
+                for col in new_data.dtype.names:
+                    if col not in orig_data.dtype.names:
+                        print(f"Columns {col} missing in orig header")
+                    self.assertTrue(col in orig_data.dtype.names)
 
     def compare_json_spectra(self, orig_file, new_file):
         """Compares two sets of spectra saved in a json file"""

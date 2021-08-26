@@ -43,10 +43,10 @@ def main():
     # initialize candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is None:
-        candidates = Candidates(mode="operation", model=model)
+        candidates = Candidates(mode="operation", model=model, userprint=userprint)
     else:
         candidates = Candidates(mode="operation", name=args.output_candidates,
-                                model=model)
+                                model=model, userprint=userprint)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
@@ -70,16 +70,17 @@ def main():
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
 
+            if index == 0:
+                columns_candidates += spectra.spectra_list()[0].metadata_names()
+
             # look for candidates
             userprint("Looking for candidates")
-            candidates.find_candidates(spectra.spectra_list())
+            candidates.find_candidates(spectra.spectra_list(), columns_candidates)
 
             t41 = time.time()
             userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
                       f" {(t41-t40)/60.0} minutes")
 
-            if index == 0:
-                columns_candidates += spectra.spectra_list()[0].metadata_names()
         t5 = time.time()
         userprint(f"INFO: time elapsed to find candidates: {(t5-t4)/60.0} minutes")
 
