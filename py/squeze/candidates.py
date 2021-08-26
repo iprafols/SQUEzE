@@ -557,7 +557,7 @@ class Candidates(object):
                                          aux["Z_TRUE"].values,
                                          aux["Z_TRY"].values,
                                          self.__z_precision,
-                                         self.__lines.values)
+                                         self.__lines.iloc[self.__try_lines_indexs].values)
             else:
                 self.__userprint("    is_correct_redshift")
                 aux["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
