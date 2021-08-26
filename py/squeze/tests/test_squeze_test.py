@@ -12,7 +12,7 @@ from squeze.common_functions import deserialize, load_json
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-class TestSquezeCandidates(AbstractTest):
+class TestSquezeTest(AbstractTest):
     """Test the test mode
 
         CLASS: TestSquezeCandidates
