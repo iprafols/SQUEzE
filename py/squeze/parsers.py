@@ -157,6 +157,19 @@ TRAINING_PARSER.add_argument("--model-fits", action="store_true",
                              help="""If this argument is passed, the model is saved as
                              fits file instead of a json file.""")
 
+TRAINING_PARSER.add_argument("--random-forest-options", type=str, default=None, required=False,
+                             help="""Name of tje json file containing the random forest options.
+                             The file must contain a dictionary with the options to be passed to
+                             the random forest. If two random forests are to be trained
+                             for high (>=2.1) and low redshift candidates separately, then the
+                             dictionary must only contain the keys 'high' and 'low', and the
+                             corresponding values must be dictionaries with the options for each
+                             of the classifiers.
+                             """)
+
+TRAINING_PARSER.add_argument("--random-state", type=int, default=None, required=False,
+                             help="""Random state that will be used to initialize the forest""")
+
 """
 This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
 """ # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement

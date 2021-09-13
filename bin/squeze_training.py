@@ -55,19 +55,25 @@ def main(cmdargs):
     peakfind_width = PEAKFIND_WIDTH if args.peakfind_width is None else args.peakfind_width
     peakfind_sig = PEAKFIND_SIG if args.peakfind_sig is None else args.peakfind_sig
 
+    # load random forest options
+    random_forest_options = RANDOM_FOREST_OPTIONS if args.random_forest_options is None else load_json(args.random_forest_options)
+    random_state = RANDOM_STATE if args.random_state is None else args.random_state
+
     # initialize candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is None:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 peakfind=(peakfind_width, peakfind_sig),
-                                model=None, userprint=userprint)
+                                model=None, userprint=userprint,
+                                model_options=(random_forest_options, random_state))
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 name=args.output_candidates,
                                 peakfind=(peakfind_width, peakfind_sig),
-                                model=None, userprint=userprint)
+                                model=None, userprint=userprint,
+                                model_options=(random_forest_options, random_state))
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:

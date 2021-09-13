@@ -28,7 +28,7 @@ class Model(object):
         """
 
     def __init__(self, name, selected_cols, settings,
-                 model_options(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
+                 model_options=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
 
             Parameters
