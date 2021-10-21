@@ -113,5 +113,50 @@ class TestModel(AbstractTest):
         self.assertTrue(os.path.isfile(out_file))
         self.compare_data_frames(test_file, out_file)
 
+    def test_single_random_forest_model(self):
+        """ Create a json model and test it"""
+
+        # first create the model by running squeze_training.py
+        in_file = "{}/data/formatted_boss_test1.json".format(THIS_DIR)
+        out_file = "{}/results/training_boss_test1_singlerf.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
+        rf_options_file = "{}/data/singlerf_options.json".format(THIS_DIR)
+
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_training.py",
+                   "--peakfind-width", "70",
+                   "--peakfind-sig", "6",
+                   "--z-precision", "0.15",
+                   "--output-candidates",
+                   out_file,
+                   "--input-spectra",
+                   in_file,
+                   "--random-forest-options",
+                   rf_options_file,
+                   ]
+        self.run_command(command, squeze_training)
+        self.assertTrue(os.path.isfile(out_file))
+        self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
+                                                        "_model.json")))
+        self.compare_data_frames(test_file, out_file)
+
+        # now test the model
+        model_file = out_file.replace(".fits.gz", "_model.json")
+        in_file = "{}/data/formatted_boss_test2.json".format(THIS_DIR)
+        out_file = "{}/results/test_boss_test2_nostats_singlerf.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test2_pred_singlerf.fits.gz".format(THIS_DIR)
+
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_test.py",
+                   "--model", model_file,
+                   "--output-candidates",
+                   out_file,
+                   "--input-spectra",
+                   in_file,
+                   ]
+        self.run_command(command, squeze_test)
+        self.assertTrue(os.path.isfile(out_file))
+        self.compare_data_frames(test_file, out_file)
+
 if __name__ == '__main__':
     unittest.main()

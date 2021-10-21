@@ -28,7 +28,7 @@ class Model(object):
         """
 
     def __init__(self, name, selected_cols, settings,
-                 model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
+                 model_options=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
         """ Initialize class instance.
 
             Parameters
@@ -46,7 +46,7 @@ class Model(object):
             random_state : int - Default: RANDOM_STATE
             Integer to set the sandom states of the classifier
 
-            model_opt : tuple -  Default: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
+            model_options : tuple -  Default: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
             A tuple. First item should be a dictionary with the options to be
             passed to the random forest. If two random forests are to be trained
             for high (>=2.1) and low redshift candidates separately, then the
@@ -58,12 +58,12 @@ class Model(object):
         self.__name = name
         self.__settings = settings
         self.__selected_cols = selected_cols
-        self.__clf_options = model_opt[0]
-        self.__random_state = model_opt[1]
+        self.__clf_options = model_options[0]
+        self.__random_state = model_options[1]
         if "high" in self.__clf_options.keys() and "low" in self.__clf_options.keys():
             self.__highlow_split = True
         else:
-            self.__clf_options = {"all": model_opt[0]}
+            self.__clf_options = {"all": model_options[0]}
             self.__highlow_split = False
 
         # load models
@@ -440,12 +440,12 @@ class Model(object):
         lines = deserialize(settings.get("LINES"))
         lines.columns = [col.upper() for col in lines.columns]
         settings["LINES"] = lines
-        model_opt = [data.get("_Model__clf_options"), data.get("_Model__random_state")]
+        model_options = [data.get("_Model__clf_options"), data.get("_Model__random_state")]
         cls_instance = cls(name, selected_cols, settings,
-                           model_opt=model_opt)
+                           model_options=model_options)
 
         # now update the instance to the current values
-        if "high" in model_opt[0].keys() and "low" in model_opt[0].keys():
+        if "high" in model_options[0].keys() and "low" in model_options[0].keys():
             cls_instance.set_clf_high(RandomForestClassifier.from_json(data.get("_Model__clf_high")))
             cls_instance.set_clf_low(RandomForestClassifier.from_json(data.get("_Model__clf_low")))
         else:
@@ -523,8 +523,8 @@ class Model(object):
                            "random_state"]:
                     continue
                 low[key.lower()] = hdul["LOWINFO"].header[key]
-            model_opt = [{"high": high, "low": low},
-                         hdul["HIGHINFO"].header["random_state"]]
+            model_options = [{"high": high, "low": low},
+                             hdul["HIGHINFO"].header["random_state"]]
         except:
             all = {}
             for key in hdul["ALLINFO"].header:
@@ -534,30 +534,30 @@ class Model(object):
                            "random_state"]:
                     continue
                 all[key.lower()] = hdul["HIGHINFO"].header[key]
-            model_opt = [all, hdul["ALLINFO"].header["random_state"]]
+            model_options = [all, hdul["ALLINFO"].header["random_state"]]
 
         # create instance using the constructor
         cls_instance = cls(name, selected_cols, settings,
-                           model_opt=model_opt)
+                           model_options=model_options)
 
         # now update the instance to the current values
-        if "high" in model_opt[0].keys() and "low" in model_opt[0].keys():
+        if "high" in model_options[0].keys() and "low" in model_options[0].keys():
             cls_instance.set_clf_high(RandomForestClassifier.from_fits_hdul(
                 hdul, "high", hdul["HIGHINFO"].header["N_TREES"],
                 hdul["HIGHINFO"].header["N_CAT"],
                 hdul["HIGHINFO"].data["CLASSES"].astype(np.float64),
-                args=model_opt[0].get("high")))
+                args=model_options[0].get("high")))
             cls_instance.set_clf_low(RandomForestClassifier.from_fits_hdul(
                 hdul, "low", hdul["LOWINFO"].header["N_TREES"],
                 hdul["LOWINFO"].header["N_CAT"],
                 hdul["LOWINFO"].data["CLASSES"].astype(np.float64),
-                args=model_opt[0].get("low")))
+                args=model_options[0].get("low")))
         else:
             cls_instance.set_clf(RandomForestClassifier.from_fits_hdul(
                 hdul, "all", hdul["ALLINFO"].header["N_TREES"],
                 hdul["ALLINFO"].header["N_CAT"],
                 hdul["ALLINFO"].data["CLASSES"].astype(np.float64),
-                args=model_opt[0]))
+                args=model_options[0]))
 
         hdul.close()
         return cls_instance

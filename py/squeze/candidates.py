@@ -297,7 +297,7 @@ class Candidates(object):
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.fits.gz",
                  peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
-                 model=None, model_opt=(RANDOM_FOREST_OPTIONS, RANDOM_STATE),
+                 model=None, model_options=(RANDOM_FOREST_OPTIONS, RANDOM_STATE),
                  userprint=verboseprint):
         """ Initialize class instance.
 
@@ -332,7 +332,7 @@ class Candidates(object):
             it is supposed to be None initially, and the model will be trained
             and given as an output of the code.
 
-            model_opt : (dict, int) - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
+            model_options : (dict, int) - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
             The first dictionary sets the options to be passed to the random forest
             cosntructor. If high-low split of the training is desired, the
             dictionary must contain the entries "high" and "low", and the
@@ -377,7 +377,7 @@ class Candidates(object):
         else:
             self.__model = model
             self.__load_model_settings()
-        self.__model_opt = model_opt
+        self.__model_options = model_options
 
         # initialize peak finder
         self.__peak_finder = PeakFinder(self.__peakfind_width, self.__peakfind_sig)
@@ -947,7 +947,7 @@ class Candidates(object):
         else:
             raise Error("Invalid model name")
         self.__model = Model(model_name, selected_cols, self.__get_settings(),
-                             model_opt=self.__model_opt)
+                             model_options=self.__model_options)
         self.__model.train(self.__candidates)
         self.__model.save_model()
 
