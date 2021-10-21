@@ -158,7 +158,7 @@ TRAINING_PARSER.add_argument("--model-fits", action="store_true",
                              fits file instead of a json file.""")
 
 TRAINING_PARSER.add_argument("--random-forest-options", type=str, default=None, required=False,
-                             help="""Name of tje json file containing the random forest options.
+                             help="""Name of the json file containing the random forest options.
                              The file must contain a dictionary with the options to be passed to
                              the random forest. If two random forests are to be trained
                              for high (>=2.1) and low redshift candidates separately, then the
