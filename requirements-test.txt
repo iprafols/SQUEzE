@@ -1,2 +1,1 @@
-unittest
 pytest>=5.3.4
