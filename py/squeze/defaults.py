@@ -103,6 +103,12 @@ This variable sets the random states of the random forest instances
 RANDOM_STATE = 2081487193
 
 """
+This variable contains a list of columns to be passed to the random forest
+classifier(s). None for no columns. Columns must be in the input catalogue.
+""" # description of PASS_COLS_TO_RF ... pylint: disable=pointless-string-statement
+PASS_COLS_TO_RF = None
+
+"""
 This variable contains the transcription from numerical predicted class to
 named predicted class
 """ # description of CLASS_PREDICTED ... pylint: disable=pointless-string-statement

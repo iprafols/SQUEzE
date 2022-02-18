@@ -170,6 +170,9 @@ TRAINING_PARSER.add_argument("--random-forest-options", type=str, default=None, 
 TRAINING_PARSER.add_argument("--random-state", type=int, default=None, required=False,
                              help="""Random state that will be used to initialize the forest""")
 
+TRAINING_PARSER.add_argument("--pass-cols-to-rf", nargs='*', type=str, default=None, required=False,
+                             help="""Pass these columns to the random forest classifier""")
+
 """
 This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
 """ # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement

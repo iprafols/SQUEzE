@@ -28,6 +28,7 @@ from squeze.defaults import LINES
 from squeze.defaults import TRY_LINES
 from squeze.defaults import RANDOM_FOREST_OPTIONS
 from squeze.defaults import RANDOM_STATE
+from squeze.defaults import PASS_COLS_TO_RF
 from squeze.defaults import Z_PRECISION
 from squeze.defaults import PEAKFIND_WIDTH
 from squeze.defaults import PEAKFIND_SIG
@@ -297,7 +298,8 @@ class Candidates(object):
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.fits.gz",
                  peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
-                 model=None, model_options=(RANDOM_FOREST_OPTIONS, RANDOM_STATE),
+                 model=None,
+                 model_options=(RANDOM_FOREST_OPTIONS, RANDOM_STATE, PASS_COLS_TO_RF),
                  userprint=verboseprint):
         """ Initialize class instance.
 
@@ -332,13 +334,16 @@ class Candidates(object):
             it is supposed to be None initially, and the model will be trained
             and given as an output of the code.
 
-            model_options : (dict, int) - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
+            model_options : (dict, int, list or None) - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE, None)
             The first dictionary sets the options to be passed to the random forest
             cosntructor. If high-low split of the training is desired, the
             dictionary must contain the entries "high" and "low", and the
             corresponding values must be dictionaries with the options for each
-            of the classifiers. In training mode, they're passed to the model
-            instance before training. Otherwise it's ignored.
+            of the classifiers. The second int is the random state passed to the
+            random forest classifiers. The third list contains columns to be passed
+            to the random forest classifiers (None for no columns). In training
+            mode, they're passed to the model instance before training.
+            Otherwise it's ignored.
 
             userprint : function - Default: verboseprint
             Print function to use
@@ -930,6 +935,10 @@ class Candidates(object):
         selected_cols += [col.upper() for col in self.__candidates.columns if col.endswith("RATIO2")]
         selected_cols += [col.upper() for col in self.__candidates.columns if col.endswith("RATIO")]
         selected_cols += ["PEAK_SIGNIFICANCE"]
+
+        # add extra columns
+        if len(self.__model_options) == 3 and self.__model_options[2] is not None:
+            selected_cols += [item.upper() for item in self.__model_options[2]]
 
         # add columns to compute the class in training
         selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
