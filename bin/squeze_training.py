@@ -61,7 +61,7 @@ def main(cmdargs):
     random_state = RANDOM_STATE if args.random_state is None else args.random_state
 
     # load pixel metrics options
-    pixels_as_metrics = args.pixel_as_metrics
+    pixels_as_metrics = args.pixels_as_metrics
     num_pixels = NUM_PIXELS if args.num_pixels is None else args.num_pixels
 
     # initialize candidates object

@@ -507,6 +507,8 @@ class Candidates(object):
                 "Z_PRECISION": self.__z_precision,
                 "PEAKFIND_WIDTH": self.__peakfind_width,
                 "PEAKFIND_SIG": self.__peakfind_sig,
+                "PIXELS_AS_METRICS": self.__pixels_as_metrics,
+                "NUM_PIXELS": self.__num_pixels,
                }
 
     def __find_candidates(self, spectrum):
@@ -589,6 +591,8 @@ class Candidates(object):
         self.__z_precision = settings.get("Z_PRECISION")
         self.__peakfind_width = settings.get("PEAKFIND_WIDTH")
         self.__peakfind_sig = settings.get("PEAKFIND_SIG")
+        self.__pixels_as_metrics = settings.get("PIXELS_AS_METRICS")
+        self.__num_pixels = settings.get("NUM_PIXELS")
 
     def save_candidates(self):
         """ Save the candidates DataFrame. """
