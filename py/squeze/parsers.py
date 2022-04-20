@@ -173,6 +173,13 @@ TRAINING_PARSER.add_argument("--random-state", type=int, default=None, required=
 TRAINING_PARSER.add_argument("--pass-cols-to-rf", nargs='*', type=str, default=None, required=False,
                              help="""Pass these columns to the random forest classifier""")
 
+TRAINING_PARSER.add_argument("--pixels-as-metrics", action="store_true",
+                             help="""keep pixel information as
+                             metrics""")
+
+TRAINING_PARSER.add_argument("--num-pixels", type=int, default=None, required=False,
+                             help="""Number of pixels to each side of the peak to
+                             use as metrics""")
 """
 This OPERATION_PARSER contains the options used to run SQUEzE in operation mode
 """ # description of OPERATION_PARSER ... pylint: disable=pointless-string-statement
