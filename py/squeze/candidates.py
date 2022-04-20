@@ -212,6 +212,8 @@ def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
     for i in prange(peak_indexs.size):
     #for peak_index, significance in zip(peak_indexs, significances):
 
+        candidate_info = [float(x) for x in range(0)]
+
         # compute pixel metrics
         peak_index = peak_indexs[i]
         candidate_info = []
@@ -220,15 +222,15 @@ def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
                 candidate_info.append(np.nan)
                 candidate_info.append(np.nan)
             else:
-                candidates_info.append(flux[peak_index + j])
-                candidates_info.append(ivar[peak_index + j])
+                candidate_info.append(flux[peak_index + j])
+                candidate_info.append(ivar[peak_index + j])
         for j in prange(0, num_pixels):
             if peak_index + j >= flux.size:
                 candidate_info.append(np.nan)
                 candidate_info.append(np.nan)
             else:
-                candidates_info.append(flux[peak_index + j])
-                candidates_info.append(ivar[peak_index + j])
+                candidate_info.append(flux[peak_index + j])
+                candidate_info.append(ivar[peak_index + j])
 
         for j in prange(len(try_lines)):
         #for try_line in try_lines:
@@ -653,10 +655,10 @@ class Candidates(object):
             if self.__pixels_as_metrics:
                 for index in range(-self.__num_pixels, 0):
                     columns_candidates.append(f"FLUX_{i}")
-                    columns_candidates.append(f"IVAR{i}")
+                    columns_candidates.append(f"IVAR_{i}")
                 for index in range(0, self.__num_pixels):
                     columns_candidates.append(f"FLUX_{i}")
-                    columns_candidates.append(f"IVAR{i}")
+                    columns_candidates.append(f"IVAR_{i}")
 
         # create dataframe
         aux = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
@@ -1055,6 +1057,8 @@ class Candidates(object):
         selected_cols = [col.upper() for col in self.__candidates.columns if col.endswith("RATIO_SN")]
         selected_cols += [col.upper() for col in self.__candidates.columns if col.endswith("RATIO2")]
         selected_cols += [col.upper() for col in self.__candidates.columns if col.endswith("RATIO")]
+        selected_cols += [col.upper() for col in self.__candidates.columns if col.startswith("FLUX_")]
+        selected_cols += [col.upper() for col in self.__candidates.columns if col.startswith("IVAR_")]
         selected_cols += ["PEAK_SIGNIFICANCE"]
 
         # add extra columns
