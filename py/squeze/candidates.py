@@ -162,6 +162,90 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances,
 
     return new_candidates
 
+@jit(nopython=True)
+def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
+                          lines):
+    """Compute pixel metrics.
+
+        Basically keep the pixel close to each peak as a new set of metrics.
+        For each pixel, keep the flux and the ivar. Use NaN for no coverage.
+
+        Parameters
+        ----------
+        wave : array of float
+        The spectrum wavelength
+
+        flux : array of float
+        The spectrum flux
+
+        ivar : array of float
+        The spectrum inverse variance
+
+        peak indexs : array of int
+        The indexes on the wave array where peaks are found
+
+        num_pixels : int
+        The number of pixels to keep to each side of the peak
+
+        try_lines : array of ints
+        Indexes of the lines to be considered as originators of the peaks
+
+        lines : array of arrays of floats
+        Information of the lines where the ratios need to be computed. Each
+        of the arrays must be organised as follows:
+        0 - wavelength of the line
+        1 - wavelength of the start of the peak interval
+        2 - wavelength of the end of the peak interval
+        3 - wavelength of the start of the blue interval
+        4 - wavelength of the end of the blue interval
+        5 - wavelength of the start of the red interval
+        6 - wavelength of the end of the red interval
+
+        Returns
+        -------
+        pixel_metrics : list
+        Each element of the list contains the pixel metrics associated to each
+        peak.
+
+    """
+    pixel_metrics = []
+    for i in prange(peak_indexs.size):
+    #for peak_index, significance in zip(peak_indexs, significances):
+
+        # compute pixel metrics
+        peak_index = peak_indexs[i]
+        candidate_info = []
+        for j in prange(-num_pixels, 0):
+            if peak_index + j < 0:
+                candidate_info.append(np.nan)
+                candidate_info.append(np.nan)
+            else:
+                candidates_info.append(flux[peak_index + j])
+                candidates_info.append(ivar[peak_index + j])
+        for j in prange(0, num_pixels):
+            if peak_index + j >= flux.size:
+                candidate_info.append(np.nan)
+                candidate_info.append(np.nan)
+            else:
+                candidates_info.append(flux[peak_index + j])
+                candidates_info.append(ivar[peak_index + j])
+
+        for j in prange(len(try_lines)):
+        #for try_line in try_lines:
+
+            # compute redshift
+            # 0=WAVE
+            z_try = wave[peak_indexs[i]]
+            z_try = z_try/lines[try_lines[j], 0]
+            z_try = z_try - 1.0
+            if z_try < 0.0:
+                continue
+
+            # add pixel metrics to the list once per each candidate
+            pixel_metrics.append(candidate_info)
+
+    return pixel_metrics
+
 def convert_dtype(dtype):
      if dtype == "O":
          return "15A"
@@ -304,6 +388,7 @@ class Candidates(object):
     def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
                  mode="operation", name="SQUEzE_candidates.fits.gz",
                  peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
+                 pixel_as_metrics=(False, 0),
                  model=None,
                  model_options=(RANDOM_FOREST_OPTIONS, RANDOM_STATE, PASS_COLS_TO_RF),
                  userprint=verboseprint):
@@ -332,6 +417,12 @@ class Candidates(object):
             with the information of the database in a csv file with this name.
             If load is set to True, then the candidates sample will be loaded
             from this file. Recommended extension is fits.gz.
+
+            pixel_as_metrics: (bool, int) - Default: (False, 0)
+            The first boolean specifies whether to keep pixel information as
+            metrics and the second int specifies the number of pixels to each
+            side of the peak to keep. If set, for each pixel, keep the flux and
+            ivar as metrics.
 
             model : Model or None  - Default: None
             Instance of the Model class defined in squeze_model or None.
@@ -381,6 +472,10 @@ class Candidates(object):
         # options to be passed to the peak finder
         self.__peakfind_width = peakfind[0]
         self.__peakfind_sig = peakfind[1]
+
+        # pixel metrics
+        self.__pixels_as_metrics = pixel_as_metrics[0]
+        self.__num_pixels = pixel_as_metrics[1]
 
         # model
         if model is None:
@@ -447,13 +542,18 @@ class Candidates(object):
             ratios = np.zeros(self.__lines.shape[0], dtype=float)
             ratios_sn = np.zeros_like(ratios)
             ratios2 = np.zeros_like(ratios)
-            for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
+            for _ in zip(ratios, ratios_sn, ratios2):
                 candidate_info.append(np.nan)
                 candidate_info.append(np.nan)
                 candidate_info.append(np.nan)
             candidate_info.append(z_try)
             candidate_info.append(significance)
             candidate_info.append(try_line)
+            if self.__pixels_as_metrics:
+                for _ in range(-self.__num_pixels, 0):
+                    candidate_info.append(np.nan)
+                for _ in range(0, self.__num_pixels):
+                    candidate_info.append(np.nan)
             self.__candidates_list.append(candidate_info)
         # if there are peaks, compute the metrics and keep the info
         else:
@@ -469,6 +569,16 @@ class Candidates(object):
 
             new_candidates = [metadata + item[:-1] + [self.__try_lines[int(item[-1])]]
                               for item in new_candidates]
+
+            if self.__pixels_as_metrics:
+                pixel_metrics = compute_pixel_metrics(wave, flux, ivar,
+                                                      peak_indexs, self.__num_pixels,
+                                                      self.__try_lines_indexs,
+                                                      self.__lines.values)
+                new_candidates = [item + candidate_pixel_metrics
+                                  for item, candidate_pixel_metrics in
+                                  zip(new_candidates, pixel_metrics)]
+
             self.__candidates_list += new_candidates
 
     def __load_model_settings(self):
@@ -536,6 +646,13 @@ class Candidates(object):
             columns_candidates.append("Z_TRY")
             columns_candidates.append("PEAK_SIGNIFICANCE")
             columns_candidates.append("ASSUMED_LINE")
+            if self.__pixels_as_metrics:
+                for index in range(-self.__num_pixels, 0):
+                    columns_candidates.append(f"FLUX_{i}")
+                    columns_candidates.append(f"IVAR{i}")
+                for index in range(0, self.__num_pixels):
+                    columns_candidates.append(f"FLUX_{i}")
+                    columns_candidates.append(f"IVAR{i}")
 
         # create dataframe
         aux = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
