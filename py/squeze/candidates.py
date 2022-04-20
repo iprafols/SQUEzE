@@ -162,6 +162,12 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances,
 
     return new_candidates
 
+def convert_dtype(dtype):
+     if dtype == "O":
+         return "15A"
+     else:
+         return dtype
+
 @vectorize
 def is_correct(correct_redshift, class_person):
     """ Returns True if a candidate is a true quasar and False otherwise.
@@ -476,12 +482,6 @@ class Candidates(object):
 
     def save_candidates(self):
         """ Save the candidates DataFrame. """
-        def convert_dtype(dtype):
-             if dtype == "O":
-                 return "15A"
-             else:
-                 return dtype
-
         hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
                                                          format=convert_dtype(dtype),
                                                          array=self.__candidates[col])
@@ -980,12 +980,6 @@ class Candidates(object):
         """
         if filename is None:
             filename = self.__name.replace(".fits", "_catalogue.fits")
-
-        def convert_dtype(dtype):
-             if dtype == "O":
-                 return "15A"
-             else:
-                 return dtype
 
         # filter data DataFrame
         data_frame = self.__candidates[(~self.__candidates["DUPLICATED"]) &
