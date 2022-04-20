@@ -53,6 +53,29 @@ class TestSquezeTraining(AbstractTest):
 
         self.compare_data_frames(test_file, out_file)
 
+    def test_squeze_training_with_extra_columns(self):
+        """ Run squeze_training.py """
+
+        in_file = "{}/data/formatted_boss_test1.json".format(THIS_DIR)
+        out_file = "{}/results/training_boss_test1_extra_columns.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
+
+        command = ["python",
+                   f"{SQUEZE_BIN}/squeze_training.py",
+                   "--peakfind-width", "70",
+                   "--peakfind-sig", "6",
+                   "--z-precision", "0.15",
+                   "--output-candidates", out_file,
+                   "--input-spectra", in_file,
+                   "--pass-cols-to-rf", "z_try",
+                   ]
+        self.run_command(command, squeze_training)
+        self.assertTrue(os.path.isfile(out_file))
+        self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
+                                                        "_model.json")))
+
+        self.compare_data_frames(test_file, out_file)
+
     def test_squeze_training_with_model_options(self):
         """ Run squeze_training.py """
 

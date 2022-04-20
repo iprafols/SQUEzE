@@ -66,14 +66,16 @@ def main(cmdargs):
                                 z_precision=z_precision, mode="training",
                                 peakfind=(peakfind_width, peakfind_sig),
                                 model=None, userprint=userprint,
-                                model_options=(random_forest_options, random_state))
+                                model_options=(random_forest_options, random_state,
+                                               args.pass_cols_to_rf))
     else:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 name=args.output_candidates,
                                 peakfind=(peakfind_width, peakfind_sig),
                                 model=None, userprint=userprint,
-                                model_options=(random_forest_options, random_state))
+                                model_options=(random_forest_options, random_state,
+                                               args.pass_cols_to_rf))
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:

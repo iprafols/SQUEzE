@@ -46,14 +46,14 @@ class Model(object):
             random_state : int - Default: RANDOM_STATE
             Integer to set the sandom states of the classifier
 
-            model_options : tuple -  Default: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
-            A tuple. First item should be a dictionary with the options to be
-            passed to the random forest. If two random forests are to be trained
-            for high (>=2.1) and low redshift candidates separately, then the
-            dictionary must only contain the keys 'high' and 'low', and the
+            model_options : (dict, int, :) - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
+            The first dictionary sets the options to be passed to the random forest
+            cosntructor. If high-low split of the training is desired, the
+            dictionary must contain the entries "high" and "low", and the
             corresponding values must be dictionaries with the options for each
-            of the classifiers. The second element of the tuple is the random
-            state that will be used to initialize the forest.
+            of the classifiers. The second int is the random state passed to the
+            random forest classifiers. If the tuple has more elements, they are
+            ignored.
             """
         self.__name = name
         self.__settings = settings
