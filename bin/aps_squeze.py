@@ -208,8 +208,8 @@ def write_results(zbest, candidates_df, args):
     primary_hdu.header["CS_NME1"] = ("Perez Rafols", "CS author surname(s)")
     primary_hdu.header["CS_MAIL"] = ("iprafols@gmail.com", "CS author email")
     # TODO: update the files used
-    primary_hdu.header["PROV0001"] = ("", "L1 file used")
-    primary_hdu.header["PROV0002"] = ("", "L2 file used")
+    primary_hdu.header["PROV1001"] = ("", "L1 file used")
+    primary_hdu.header["PROV2001"] = ("", "L2 file used")
     now = datetime.now()
     primary_hdu.header["DATETIME"] = (now.strftime("%Y-%m-%dT%H:%M:%S"), "DateTime file created")
     # TODO: update the datasum
