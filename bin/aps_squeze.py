@@ -203,7 +203,7 @@ def write_results(zbest, candidates_df, args):
     primary_hdu.header["COMMENT"] = "WEAVE Contributed Software: SQUEzE"
     primary_hdu.header["DATAMVER"] = ("8.00", "WEAVE Data Model Version")
     # TODO: read the version of the CS on the fly
-    primary_hdu.header["CSVER"] = ("0.4", "CS version")
+    primary_hdu.header["CS_VER"] = ("0.4", "CS version")
     primary_hdu.header["CS_NME1"] = ("Ignasi", "CS author forename")
     primary_hdu.header["CS_NME1"] = ("Perez Rafols", "CS author surname(s)")
     primary_hdu.header["CS_MAIL"] = ("iprafols@gmail.com", "CS author email")
