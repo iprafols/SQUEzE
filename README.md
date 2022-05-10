@@ -1,4 +1,5 @@
 # SQUEzE
+[![Coverage Status](https://coveralls.io/repos/github/iprafols/SQUEzE/badge.svg?branch=master)](https://coveralls.io/github/iprafols/SQUEzE?branch=master)
 
 Spectroscopic QUasar Extractor and redshift (z) Estimator
 
