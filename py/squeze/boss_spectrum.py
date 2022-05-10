@@ -10,7 +10,7 @@ __version__ = "0.1"
 
 import numpy as np
 from numpy.random import randn
-import astropy.io.fits as fits
+import fitsio
 
 from squeze.error import Error
 from squeze.spectrum import Spectrum
@@ -71,10 +71,10 @@ class BossSpectrum(Spectrum):
             raise Error("""The property "SPECID" must be present in metadata""")
 
         # open fits file
-        spectrum_hdu = fits.open(spectrum_file)
+        spectrum_hdul = fitsio.FITS(spectrum_file)
 
         # compute sky mask
-        self._wave = 10**spectrum_hdu[1].data["LOGLAM"].copy()
+        self._wave = 10**spectrum_hdul[1]["LOGLAM"][:]
         masklambda = sky_mask[0]
         margin = sky_mask[1]
         self.__skymask = None
@@ -87,8 +87,8 @@ class BossSpectrum(Spectrum):
         # store the wavelength, flux and inverse variance as arrays
         # The 1.0 mulitplying is added to change type from >4f to np.float
         # this is required by numba later on
-        self._flux = 1.0*spectrum_hdu[1].data["FLUX"].copy()
-        self._ivar = 1.0*spectrum_hdu[1].data["IVAR"].copy()
+        self._flux = 1.0*spectrum_hdul[1]["FLUX"][:]
+        self._ivar = 1.0*spectrum_hdul[1]["IVAR"][:]
         # mask pixels
         self._ivar[self.__skymask] = 0.0
         self._metadata = metadata
@@ -112,8 +112,7 @@ class BossSpectrum(Spectrum):
             self._ivar = self._ivar[pos].copy()
             self._flux = self._flux[pos].copy()
 
-        del spectrum_hdu[1].data
-        spectrum_hdu.close()
+        spectrum_hdul.close()
 
     def __add_noise(self, noise_amount):
         """ Adds noise to the spectrum by adding a gaussian random number of width

@@ -8,7 +8,7 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-import astropy.io.fits as fits
+import fitsio
 
 import pandas as pd
 
@@ -40,16 +40,15 @@ class QuasarCatalogue(object):
             hdu : int
             Number of the Header Data Unit to load
             """
-        catalogue_hdu = fits.open(filename)
-        data = [catalogue_hdu[hdu].data[col.upper()].copy() for col in columns]
-        data.append(catalogue_hdu[hdu].data[specid_column].copy())
-        data.append(catalogue_hdu[hdu].data[ztrue_column].copy())
+        catalogue_hdul = fitsio.FITS(filename)
+        data = [catalogue_hdul[hdu][col][:] for col in columns]
+        data.append(catalogue_hdul[hdu][specid_column][:].copy())
+        data.append(catalogue_hdul[hdu][ztrue_column][:].copy())
         columns = [col.upper() for col in columns]
         columns.append("SPECID")
         columns.append("Z_TRUE")
         self.__quasar_catalogue = pd.DataFrame(list(zip(*data)), columns=columns)
-        del catalogue_hdu[hdu].data
-        catalogue_hdu.close()
+        catalogue_hdul.close()
 
     def quasar_catalogue(self):
         """ Access the quasar catalogue """

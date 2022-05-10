@@ -249,8 +249,7 @@ class RandomForestClassifier(object):
                   "children_right": hdu.data["children_right"].astype(np.int64),
                   "feature": hdu.data["feature"].astype(np.int64),
                   "threshold": hdu.data["threshold"].astype(np.float64),
-                  "proba": hdu.data["proba"].astype(np.float64).reshape(
-                    (hdu.data["proba"].shape[0], 1, hdu.data["proba"].shape[1])),
+                  "proba": hdu.data["proba"].astype(np.float64),
                 } for hdu in hdus]
         cls_instance.set_trees(trees)
 
@@ -304,7 +303,7 @@ class RandomForestClassifier(object):
         """ Access the number of categories """
         return self.__num_categories
 
-    def to_fits_hdu(self, index, name):
+    def to_fits_hdu(self, index):
         """ Formats tree as a fits Header Data Unit
 
             Parameters
@@ -312,27 +311,22 @@ class RandomForestClassifier(object):
             index : int
             Index of the tree to format
 
-            name : string
-            Name of the HDU
-
             Returns
             -------
-            The Header Data Unit
+            names: list of str
+            Names of the different variables
+
+            cols: list of arrays
+            Data of the different variables
             """
+
         # create HDU columns
-        cols = [fits.Column(name="{}".format(field),
-                    array=self.__trees[index].get(field),
-                    format=type,
-                    )
-                for field, type in [("children_left", "K"),
-                                    ("children_right", "K"),
-                                    ("feature", "K"),
-                                    ("threshold", "D"),
-                                    ("proba", "{}D".format(self.__num_categories))]
-                ]
+        names = ["children_left", "children_right", "feature", "threshold",
+                 "proba"]
+        cols = [self.__trees[index].get(name) for name in names]
 
         # create HDU and return
-        return fits.BinTableHDU.from_columns(cols, name=name)
+        return names, cols
 
 if __name__ == '__main__':
     pass
