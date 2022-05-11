@@ -10,7 +10,7 @@ __version__ = "0.1"
 
 import numpy as np
 import pandas as pd
-import astropy.io.fits as fits
+import fitsio
 from astropy.table import Table
 
 from squeze.common_functions import save_json, deserialize
@@ -182,134 +182,118 @@ class Model(object):
 
     def save_model_as_fits(self):
         """ Save the model as a fits file"""
+        results = fitsio.FITS(self.__name.replace(".json", ".fits.gz"), 'rw',
+                              clobber=True)
 
         # Create settings HDU to store items in self.__settings
-        header = fits.Header()
-        header["Z_PREC"] = self.__settings.get("Z_PRECISION")
-        header["PF_WIDTH"] = self.__settings.get("PEAKFIND_WIDTH")
-        header["PF_SIG"] = self.__settings.get("PEAKFIND_SIG")
+        header = [
+            {
+            "name": "Z_PREC",
+            "value": self.__settings.get("Z_PRECISION"),
+            "comment": "z_try correct if in z_true +/- Z_PRECISION",
+            },
+            {
+            "name": "PF_WIDTH",
+            "value": self.__settings.get("PEAKFIND_WIDTH"),
+            "comment": "smoothing used by the peak finder",
+            },
+            {
+            "name": "PF_SIG",
+            "value": self.__settings.get("PEAKFIND_SIG"),
+            "comment": "min significance used by the peak finder",
+            },
+        ]
         # now create the columns to store lines and try_lines.
         lines = self.__settings.get("LINES")
         try_lines = self.__settings.get("TRY_LINES")
-        cols = [
-            fits.Column(name="LINE_NAME",
-                        array=lines.index,
-                        format="10A",
-                        ),
-            fits.Column(name="LINE_WAVE",
-                        array=lines["WAVE"],
-                        format="D",
-                        ),
-            fits.Column(name="LINE_START",
-                        array=lines["START"],
-                        format="D",
-                        ),
-            fits.Column(name="LINE_END",
-                        array=lines["END"],
-                        format="D",
-                        ),
-            fits.Column(name="LINE_BLUE_START",
-                        array=lines["BLUE_START"],
-                        format="D",
-                        ),
-            fits.Column(name="LINE_BLUE_END",
-                        array=lines["BLUE_END"],
-                        format="D",
-                        ),
-            fits.Column(name="LINE_RED_START",
-                        array=lines["RED_START"],
-                        format="D",
-                        ),
-            fits.Column(name="LINE_RED_END",
-                        array=lines["RED_END"],
-                        format="D",
-                        ),
-            # try lines is stored as an array of booleans
-            # (True if the value in LINES_NAME is in try_lines, and
-            # false otherwise)
-            fits.Column(name="TRY_LINES",
-                        array=lines.index.isin(try_lines),
-                        format="L",
-                        ),
+        names = ["LINE_NAME"]
+        cols = [np.array(lines.index, dtype=str)]
 
-            # selected_cols is stored as an array of strings
-            fits.Column(name="SELECTED_COLS",
-                        array=self.__selected_cols,
-                        format="20A",
-                        ),
-        ]
-        # Create settings HDUs
-        hdu = fits.BinTableHDU.from_columns(cols,
-                                            name="SETTINGS",
-                                            header=header)
-        # Update header with more detailed info
-        desc = {"Z_PREC": "z_try correct if in z_true +/- Z_PRECISION",
-                "PK_WIDTH": "smoothing used by the peak finder",
-                "PK_SIG": "min significance used by the peak finder",
-                "W_MODE": "deprecated, included for testing",
-                "LINE_NAME": "name of the line",
-                "LINE_WAVE": "wavelength of the line",
-                "LINE_START": "start of the peak interval",
-                "LINE_END": "end of the peak interval",
-                "LINE_BLUE_START": "start of the blue continuum interval",
-                "LINE_BLUE_END": "end of the blue continuum interval",
-                "LINE_RED_START": "start of the red continuum interval",
-                "LINE_RED_END": "end of the red continuum interval",
-                "TRY_LINE": "True if this line is part of try_lines",
+        desc = {"WAVE": "wavelength of the line",
+                "START": "start of the peak interval",
+                "END": "end of the peak interval",
+                "BLUE_START": "start of the blue continuum interval",
+                "BLUE_END": "end of the blue continuum interval",
+                "RED_START": "start of the red continuum interval",
+                "RED_END": "end of the red continuum interval",
                 }
-        for key in hdu.header:
-            hdu.header.comments[key] = desc.get(hdu.header[key], "")
-        # End of settings HDU
+        names += [f"LINE_{col}" for col in lines.columns]
+        cols += [lines[col] for col in lines.columns]
 
-        # store HDU in HDU list and liberate memory
-        hdul = fits.HDUList([fits.PrimaryHDU(), hdu])
-        del hdu, header, cols, desc
+        # try lines is stored as an array of booleans
+        # (True if the value in LINES_NAME is in try_lines, and
+        # false otherwise)
+        names += ["TRY_LINES"]
+        cols += [lines.index.isin(try_lines)]
+
+        results.write(cols, names=names, header=header, extname="SETTINGS")
+        del header, names, cols
+
+        # selected_cols is stored as an array of strings
+        names = ["SELECTED_COLS"]
+        cols = [np.array(self.__selected_cols, dtype=str)]
+        results.write(cols, names=names, extname="RF_COLS")
+        del names, cols
 
         # Create model HDU(s) to store the classifiers
         if self.__highlow_split:
-            names = ["high", "low"]
+            classifier_names = ["high", "low"]
             classifiers = [self.__clf_high, self.__clf_low]
         else:
-            names = ["all"]
+            classifier_names = ["all"]
             classifiers = [self.__clf]
 
-        for name, classifier in zip(names, classifiers):
-            header = fits.Header()
-            for key, value in self.__clf_options.get(name).items():
-                header[key] = value
-            if name != "all":
-                header["COMMENT"] = ("Options passed to the classifier for"
-                                     "{} redshift quasars. Redshifts are"
-                                     "split at 2.1"
-                                     ).format(name)
+        for classifier_name, classifier in zip(classifier_names, classifiers):
+            header = [
+                {
+                    "name": key,
+                    "value": value,
+                }
+                for key, value in self.__clf_options.get(classifier_name).items()
+            ]
+            if classifier_names != "all":
+                header += [{
+                    "name": "COMMENT",
+                    "value": ("Options passed to the classifier for"
+                              f"{classifier_names} redshift quasars. Redshifts "
+                              "are split at 2.1")
+                }]
             else:
-                header["COMMENT"] = ("Options passed to the classifier for"
-                                     "all redshift quasars")
+                header += [{
+                    "name": "COMMENT",
+                    "value": ("Options passed to the classifier for"
+                              "all redshift quasars")
+                }]
 
             num_trees = classifier.num_trees()
-            header["N_TREES"] = num_trees
-            header["N_CAT"] = classifier.num_categories()
-            cols = [fits.Column(name="CLASSES",
-                        array=classifier.classes_,
-                        format="D",
-                        ),]
+            header += [
+                {
+                    "name": "N_TREES",
+                    "value": num_trees,
+                },
+                {
+                    "name": "N_CAT",
+                    "value": classifier.num_categories(),
+                }
+            ]
+
+            names = ["CLASSES"]
+            cols = [classifier.classes_]
 
             # create HDU
-            hdu = fits.BinTableHDU.from_columns(cols,
-                                                name="{}INFO".format(name),
-                                                header=header)
+            results.write(cols, names=names, header=header,
+                          extname=f"{classifier_name}INFO")
+            del header, names, cols
 
-            # add to HDU list
-            hdul.append(hdu)
             # append classifier trees in different HDUs
-            [hdul.append(classifier.to_fits_hdu(index,
-                                               "{}{}".format(name, index)))
-             for index in range(num_trees)]
-            del hdu, header
-        # End of model HDU(s)
+            for index in range(num_trees):
+                names, cols = classifier.to_fits_hdu(index)
+                results.write(cols, names=names,
+                              extname=f"{classifier_name}{index}")
+                del names, cols
 
-        # save fits file
-        hdul.writeto(self.__name.replace(".json", ".fits.gz"), overwrite=True)
+        # End of model HDU(s)
+        results.close()
 
     def compute_probability(self, data_frame):
         """ Compute the probability of a list of candidates to be quasars
@@ -465,13 +449,13 @@ class Model(object):
             Name of the fits file
 
             """
-        hdul = fits.open(filename)
+        hdul = fitsio.FITS(filename)
 
         name = filename.replace("fits.gz", "json")
 
         # load lines
         selected_cols = [sel_col.strip()
-                         for sel_col in hdul["SETTINGS"].data["SELECTED_COLS"]]
+                         for sel_col in hdul["RF_COLS"]["SELECTED_COLS"][:]]
 
         cols = {"LINE_NAME": "LINE",
                 "LINE_WAVE": "WAVE",
@@ -483,58 +467,60 @@ class Model(object):
                 "LINE_RED_END":  "RED_END",}
         dtypes = [str, np.float64, np.float64, np.float64, np.float64,
                   np.float64, np.float64, np.float64]
-        pos = np.where(hdul["SETTINGS"].data["LINE_NAME"] != "")
-        dat = {col.upper(): hdul["SETTINGS"].data[col][pos].astype(dtype)
+        dat = {col.upper(): hdul["SETTINGS"][col][:].astype(dtype)
                for col, dtype in zip(cols, dtypes)}
         lines = pd.DataFrame(dat)
         lines = lines.rename(columns=cols).set_index("LINE")
 
         # load try_lines
-        pos = np.where((hdul["SETTINGS"].data["TRY_LINES"]) &
-                       (hdul["SETTINGS"].data["LINE_NAME"] != ""))
-        try_lines = hdul["SETTINGS"].data["LINE_NAME"][pos]
-        try_lines = [try_line.strip() for try_line in try_lines]
+        pos = np.where(hdul["SETTINGS"]["TRY_LINES"][:])
+        try_lines = [try_line.strip()
+                     for try_line in hdul["SETTINGS"]["LINE_NAME"][pos]]
 
         # load settings used to find the candidates
+        header = hdul["SETTINGS"].read_header()
         settings = {
             "LINES": lines,
             "TRY_LINES": try_lines,
-            "Z_PRECISION": hdul["SETTINGS"].header["Z_PREC"],
-            "PEAKFIND_WIDTH": hdul["SETTINGS"].header["PF_WIDTH"],
-            "PEAKFIND_SIG": hdul["SETTINGS"].header["PF_SIG"],
+            "Z_PRECISION": header["Z_PREC"],
+            "PEAKFIND_WIDTH": header["PF_WIDTH"],
+            "PEAKFIND_SIG": header["PF_SIG"],
         }
 
         # now load model options
         # cas 1: highlow_split
         try:
             high = {}
-            for key in hdul["HIGHINFO"].header:
+            header = hdul["HIGHINFO"].read_header()
+            for key in header:
                 if key in ["XTENSION", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2",
                            "PCOUNT", "GCOUNT", "TFIELDS", "EXTNAME", "COMMENT",
                            "TTYPE1", "TFORM1", "N_TREES", "N_CAT",
                            "random_state"]:
                     continue
-                high[key.lower()] = hdul["HIGHINFO"].header[key]
+                high[key.lower()] = header[key]
             low = {}
-            for key in hdul["LOWINFO"].header:
+            header = hdul["LOWINFO"].read_header()
+            for key in header:
                 if key in ["XTENSION", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2",
                            "PCOUNT", "GCOUNT", "TFIELDS", "EXTNAME", "COMMENT",
                            "TTYPE1", "TFORM1", "N_TREES", "N_CAT",
                            "random_state"]:
                     continue
-                low[key.lower()] = hdul["LOWINFO"].header[key]
+                low[key.lower()] = header[key]
             model_options = [{"high": high, "low": low},
-                             hdul["HIGHINFO"].header["random_state"]]
+                             header["random_state"]]
         except:
             all = {}
-            for key in hdul["ALLINFO"].header:
+            header = hdul["ALLINFO"].read_header()
+            for key in header:
                 if key in ["XTENSION", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2",
                            "PCOUNT", "GCOUNT", "TFIELDS", "EXTNAME", "COMMENT",
                            "TTYPE1", "TFORM1", "N_TREES", "N_CAT",
                            "random_state"]:
                     continue
-                all[key.lower()] = hdul["HIGHINFO"].header[key]
-            model_options = [all, hdul["ALLINFO"].header["random_state"]]
+                all[key.lower()] = header[key]
+            model_options = [all, header["random_state"]]
 
         # create instance using the constructor
         cls_instance = cls(name, selected_cols, settings,
@@ -543,20 +529,14 @@ class Model(object):
         # now update the instance to the current values
         if "high" in model_options[0].keys() and "low" in model_options[0].keys():
             cls_instance.set_clf_high(RandomForestClassifier.from_fits_hdul(
-                hdul, "high", hdul["HIGHINFO"].header["N_TREES"],
-                hdul["HIGHINFO"].header["N_CAT"],
-                hdul["HIGHINFO"].data["CLASSES"].astype(np.float64),
+                hdul, "high", "HIGHINFO",
                 args=model_options[0].get("high")))
             cls_instance.set_clf_low(RandomForestClassifier.from_fits_hdul(
-                hdul, "low", hdul["LOWINFO"].header["N_TREES"],
-                hdul["LOWINFO"].header["N_CAT"],
-                hdul["LOWINFO"].data["CLASSES"].astype(np.float64),
+                hdul, "low", "LOWINFO",
                 args=model_options[0].get("low")))
         else:
             cls_instance.set_clf(RandomForestClassifier.from_fits_hdul(
-                hdul, "all", hdul["ALLINFO"].header["N_TREES"],
-                hdul["ALLINFO"].header["N_CAT"],
-                hdul["ALLINFO"].data["CLASSES"].astype(np.float64),
+                hdul, "all", "ALLINFO",
                 args=model_options[0]))
 
         hdul.close()

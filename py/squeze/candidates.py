@@ -15,7 +15,7 @@ from numba import prange, jit, vectorize
 import time
 
 import pandas as pd
-import astropy.io.fits as fits
+import fitsio
 from astropy.table import Table
 
 from squeze.common_functions import verboseprint
@@ -476,18 +476,14 @@ class Candidates(object):
 
     def save_candidates(self):
         """ Save the candidates DataFrame. """
-        def convert_dtype(dtype):
-             if dtype == "O":
-                 return "15A"
-             else:
-                 return dtype
-
-        hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
-                                                         format=convert_dtype(dtype),
-                                                         array=self.__candidates[col])
-                                             for col, dtype in zip(self.__candidates.columns,
-                                                                   self.__candidates.dtypes)])
-        hdu.writeto(self.__name, overwrite=True)
+        results = fitsio.FITS(self.__name, 'rw', clobber=True)
+        names = [col for col in self.__candidates.columns]
+        cols = [np.array(self.__candidates[col].values, dtype=str)
+                if self.__candidates[col].dtype == "object"
+                else self.__candidates[col].values
+                for col in self.__candidates.columns]
+        results.write(cols, names=names, extname="CANDIDATES")
+        results.close()
 
     def candidates(self):
         """ Access the candidates DataFrame. """
@@ -981,22 +977,18 @@ class Candidates(object):
         if filename is None:
             filename = self.__name.replace(".fits", "_catalogue.fits")
 
-        def convert_dtype(dtype):
-             if dtype == "O":
-                 return "15A"
-             else:
-                 return dtype
-
         # filter data DataFrame
         data_frame = self.__candidates[(~self.__candidates["DUPLICATED"]) &
                                        (self.__candidates["PROB"] >= prob_cut)]
 
-        hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
-                                                         format=convert_dtype(dtype),
-                                                         array=data_frame[col])
-                                             for col, dtype in zip(data_frame.columns,
-                                                                   data_frame.dtypes)])
-        hdu.writeto(filename, overwrite=True)
+        results = fitsio.FITS(filename, 'rw', clobber=True)
+        names = [col for col in data_frame.columns]
+        cols = [np.array(data_frame[col].values, dtype=str)
+                if data_frame[col].dtype == "object"
+                else data_frame[col].values
+                for col in data_frame.columns]
+        results.write(cols, names=names, extname="CANDIDATES")
+        results.close()
 
 if __name__ == '__main__':
     pass
