@@ -24,18 +24,20 @@ from numba import prange, jit
 
 from squeze.common_functions import deserialize
 
-@jit(nopython=True,
-     locals=dict(X=numba.types.float64[:, :],
-                 children_left=numba.types.int64[:],
-                 children_right=numba.types.int64[:],
-                 thresholds=numba.types.float64[:],
-                 tree_proba=numba.types.float64[:, :, :],
-                 proba=numba.types.float64[:, :],
-                 indexs=numba.types.int64[:],
-                 node_id=numba.types.int64),
-     )
+
+@jit(
+    nopython=True,
+    locals=dict(X=numba.types.float64[:, :],
+                children_left=numba.types.int64[:],
+                children_right=numba.types.int64[:],
+                thresholds=numba.types.float64[:],
+                tree_proba=numba.types.float64[:, :, :],
+                proba=numba.types.float64[:, :],
+                indexs=numba.types.int64[:],
+                node_id=numba.types.int64),
+)
 def search_nodes(X, children_left, children_right, features, thresholds,
-                tree_proba, proba, indexs, node_id):
+                 tree_proba, proba, indexs, node_id):
     """ Recursively navigates in the tree and calculate the tree response
         by updating the values stored in self.__proba
 
@@ -98,14 +100,13 @@ def search_nodes(X, children_left, children_right, features, thresholds,
     right_child_indexs = indexs[~left_cond]
 
     # navigate the tree
-    proba = search_nodes(X, children_left, children_right, features,
-                thresholds, tree_proba, proba, left_child_indexs,
-                left_child_id)
-    proba = search_nodes(X, children_left, children_right, features,
-                thresholds, tree_proba, proba, right_child_indexs,
-                right_child_id)
+    proba = search_nodes(X, children_left, children_right, features, thresholds,
+                         tree_proba, proba, left_child_indexs, left_child_id)
+    proba = search_nodes(X, children_left, children_right, features, thresholds,
+                         tree_proba, proba, right_child_indexs, right_child_id)
 
     return proba
+
 
 class RandomForestClassifier(object):
     """ The purpose of this class is to create a RandomForestClassifier
@@ -175,7 +176,7 @@ class RandomForestClassifier(object):
             value = tree_sklearn.value.astype(float)
             proba = tree_sklearn.value.astype(float)
             for i, p in enumerate(proba):
-                proba[i] = p/p.sum()
+                proba[i] = p / p.sum()
             tree["proba"] = proba
 
             self.__trees.append(tree)
@@ -195,8 +196,10 @@ class RandomForestClassifier(object):
         cls_instance = cls(**data.get("_RandomForestClassifier__args"))
 
         # now update the instance to the current values
-        cls_instance.set_num_trees(data.get("_RandomForestClassifier__num_trees"))
-        cls_instance.set_num_categories(data.get("_RandomForestClassifier__num_categories"))
+        cls_instance.set_num_trees(
+            data.get("_RandomForestClassifier__num_trees"))
+        cls_instance.set_num_categories(
+            data.get("_RandomForestClassifier__num_categories"))
         cls_instance.classes_ = deserialize(data.get("classes_"))
 
         trees = data.get("_RandomForestClassifier__trees")
@@ -237,15 +240,17 @@ class RandomForestClassifier(object):
         cls_instance.set_num_categories(header["N_CAT"])
         cls_instance.classes_ = hdul[info_name]["CLASSES"][:].astype(np.float64)
 
-        hdus = [hdul["{}{}".format(name_prefix, index)]
-                for index in range(header["N_TREES"])]
+        hdus = [
+            hdul["{}{}".format(name_prefix, index)]
+            for index in range(header["N_TREES"])
+        ]
         trees = [{
             "children_left": hdu["children_left"][:].astype(np.int64),
             "children_right": hdu["children_right"][:].astype(np.int64),
             "feature": hdu["feature"][:].astype(np.int64),
             "threshold": hdu["threshold"][:].astype(np.float64),
             "proba": hdu["proba"][:].astype(np.float64),
-            } for hdu in hdus]
+        } for hdu in hdus]
         cls_instance.set_trees(trees)
         return cls_instance
 
@@ -268,7 +273,7 @@ class RandomForestClassifier(object):
             tree_proba = self.__trees[tree_index]["proba"]
             indexs = np.arange(X.shape[0], dtype=int)
             if len(children_left) > sys.getrecursionlimit():
-                sys.setrecursionlimit(int(len(children_left)*1.2))
+                sys.setrecursionlimit(int(len(children_left) * 1.2))
             search_nodes(X, children_left, children_right, features, thresholds,
                          tree_proba, proba, indexs, 0)
             output += proba
@@ -315,12 +320,14 @@ class RandomForestClassifier(object):
             """
 
         # create HDU columns
-        names = ["children_left", "children_right", "feature", "threshold",
-                 "proba"]
+        names = [
+            "children_left", "children_right", "feature", "threshold", "proba"
+        ]
         cols = [self.__trees[index].get(name) for name in names]
 
         # create HDU and return
         return names, cols
+
 
 if __name__ == '__main__':
     pass

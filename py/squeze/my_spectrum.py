@@ -12,6 +12,7 @@ __version__ = "0.1"
 from squeze.error import Error
 from squeze.spectrum import Spectrum
 
+
 class MySpectrum(Spectrum):
     """
         Example of a class inheriting from Spectrum
@@ -20,6 +21,7 @@ class MySpectrum(Spectrum):
         PURPOSE: Format spectrum following the required SQUEzE
         constraints
         """
+
     # TODO: add arguments as required
     def __init__(self):
         """ This is the main function of the class. It should load
@@ -29,6 +31,7 @@ class MySpectrum(Spectrum):
             Check the definition of Spectrum for more details"""
         # TODO: fill function
         raise Error("Not implemented")
+
 
 if __name__ == "__main__":
     pass

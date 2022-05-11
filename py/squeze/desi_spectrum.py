@@ -15,6 +15,7 @@ from desispec.interpolation import resample_flux
 from squeze.error import Error
 from squeze.spectrum import Spectrum
 
+
 class DesiSpectrum(Spectrum):
     """
         Load and format a DESI  spectrum to be digested by SQUEzE
@@ -23,6 +24,7 @@ class DesiSpectrum(Spectrum):
         PURPOSE: Load and format a DESI spectrum to be digested by
         SQUEzE
         """
+
     def __init__(self, flux, wave, ivar, mask, metadata, single_exp=False):
         """ Initialize class instance
 
@@ -80,18 +82,20 @@ class DesiSpectrum(Spectrum):
     def __combine_bands(self):
         """ Combine the different bands together"""
         # create empty combined arrays
-        min_wave = np.min(np.array([np.min(flux) for flux in self._wave.values()]))
-        max_wave = np.max(np.array([np.max(flux) for flux in self._wave.values()]))
-        wave = np.linspace(min_wave,max_wave,4000)
+        min_wave = np.min(
+            np.array([np.min(flux) for flux in self._wave.values()]))
+        max_wave = np.max(
+            np.array([np.max(flux) for flux in self._wave.values()]))
+        wave = np.linspace(min_wave, max_wave, 4000)
         ivar = np.zeros_like(wave, dtype=float)
         flux = np.zeros_like(wave, dtype=float)
 
         # populate arrays
         for band in self._flux.keys():
-             ivar += resample_flux(wave,self._wave[band],self._ivar[band])
-             flux += resample_flux(wave,self._wave[band],
-                                   self._ivar[band]*self._flux[band])
-        flux = flux/(ivar+(ivar==0))
+            ivar += resample_flux(wave, self._wave[band], self._ivar[band])
+            flux += resample_flux(wave, self._wave[band],
+                                  self._ivar[band] * self._flux[band])
+        flux = flux / (ivar + (ivar == 0))
 
         # update arrays
         self._wave = wave
@@ -107,7 +111,7 @@ class DesiSpectrum(Spectrum):
 
             # do weighted sum, masked elements are set to have 0 ivar
             sivar = ivar.sum(axis=0)
-            flux = np.sum(flux*ivar,axis=0)/(sivar+(sivar==0))
+            flux = np.sum(flux * ivar, axis=0) / (sivar + (sivar == 0))
             ivar = sivar
 
             # update arrays
@@ -118,5 +122,5 @@ class DesiSpectrum(Spectrum):
         """ Discard all reobservations except for the first one"""
         # loop over bands
         for band in self._flux.keys():
-            self._flux[band] = self._flux[band][0,:]
-            self._ivar[band] = self._ivar[band][0,:]
+            self._flux[band] = self._flux[band][0, :]
+            self._ivar[band] = self._ivar[band][0, :]

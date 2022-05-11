@@ -11,6 +11,7 @@ __version__ = "0.1"
 from squeze.spectrum import Spectrum
 from squeze.common_functions import deserialize
 
+
 class SimpleSpectrum(Spectrum):
     """
         Manage the spectrum data
@@ -22,6 +23,7 @@ class SimpleSpectrum(Spectrum):
         derived Spectrum class should have in order for them to run on SQUEzE
         (for this second purpose, ignore the from_json method)
         """
+
     def __init__(self, flux, ivar, wave, metadata):
         """ Initialize class instance
 
@@ -57,10 +59,12 @@ class SimpleSpectrum(Spectrum):
         flux = deserialize(data.get("_flux"))
         ivar = deserialize(data.get("_ivar"))
         wave = deserialize(data.get("_wave"))
-        metadata = {key.upper(): value
-                    for key, value in data.get("_metadata").items()}
+        metadata = {
+            key.upper(): value for key, value in data.get("_metadata").items()
+        }
 
         return cls(flux, ivar, wave, metadata)
+
 
 if __name__ == "__main__":
     pass

@@ -18,6 +18,7 @@ import numpy as np
 
 from astropy.convolution import convolve, Gaussian1DKernel
 
+
 class Spectrum(object):
     """
         Manage the spectrum data
@@ -33,7 +34,7 @@ class Spectrum(object):
         Otherwise, the methods flux, ivar, wave, metadata, metadata_by_key,
         and metadata_names, must be overwritten
         """
-    
+
     def flux(self):
         """ Returns the flux as a numpy.ndarray.
             Must have the same size as ivar and wavelength."""
@@ -79,7 +80,7 @@ class Spectrum(object):
             """
         # member must be declared in child class ... pylint: disable=no-member
         return list(self._metadata)
-    
+
     def rebin(self, pixel_width, extend_pixels=0):
         """ Returns a rebinned version of the flux, inverse variance and wavelength.
             New bins are centered around 4000 Angstroms and have a width specified by
@@ -100,10 +101,13 @@ class Spectrum(object):
             Pixel overlap region (in Angstroms)
             """
         # define matrixes
-        start_wave = 4000 # Angstroms
-        half_width = pixel_width/2.0
-        rebinned_wave = np.append(np.arange(start_wave, self._wave.min() - pixel_width, -pixel_width)[::-1],
-                                  np.arange(start_wave, self._wave.max() + pixel_width, pixel_width))
+        start_wave = 4000  # Angstroms
+        half_width = pixel_width / 2.0
+        rebinned_wave = np.append(
+            np.arange(start_wave,
+                      self._wave.min() - pixel_width, -pixel_width)[::-1],
+            np.arange(start_wave,
+                      self._wave.max() + pixel_width, pixel_width))
         rebinned_ivar = np.zeros_like(rebinned_wave)
         rebinned_flux = np.zeros_like(rebinned_wave)
         mask = np.zeros_like(rebinned_wave, dtype=bool)
@@ -114,8 +118,9 @@ class Spectrum(object):
                            (self._wave < wave + half_width + extend_pixels))
             rebinned_flux[index] = self._flux[pos].mean()
             rebinned_ivar[index] = self._ivar[pos].sum()
-        
-        mask[np.where((np.isnan(rebinned_flux)) | (np.isnan(rebinned_ivar)))] = True
+
+        mask[np.where((np.isnan(rebinned_flux)) |
+                      (np.isnan(rebinned_ivar)))] = True
         rebinned_wave = rebinned_wave
         rebinned_flux = np.ma.array(rebinned_flux, mask=mask)
         rebinned_ivar = np.ma.array(rebinned_ivar, mask=mask)
@@ -147,6 +152,7 @@ class Spectrum(object):
             Must have the same size as flux and ivar."""
         # member must be declared in child class ... pylint: disable=no-member
         return self._wave
+
 
 if __name__ == "__main__":
     pass

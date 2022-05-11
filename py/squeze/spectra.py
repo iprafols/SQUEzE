@@ -15,6 +15,7 @@ from squeze.spectrum import Spectrum
 from squeze.simple_spectrum import SimpleSpectrum
 from squeze.common_functions import quietprint
 
+
 class Spectra(object):
     """
         Manage the spectra list
@@ -22,6 +23,7 @@ class Spectra(object):
         CLASS: Spectra
         PURPOSE: Manage the spectra list
         """
+
     def __init__(self, spectra_list=[]):
         """ Initialize class instance
 
@@ -57,7 +59,8 @@ class Spectra(object):
             the instances of Spectrum. For this function to work, data should have been
             serialized using the serialization method specified in `save_json` function
             present on `squeze_common_functions.py` """
-        spectra_list = list(map(SimpleSpectrum.from_json, data.get("_Spectra__spectra_list")))
+        spectra_list = list(
+            map(SimpleSpectrum.from_json, data.get("_Spectra__spectra_list")))
         return cls(spectra_list)
 
     @classmethod
@@ -78,7 +81,8 @@ class Spectra(object):
         for targs in ob_data.data():
             if targs.fib_status.upper() != 'A':
                 userprint(("***** Reject APS_ID = {} : "
-                           "FIB_STATUS={}").format(targs.aps_id, targs.fib_status))
+                           "FIB_STATUS={}").format(targs.aps_id,
+                                                   targs.fib_status))
                 continue
 
             metadata = {
@@ -90,12 +94,13 @@ class Spectra(object):
             }
 
             for specid in range(len(targs.spectra)):
-                spectra_list.append(SimpleSpectrum(targs.spectra[specid].flux,
-                                                   targs.spectra[specid].ivar,
-                                                   targs.spectra[specid].wave,
-                                                   metadata))
+                spectra_list.append(
+                    SimpleSpectrum(targs.spectra[specid].flux,
+                                   targs.spectra[specid].ivar,
+                                   targs.spectra[specid].wave, metadata))
 
         return cls(spectra_list)
+
 
 if __name__ == "__main__":
     pass

@@ -34,27 +34,26 @@ DO NOT MODIFY this value. If another set of lines is to be used,
 please define it elsewhere and pass it as an argument when creating
 the candidates DataFrame (see README.md)
 """ # description of LINE ... pylint: disable=pointless-string-statement
-LINES = pd.DataFrame(
-    data=[
-        ("lyb", 1033.03, 1023.0, 1041.0, 998.0, 1014.0, 1050.0, 1100.0),
-        ("lya", 1215.67, 1194.0, 1250.0, 1103.0, 1159.0, 1285.0, 1341.0),
-        ("siiv", 1396.76, 1377.0, 1417.0, 1346.0, 1370.0, 1432.0, 1497.0),
-        ("civ", 1549.06, 1515.0, 1575.0, 1449.5, 1494.5, 1603.0, 1668.0),
-        ("civ_blue", 1549.06, 1515.0, 1549.06, 1449.5, 1494.5, 1603.0, 1668.0),
-        ("civ_red", 1549.06, 1549.06, 1575.0, 1449.5, 1494.5, 1603.0, 1668.0),
-        ("ciii", 1908.73, 1880.0, 1929.0, 1756.0, 1845.0, 1964.0, 2053.0),
-        ("neiv", 2423.83, 2410.0, 2435.0, 2365.0, 2400.0, 2450.0, 2480.0),
-        ("mgii", 2798.75, 2768.0, 2816.0, 2610.0, 2743.0, 2851.0, 2984.0),
-        ("nev", 3426.84, 3415.0, 3435.0, 3375.0, 3405.0, 3445.0, 3480.0),
-        ("oii", 3728.48, 3720.0, 3745.0, 3650.0, 3710.0, 3750.0, 3790.0),
-        ("hb", 4862.68, 4800.0, 4910.0, 4700.0, 4770.0, 5030.0, 5105.0),
-        ("oiii", 5008.24, 4990.0, 5020.0, 4700.0, 4770.0, 5030.0, 5105.0),
-        ("ha", 6564.61, 6480.0, 6650.0, 6320.0, 6460.0, 6750.0, 6850.0),
-        ],
-    columns=["LINE", "WAVE", "START", "END",
-             "BLUE_START", "BLUE_END",
-             "RED_START", "RED_END"]
-    ).set_index("LINE")
+LINES = pd.DataFrame(data=[
+    ("lyb", 1033.03, 1023.0, 1041.0, 998.0, 1014.0, 1050.0, 1100.0),
+    ("lya", 1215.67, 1194.0, 1250.0, 1103.0, 1159.0, 1285.0, 1341.0),
+    ("siiv", 1396.76, 1377.0, 1417.0, 1346.0, 1370.0, 1432.0, 1497.0),
+    ("civ", 1549.06, 1515.0, 1575.0, 1449.5, 1494.5, 1603.0, 1668.0),
+    ("civ_blue", 1549.06, 1515.0, 1549.06, 1449.5, 1494.5, 1603.0, 1668.0),
+    ("civ_red", 1549.06, 1549.06, 1575.0, 1449.5, 1494.5, 1603.0, 1668.0),
+    ("ciii", 1908.73, 1880.0, 1929.0, 1756.0, 1845.0, 1964.0, 2053.0),
+    ("neiv", 2423.83, 2410.0, 2435.0, 2365.0, 2400.0, 2450.0, 2480.0),
+    ("mgii", 2798.75, 2768.0, 2816.0, 2610.0, 2743.0, 2851.0, 2984.0),
+    ("nev", 3426.84, 3415.0, 3435.0, 3375.0, 3405.0, 3445.0, 3480.0),
+    ("oii", 3728.48, 3720.0, 3745.0, 3650.0, 3710.0, 3750.0, 3790.0),
+    ("hb", 4862.68, 4800.0, 4910.0, 4700.0, 4770.0, 5030.0, 5105.0),
+    ("oiii", 5008.24, 4990.0, 5020.0, 4700.0, 4770.0, 5030.0, 5105.0),
+    ("ha", 6564.61, 6480.0, 6650.0, 6320.0, 6460.0, 6750.0, 6850.0),
+],
+                     columns=[
+                         "LINE", "WAVE", "START", "END", "BLUE_START",
+                         "BLUE_END", "RED_START", "RED_END"
+                     ]).set_index("LINE")
 
 """
 Name of the json and log file (without extension) where the
@@ -89,17 +88,25 @@ PEAKFIND_SIG = 6
 """
 This variable sets the options to be passed to the random forest classifier
 """ # description of RANDOM_FOREST_OPTIONS ... pylint: disable=pointless-string-statement
-RANDOM_FOREST_OPTIONS = {"high": {"class_weight": "balanced_subsample",
-                                  "n_jobs": 3, "n_estimators": 1000,
-                                  "max_depth": 10,},
-                         "low": {"class_weight": "balanced_subsample",
-                                 "n_jobs": 3, "n_estimators": 1000,
-                                 "max_depth": 10,},
-                        }
-
+RANDOM_FOREST_OPTIONS = {
+    "high": {
+        "class_weight": "balanced_subsample",
+        "n_jobs": 3,
+        "n_estimators": 1000,
+        "max_depth": 10,
+    },
+    "low": {
+        "class_weight": "balanced_subsample",
+        "n_jobs": 3,
+        "n_estimators": 1000,
+        "max_depth": 10,
+    },
+}
 """
 This variable sets the random states of the random forest instances
-""" # description of RANDOM_STATE ... pylint: disable=pointless-string-statement
+"""
+
+  # description of RANDOM_STATE ... pylint: disable=pointless-string-statement
 RANDOM_STATE = 2081487193
 
 """
@@ -112,15 +119,15 @@ PASS_COLS_TO_RF = None
 This variable contains the transcription from numerical predicted class to
 named predicted class
 """ # description of CLASS_PREDICTED ... pylint: disable=pointless-string-statement
-CLASS_PREDICTED = {"star": 1,
-                   "quasar": 3,
-                   "quasar, wrong z": 35,
-                   "quasar, bal": 30,
-                   "quasar, bal, wrong z": 305,
-                   "galaxy": 4,
-                   "galaxy, wrong z": 45,
-                  }
-
+CLASS_PREDICTED = {
+    "star": 1,
+    "quasar": 3,
+    "quasar, wrong z": 35,
+    "quasar, bal": 30,
+    "quasar, bal, wrong z": 305,
+    "galaxy": 4,
+    "galaxy, wrong z": 45,
+}
 """
 This variable sets the maximum number of candidates allowed before a partial
 conversion to dataframe is executed
