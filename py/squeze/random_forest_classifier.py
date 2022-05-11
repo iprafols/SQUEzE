@@ -208,28 +208,21 @@ class RandomForestClassifier(object):
         return cls_instance
 
     @classmethod
-    def from_fits_hdul(cls, hdul, name_prefix, num_trees, num_categories,
-                       classes, args={}):
+    def from_fits_hdul(cls, hdul, name_prefix, info_name, args={}):
         """ This function parses the RandomForestClassifier from the data
             contained in a fits HDUList. Each HDU in HDUL has to be according
             to the format specified in method to_fits_hdu
 
             Parameters
             ----------
-            hdul : fits.hdu.hdulist.HDUList
-            The Header Data Unit Containing the trained classifier
+            hdul : fitsio.fitslib.FITS
+            The Header Data Unit List containing the trained classifier
 
             name_prefix : string
             Prefix of the HDU names (high, low, or all)
 
-            num_trees : int
-            Number of trees in the forest
-
-            num_categories : int
-            Number of categories to classify
-
-            classes : array
-            Classes present in the data
+            name_prefix : string
+            Name of the info HDU (HIGHINFO, LOWINFO, or ALLINFO)
 
             args : dict -  Default: {}}
             Options to be passed to the RandomForestClassifier
@@ -239,20 +232,21 @@ class RandomForestClassifier(object):
         cls_instance = cls(**args)
 
         # now update the instance to the current values
-        cls_instance.set_num_trees(num_trees)
-        cls_instance.set_num_categories(num_categories)
-        cls_instance.classes_ = classes
+        header = hdul[info_name].read_header()
+        cls_instance.set_num_trees(header["N_TREES"])
+        cls_instance.set_num_categories(header["N_CAT"])
+        cls_instance.classes_ = hdul[info_name]["CLASSES"][:].astype(np.float64)
 
         hdus = [hdul["{}{}".format(name_prefix, index)]
-                for index in range(num_trees)]
-        trees = [{"children_left": hdu.data["children_left"].astype(np.int64),
-                  "children_right": hdu.data["children_right"].astype(np.int64),
-                  "feature": hdu.data["feature"].astype(np.int64),
-                  "threshold": hdu.data["threshold"].astype(np.float64),
-                  "proba": hdu.data["proba"].astype(np.float64),
-                } for hdu in hdus]
+                for index in range(header["N_TREES"])]
+        trees = [{
+            "children_left": hdu["children_left"][:].astype(np.int64),
+            "children_right": hdu["children_right"][:].astype(np.int64),
+            "feature": hdu["feature"][:].astype(np.int64),
+            "threshold": hdu["threshold"][:].astype(np.float64),
+            "proba": hdu["proba"][:].astype(np.float64),
+            } for hdu in hdus]
         cls_instance.set_trees(trees)
-
         return cls_instance
 
     def predict_proba(self, X):
