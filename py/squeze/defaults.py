@@ -9,31 +9,27 @@ __version__ = "0.1"
 
 import pandas as pd
 
-import numpy as np
-
-"""
-This variable sets the characteristics of the lines used by the code.
-The first two columns are the line name and wavelength. Their names
-must be "line" and "wave". The first column will be used as the index
-of the DataFrame
-The second two columns specify the wavelength interval where the peak
-emission will be estimated. Their names must be "start" and "end".
-The following two columns specify the wavelength interval where the
-blue end of the peak will be estimated. Their names must be
-"blue_start" and "blue_end".
-The following two columns specify the wavelength interval where the
-red end of the peak will be estimated. Their names must be
-"red_start" and "red_end".
-Units may be different but Angstroms are suggested.
-Any number of lines might be introduced, but the Lyman-alpha line must
-always be present and named 'lya'.
-The user is responsible to make sure all wavelength are passed with
-the same units.
-
-DO NOT MODIFY this value. If another set of lines is to be used,
-please define it elsewhere and pass it as an argument when creating
-the candidates DataFrame (see README.md)
-""" # description of LINE ... pylint: disable=pointless-string-statement
+# This variable sets the characteristics of the lines used by the code.
+# The first two columns are the line name and wavelength. Their names
+# must be "line" and "wave". The first column will be used as the index
+# of the DataFrame
+# The second two columns specify the wavelength interval where the peak
+# emission will be estimated. Their names must be "start" and "end".
+# The following two columns specify the wavelength interval where the
+# blue end of the peak will be estimated. Their names must be
+# "blue_start" and "blue_end".
+# The following two columns specify the wavelength interval where the
+# red end of the peak will be estimated. Their names must be
+# "red_start" and "red_end".
+# Units may be different but Angstroms are suggested.
+# Any number of lines might be introduced, but the Lyman-alpha line must
+# always be present and named 'lya'.
+# The user is responsible to make sure all wavelength are passed with
+# the same units.
+#
+# DO NOT MODIFY this value. If another set of lines is to be used,
+# please define it elsewhere and pass it as an argument when creating
+# the candidates DataFrame (see README.md)
 LINES = pd.DataFrame(data=[
     ("lyb", 1033.03, 1023.0, 1041.0, 998.0, 1014.0, 1050.0, 1100.0),
     ("lya", 1215.67, 1194.0, 1250.0, 1103.0, 1159.0, 1285.0, 1341.0),
@@ -55,39 +51,28 @@ LINES = pd.DataFrame(data=[
                          "BLUE_END", "RED_START", "RED_END"
                      ]).set_index("LINE")
 
-"""
-Name of the json and log file (without extension) where the
-variable TRY_LINES will be saved
-""" # description of TRY_LINE ... pylint: disable=pointless-string-statement
+# Name of the json and log file (without extension) where the
+# variable TRY_LINES will be saved
 TRY_LINES = ["lya", "civ", "ciii", "mgii", "hb", "ha"]
 
-"""
-This variable sets the redshift precision with which the code will assume
-a candidate has the correct redshift. The truth table will be constructed
-such that any candidates with Z_TRY = Z_TRUE +/- Z_PRECISION
-will be considered as a true quasar.
-This will be ignored in operation mode.
-""" # description of Z_PRECISION ... pylint: disable=pointless-string-statement
+# This variable sets the redshift precision with which the code will assume
+# a candidate has the correct redshift. The truth table will be constructed
+# such that any candidates with Z_TRY = Z_TRUE +/- Z_PRECISION
+# will be considered as a true quasar.
+# This will be ignored in operation mode.
 Z_PRECISION = 0.15
 
-
-"""
-This variable sets the width (in pixels) of the typical peak to be detected.
-This parameter will be passed to the peak finding function. Check the documentation
-on the module squeze_peak_finder for more details
-""" # description of PEAKFIND_WIDTH ... pylint: disable=pointless-string-statement
+# This variable sets the width (in pixels) of the typical peak to be detected.
+# This parameter will be passed to the peak finding function. Check the
+# documentation on the module squeze_peak_finder for more details
 PEAKFIND_WIDTH = 70
 
-"""
-This variable sets the minimum signal-to-noise ratio of a peak.
-This parameter will be passed to the peak finding function. Check the documentation
-on the module squeze_peak_finder for more details
-""" # description of PEAKFIND_SIG ... pylint: disable=pointless-string-statement
+# This variable sets the minimum signal-to-noise ratio of a peak.
+# This parameter will be passed to the peak finding function. Check the
+# documentationon the module squeze_peak_finder for more details
 PEAKFIND_SIG = 6
 
-"""
-This variable sets the options to be passed to the random forest classifier
-""" # description of RANDOM_FOREST_OPTIONS ... pylint: disable=pointless-string-statement
+# This variable sets the options to be passed to the random forest classifier
 RANDOM_FOREST_OPTIONS = {
     "high": {
         "class_weight": "balanced_subsample",
@@ -102,23 +87,16 @@ RANDOM_FOREST_OPTIONS = {
         "max_depth": 10,
     },
 }
-"""
-This variable sets the random states of the random forest instances
-"""
 
-  # description of RANDOM_STATE ... pylint: disable=pointless-string-statement
+# This variable sets the random states of the random forest instances
 RANDOM_STATE = 2081487193
 
-"""
-This variable contains a list of columns to be passed to the random forest
-classifier(s). None for no columns. Columns must be in the input catalogue.
-""" # description of PASS_COLS_TO_RF ... pylint: disable=pointless-string-statement
+# This variable contains a list of columns to be passed to the random forest
+# classifier(s). None for no columns. Columns must be in the input catalogue.
 PASS_COLS_TO_RF = None
 
-"""
-This variable contains the transcription from numerical predicted class to
-named predicted class
-""" # description of CLASS_PREDICTED ... pylint: disable=pointless-string-statement
+# This variable contains the transcription from numerical predicted class to
+# named predicted class
 CLASS_PREDICTED = {
     "star": 1,
     "quasar": 3,
@@ -128,10 +106,9 @@ CLASS_PREDICTED = {
     "galaxy": 4,
     "galaxy, wrong z": 45,
 }
-"""
-This variable sets the maximum number of candidates allowed before a partial
-conversion to dataframe is executed
-"""
+
+# This variable sets the maximum number of candidates allowed before a partial
+# conversion to dataframe is executed
 MAX_CANDIDATES_TO_CONVERT = 100000000
 
 if __name__ == '__main__':

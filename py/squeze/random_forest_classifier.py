@@ -18,11 +18,18 @@ __version__ = "0.1"
 import sys
 
 import numpy as np
-import astropy.io.fits as fits
 import numba
 from numba import prange, jit
 
 from squeze.common_functions import deserialize
+
+# extra imports for plotting function
+SKLEARN_ERROR = None
+try:
+    from sklearn.ensemble import RandomForestClassifier as rf_sklearn
+except ImportError as error:
+    SKLEARN_ERROR = error
+# load sklearn modules to train the model
 
 
 @jit(
@@ -83,8 +90,10 @@ def search_nodes(X, children_left, children_right, features, thresholds,
 
     # chek if we are on a leave load probabilities and return
     if left_child_id == -1:
-        for i in prange(indexs.size):
-            proba[indexs[i]] = tree_proba[node_id]
+        # pylint: disable=not-an-iterable
+        # prange is the numba equivalent to range
+        for index1 in prange(indexs.size):
+            proba[indexs[index1]] = tree_proba[node_id]
         return proba
 
     # find right child
@@ -137,14 +146,6 @@ class RandomForestClassifier(object):
         self.__num_categories = 0
         self.classes_ = []
 
-        # auxiliar variables to loop over trees
-        self.__children_left = None
-        self.__children_right = None
-        self.__feature = None
-        self.__threshold = None
-        self.__proba = None
-        self.__tree_proba = None
-
     def fit(self, X, y):
         """ Create and train models
 
@@ -152,37 +153,36 @@ class RandomForestClassifier(object):
             ----------
             Refer to sklearn.ensemble.RandomForestClassifier.fit
             """
-        # load sklearn modules to train the model
-        from sklearn.ensemble import RandomForestClassifier as rf_sklearn
+        if SKLEARN_ERROR is not None:
+            raise SKLEARN_ERROR
 
         # create a RandomForestClassifier
-        rf = rf_sklearn(**self.__args)
+        random_forest = rf_sklearn(**self.__args)
 
         # train model
-        rf.fit(X, y)
+        random_forest.fit(X, y)
 
         # add persistence
-        self.__num_trees = len(rf.estimators_)
+        self.__num_trees = len(random_forest.estimators_)
         self.__num_categories = np.unique(y).size
-        self.classes_ = rf.classes_
-        for dt in rf.estimators_:
-            tree_sklearn = dt.tree_
+        self.classes_ = random_forest.classes_
+        for decision_tree in random_forest.estimators_:
+            tree_sklearn = decision_tree.tree_
 
             tree = {}
             tree["children_left"] = tree_sklearn.children_left.astype(int)
             tree["children_right"] = tree_sklearn.children_right.astype(int)
             tree["feature"] = tree_sklearn.feature.astype(int)
             tree["threshold"] = tree_sklearn.threshold.astype(float)
-            value = tree_sklearn.value.astype(float)
             proba = tree_sklearn.value.astype(float)
-            for i, p in enumerate(proba):
-                proba[i] = p / p.sum()
+            for index, prob in enumerate(proba):
+                proba[index] = prob / prob.sum()
             tree["proba"] = proba
 
             self.__trees.append(tree)
 
         # discard the sklearn model
-        del rf
+        del random_forest
 
     @classmethod
     def from_json(cls, data):
@@ -211,7 +211,7 @@ class RandomForestClassifier(object):
         return cls_instance
 
     @classmethod
-    def from_fits_hdul(cls, hdul, name_prefix, info_name, args={}):
+    def from_fits_hdul(cls, hdul, name_prefix, info_name, args=None):
         """ This function parses the RandomForestClassifier from the data
             contained in a fits HDUList. Each HDU in HDUL has to be according
             to the format specified in method to_fits_hdu
@@ -231,6 +231,9 @@ class RandomForestClassifier(object):
             Options to be passed to the RandomForestClassifier
 
             """
+        if args is None:
+            args = {}
+
         # create instance using the constructor
         cls_instance = cls(**args)
 
@@ -241,8 +244,7 @@ class RandomForestClassifier(object):
         cls_instance.classes_ = hdul[info_name]["CLASSES"][:].astype(np.float64)
 
         hdus = [
-            hdul["{}{}".format(name_prefix, index)]
-            for index in range(header["N_TREES"])
+            hdul[f"{name_prefix}{index}"] for index in range(header["N_TREES"])
         ]
         trees = [{
             "children_left": hdu["children_left"][:].astype(np.int64),

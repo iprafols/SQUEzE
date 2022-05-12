@@ -82,8 +82,15 @@ class BossSpectrum(Spectrum):
         # open fits file
         spectrum_hdul = fitsio.FITS(spectrum_file)
 
+        # intialize arrays
+        # The 1.0 mulitplying is added to change type from >4f to np.float
+        # this is required by numba later on
+        wave = 10**spectrum_hdul[1]["LOGLAM"][:]
+        flux = 1.0 * spectrum_hdul[1]["FLUX"][:]
+        ivar = 1.0 * spectrum_hdul[1]["IVAR"][:]
+        super().__init__(flux, ivar, wave, metadata)
+
         # compute sky mask
-        self._wave = 10**spectrum_hdul[1]["LOGLAM"][:]
         masklambda = sky_mask[0]
         margin = sky_mask[1]
         self.__skymask = None
@@ -94,13 +101,8 @@ class BossSpectrum(Spectrum):
             self.__filter_wavelengths(forbidden_wavelenghts)
 
         # store the wavelength, flux and inverse variance as arrays
-        # The 1.0 mulitplying is added to change type from >4f to np.float
-        # this is required by numba later on
-        self._flux = 1.0 * spectrum_hdul[1]["FLUX"][:]
-        self._ivar = 1.0 * spectrum_hdul[1]["IVAR"][:]
         # mask pixels
         self._ivar[self.__skymask] = 0.0
-        self._metadata = metadata
         if noise_increase > 1:
             self.__add_noise(noise_increase)
         if rebin_pixels_width > 0:

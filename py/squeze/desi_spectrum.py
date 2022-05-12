@@ -10,10 +10,121 @@ __version__ = "0.1"
 
 import numpy as np
 
-from desispec.interpolation import resample_flux
-
-from squeze.error import Error
 from squeze.spectrum import Spectrum
+
+# extra imports to read DESI data
+try:
+    from desispec.interpolation import resample_flux
+except ImportError as error:
+    print("Make sure you have 'desispec' installed before running on DESI data")
+    raise error
+
+
+def combine_bands(flux_dict, wave_dict, ivar_dict):
+    """ Combine the different bands together
+
+    Parameters
+    ----------
+    flux_dict : dict
+    A dictionary with the flux arrays of the different reobserbations.
+    Each key will contain an array with the fluxes in a given band.
+
+    wave_dict : dict
+    A dictionary with the wavalegth array.
+    Each key will contain an array with the fluxes in a given band.
+
+    ivar_dict : dict
+    A dictionary with the ivar arrays of the different reobservations.
+    Each key will contain an array with the ivars in a given band
+
+    Returns
+    -------
+    flux : np.array
+    Array containing the flux
+
+    wave : np.array
+    Array containing the wavelength
+
+    ivar : np.array
+    Array containing the inverse variance
+    """
+    # create empty combined arrays
+    min_wave = np.min(np.array([np.min(flux) for flux in wave_dict.values()]))
+    max_wave = np.max(np.array([np.max(flux) for flux in wave_dict.values()]))
+    wave = np.linspace(min_wave, max_wave, 4000)
+    ivar = np.zeros_like(wave, dtype=float)
+    flux = np.zeros_like(wave, dtype=float)
+
+    # populate arrays
+    for band in flux_dict:
+        ivar += resample_flux(wave, wave_dict[band], ivar_dict[band])
+        flux += resample_flux(wave, wave_dict[band],
+                              ivar_dict[band] * flux_dict[band])
+    flux = flux / (ivar + (ivar == 0))
+
+    return flux, wave, ivar
+
+
+def combine_reobservations(flux_dict, ivar_dict):
+    """ Combine the different reobservations into a single one
+
+    Parameters
+    ----------
+    flux_dict: dict
+    Dictionary containing the fluxes for all reobserbations
+
+    ivar_dict: dict
+    Dictionary containing the inverse variances for all reobserbations
+
+    Returns
+    -------
+    flux_dict: dict
+    Dictionary containing the flux with combined reobserbations
+
+    ivar_dict: dict
+    Dictionary containing the inverse variance with combined reobserbations
+    """
+    # loop over bands
+    for band in flux_dict:
+        flux = flux_dict[band]
+        ivar = ivar_dict[band]
+
+        # do weighted sum, masked elements are set to have 0 ivar
+        sivar = ivar.sum(axis=0)
+        flux = np.sum(flux * ivar, axis=0) / (sivar + (sivar == 0))
+        ivar = sivar
+
+        # update arrays
+        flux_dict[band] = flux
+        ivar_dict[band] = ivar
+
+    return flux_dict, ivar_dict
+
+
+def select_first_reobservation(flux_dict, ivar_dict):
+    """ Discard all reobservations except for the first one
+
+        Parameters
+        ----------
+        flux_dict: dict
+        Dictionary containing the fluxes for all reobserbations
+
+        ivar_dict: dict
+        Dictionary containing the inverse variances for all reobserbations
+
+        Returns
+        -------
+        flux_dict: dict
+        Dictionary containing the flux for the first reobserbations
+
+        ivar_dict: dict
+        Dictionary containing the inverse variance for the first reobserbations
+    """
+    # loop over bands
+    for band in flux_dict:
+        flux_dict[band] = flux_dict[band][0, :]
+        ivar_dict[band] = ivar_dict[band][0, :]
+    return flux_dict, ivar_dict
 
 
 class DesiSpectrum(Spectrum):
@@ -25,24 +136,30 @@ class DesiSpectrum(Spectrum):
         SQUEzE
         """
 
-    def __init__(self, flux, wave, ivar, mask, metadata, single_exp=False):
+    def __init__(self,
+                 flux_dict,
+                 wave_dict,
+                 ivar_dict,
+                 mask_dict,
+                 metadata,
+                 single_exp=False):
         """ Initialize class instance
 
             Parameters
             ----------
-            flux : dict
+            flux_dict : dict
             A dictionary with the flux arrays of the different reobserbations.
             Each key will contain an array with the fluxes in a given band.
 
-            wave : dict
+            wave_dict : dict
             A dictionary with the wavalegth array.
             Each key will contain an array with the fluxes in a given band.
 
-            ivar : dict
+            ivar_dict : dict
             A dictionary with the ivar arrays of the different reobservations.
             Each key will contain an array with the ivars in a given band
 
-            mask : dict
+            mask_dict : dict
             A dictionary with the mask arrays of the different reobservations.
             Each key will contain an array with the mask in a given band.
 
@@ -53,74 +170,19 @@ class DesiSpectrum(Spectrum):
             single_exp : bool
             If True, loads only the first reobservation. Otherwise combine them.
             """
-
-        # variables to store the information initially they are dictionaries
-        # but they will be np.ndarrays by the end of __init__
-        self._flux = {}
-        self._ivar = {}
-        self._wave = wave
-
-        # first set arrays as masked arrays
-        for key in flux:
-            self._flux[key] = flux.get(key)
-            self._ivar[key] = ivar.get(key)
-            self._ivar[key][mask.get(key)] = 0.0
-
-        # keep metadata
-        self._metadata = metadata
+        # mask inverse variance arrays
+        for key in ivar_dict:
+            ivar_dict[key][mask_dict.get(key)] = 0.0
 
         if single_exp:
             # keep only the first reobservation
-            self.__select_first_reobservation()
+            flux_dict, ivar_dict = select_first_reobservation(
+                flux_dict, ivar_dict)
         else:
             # combine reobservations
-            self.__combine_reobservations()
+            flux_dict, ivar_dict = combine_reobservations(flux_dict, ivar_dict)
 
         # combine bands
-        self.__combine_bands()
+        flux, wave, ivar = combine_bands(flux_dict, wave_dict, ivar_dict)
 
-    def __combine_bands(self):
-        """ Combine the different bands together"""
-        # create empty combined arrays
-        min_wave = np.min(
-            np.array([np.min(flux) for flux in self._wave.values()]))
-        max_wave = np.max(
-            np.array([np.max(flux) for flux in self._wave.values()]))
-        wave = np.linspace(min_wave, max_wave, 4000)
-        ivar = np.zeros_like(wave, dtype=float)
-        flux = np.zeros_like(wave, dtype=float)
-
-        # populate arrays
-        for band in self._flux.keys():
-            ivar += resample_flux(wave, self._wave[band], self._ivar[band])
-            flux += resample_flux(wave, self._wave[band],
-                                  self._ivar[band] * self._flux[band])
-        flux = flux / (ivar + (ivar == 0))
-
-        # update arrays
-        self._wave = wave
-        self._flux = flux
-        self._ivar = ivar
-
-    def __combine_reobservations(self):
-        """ Combine the different reobservations into a single one"""
-        # loop over bands
-        for band in self._flux.keys():
-            flux = self._flux[band]
-            ivar = self._ivar[band]
-
-            # do weighted sum, masked elements are set to have 0 ivar
-            sivar = ivar.sum(axis=0)
-            flux = np.sum(flux * ivar, axis=0) / (sivar + (sivar == 0))
-            ivar = sivar
-
-            # update arrays
-            self._flux[band] = flux
-            self._ivar[band] = ivar
-
-    def __select_first_reobservation(self):
-        """ Discard all reobservations except for the first one"""
-        # loop over bands
-        for band in self._flux.keys():
-            self._flux[band] = self._flux[band][0, :]
-            self._ivar[band] = self._ivar[band][0, :]
+        super().__init__(flux, ivar, wave, metadata)

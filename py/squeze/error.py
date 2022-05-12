@@ -12,7 +12,6 @@ class Error(Exception):
     """
         base class for all exceptions in package SQUEzE
         """
-    pass
 
 
 if __name__ == '__main__':

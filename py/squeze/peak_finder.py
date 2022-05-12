@@ -1,7 +1,7 @@
 """
     SQUEzE
     ======
-    
+
     This file provides a peak finder to be used by SQUEzE
     """
 
@@ -10,7 +10,7 @@ import numpy as np
 
 class PeakFinder(object):
     """ Create and manage the peak finder used by SQUEzE
-        
+
         CLASS: PeakFinder
         PURPOSE: Create and manage the peak finder used by SQUEzE. This
         peak finder looks for peaks in a smoothed spectrum by looking for
@@ -47,13 +47,11 @@ class PeakFinder(object):
             full width half maximum of the Gaussian used in the smoothing.
             The continuum is measured using two windows of size FWHM/2 at each
             side of the peak.
-            
+
             Parameters
             ----------
             spectrum : Spectrum
             The spectrum where peaks are looked for
-            
-            
             """
         flux = spectrum.flux()
         ivar = spectrum.ivar()
@@ -79,12 +77,12 @@ class PeakFinder(object):
 
     def find_peaks(self, spectrum):
         """ Find significant peaks in a given spectrum.
-            
+
             Parameters
             ----------
             spectrum : Spectrum
             The spectrum where peaks are looked for
-            
+
             Returns
             -------
             An array with the position of the peaks
@@ -96,7 +94,7 @@ class PeakFinder(object):
         peak_indexs = []
         significances = []
         for index, flux in enumerate(smoothed_data):
-            if ((index > 0) and (index < smoothed_data.size - 1) and
+            if ((0 < index < smoothed_data.size - 1) and
                 (flux > smoothed_data[index + 1]) and
                 (flux > smoothed_data[index - 1])):
                 # find significance of the peak

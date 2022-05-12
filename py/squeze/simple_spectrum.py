@@ -24,30 +24,6 @@ class SimpleSpectrum(Spectrum):
         (for this second purpose, ignore the from_json method)
         """
 
-    def __init__(self, flux, ivar, wave, metadata):
-        """ Initialize class instance
-
-            Parameters
-            ----------
-            flux : np.array
-            Array containing the flux
-
-            ivar : np.array
-            Array containing the inverse variance
-
-            wave : np.array
-            Array containing the wavelength
-
-            metadata : dict
-            A dictionary where the keys are the names of the properties
-            and have type str.
-            """
-        self._flux = flux
-        self._ivar = ivar
-        self._wave = wave
-
-        self._metadata = metadata
-
     @classmethod
     def from_json(cls, data):
         """ This function deserializes a json string to correclty build the class.

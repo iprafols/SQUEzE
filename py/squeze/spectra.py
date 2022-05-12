@@ -24,7 +24,7 @@ class Spectra(object):
         PURPOSE: Manage the spectra list
         """
 
-    def __init__(self, spectra_list=[]):
+    def __init__(self, spectra_list=None):
         """ Initialize class instance
 
             Parameters
@@ -32,6 +32,8 @@ class Spectra(object):
             spectra_list : list of Spectrum
             List of spectra
             """
+        if spectra_list is None:
+            spectra_list = []
         self.__spectra_list = spectra_list
 
     def append(self, spectrum):
@@ -80,9 +82,8 @@ class Spectra(object):
         spectra_list = []
         for targs in ob_data.data():
             if targs.fib_status.upper() != 'A':
-                userprint(("***** Reject APS_ID = {} : "
-                           "FIB_STATUS={}").format(targs.aps_id,
-                                                   targs.fib_status))
+                userprint(f"***** Reject APS_ID = {targs.aps_id} : "
+                          f"FIB_STATUS={targs.fib_status}")
                 continue
 
             metadata = {
@@ -93,7 +94,7 @@ class Spectra(object):
                 'APS_ID': np.int(targs.id)
             }
 
-            for specid in range(len(targs.spectra)):
+            for specid, _ in enumerate(targs.spectra):
                 spectra_list.append(
                     SimpleSpectrum(targs.spectra[specid].flux,
                                    targs.spectra[specid].ivar,

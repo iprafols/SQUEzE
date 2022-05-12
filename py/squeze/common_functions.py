@@ -25,16 +25,18 @@ def serialize(obj):
 
         Returns
         -------
-        Serialized object
+        encodable_object: Object
+        An encodable version of the object
 
         Raises
         ------
         TypeError upon unsuccesful serialization
         """
+    encodable_object = None
     # first deal with  all special types of numpy arrays (mandatory since they
     # also inherit from np.ndarray)
     if isinstance(obj, np.ma.core.MaskedArray):
-        return {
+        encodable_object = {
             "np.ma.core.MakedArray": {
                 "data": obj.data.tolist(),
                 "mask": obj.mask.tolist(),
@@ -42,41 +44,47 @@ def serialize(obj):
             }
         }
     # now deal with normal numpy arrays
-    if isinstance(obj, np.ndarray):
-        return {"np.ndarray": {"data": obj.tolist(), "dtype": obj.dtype}}
+    elif isinstance(obj, np.ndarray):
+        encodable_object = {
+            "np.ndarray": {
+                "data": obj.tolist(),
+                "dtype": obj.dtype
+            }
+        }
 
     # deal with numpy ints
-    if isinstance(obj, np.int64):
-        return int(obj)
-    if isinstance(obj, np.int32):
-        return int(obj)
+    elif isinstance(obj, np.int64):
+        encodable_object = int(obj)
+    elif isinstance(obj, np.int32):
+        encodable_object = int(obj)
 
     # deal with numpy floats
-    if isinstance(obj, np.float32):
-        return float(obj)
+    elif isinstance(obj, np.float32):
+        encodable_object = float(obj)
 
     # deal with numpy bools
-    if isinstance(obj, np.bool_):
-        return bool(obj)
+    elif isinstance(obj, np.bool_):
+        encodable_object = bool(obj)
 
     # deal with other numpy objects
-    if isinstance(obj, np.dtype):
-        return str(obj)
+    elif isinstance(obj, np.dtype):
+        encodable_object = str(obj)
 
     # deal with pandas objects
-    if isinstance(obj, pd.DataFrame):
-        return {"pd.DataFrame": obj.to_json()}
+    elif isinstance(obj, pd.DataFrame):
+        encodable_object = {"pd.DataFrame": obj.to_json()}
 
     # deal with complex objects
-    if hasattr(obj, "__dict__"):
-        return obj.__dict__
+    elif hasattr(obj, "__dict__"):
+        encodable_object = obj.__dict__
 
     # raise error if the object serialization is not addressed by this class
-    obj_type = str(type(obj))
-    if obj_type.startswith("<class '"):
-        obj_type = obj_type[8:-2]
-    raise TypeError(
-        "Object of type {} is not JSON serializable".format(obj_type))
+    if encodable_object is None:
+        obj_type = str(type(obj))
+        if obj_type.startswith("<class '"):
+            obj_type = obj_type[8:-2]
+        raise TypeError(f"Object of type {obj_type} is not JSON serializable")
+    return encodable_object
 
 
 def deserialize(json_dict):
@@ -92,23 +100,25 @@ def deserialize(json_dict):
 
         Returns
         -------
+        my_object : Object
         The object
         """
+    my_object = None
     if "np.ndarray" in json_dict:
-        obj = json_dict.get("np.ndarray")
-        return np.array(obj.get("data"), dtype=obj.get("dtype"))
+        aux = json_dict.get("np.ndarray")
+        my_object = np.array(aux.get("data"), dtype=aux.get("dtype"))
     if "np.ma.core.MakedArray" in json_dict:
-        obj = json_dict.get("np.ma.core.MakedArray")
-        return np.ma.array(obj.get("data"), mask=obj.get("mask"))
+        aux = json_dict.get("np.ma.core.MakedArray")
+        my_object = np.ma.array(aux.get("data"), mask=aux.get("mask"))
     if "pd.DataFrame" in json_dict:
-        obj = pd.read_json(json_dict.get("pd.DataFrame"))
-        return obj
+        my_object = pd.read_json(json_dict.get("pd.DataFrame"))
+    return my_object
 
 
 def save_json(filename, user_object):
     """ Saves object into filename. Encoding file as a json object.
         Complex object are saved using their __dict__ property"""
-    with open(filename, 'w') as outfile:
+    with open(filename, 'w', encoding="UTF-8") as outfile:
         json.dump(user_object, outfile, indent=0, default=serialize)
 
 
@@ -119,7 +129,7 @@ def load_json(filename):
         -------
         The loaded object
         """
-    with open(filename) as json_file:
+    with open(filename, encoding="UTF-8") as json_file:
         user_object = json.load(json_file)
     return user_object
 
@@ -133,11 +143,9 @@ def verboseprint(*args):
     print("")
 
 
-def quietprint(*args):
+def quietprint(*args):  # pylint: disable=unused-argument
     """ Don't print anything
         """
-    # pylint: disable=unused-argument
-    pass
 
 
 if __name__ == '__main__':

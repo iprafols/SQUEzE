@@ -11,13 +11,53 @@ __version__ = "0.1"
 import numpy as np
 import pandas as pd
 import fitsio
-from astropy.table import Table
 
 from squeze.common_functions import save_json, deserialize
-from squeze.defaults import CLASS_PREDICTED
 from squeze.defaults import RANDOM_STATE
 from squeze.defaults import RANDOM_FOREST_OPTIONS
 from squeze.random_forest_classifier import RandomForestClassifier
+
+
+def find_prob(row, columns):
+    """ Find the probability of a instance being a quasar by
+        adding the probabilities of classes 3 and 30. If
+        the probability for this classes are not found,
+        then return np.nan
+
+        Parameters
+        ----------
+        row : pd.Series
+        A row in the DataFrame.
+
+        colums: list of string
+        The column labels of the Series.
+
+        Returns
+        -------
+        The probability of the object being a quasar.
+        This probability is the sum of the probabilities for classes
+        3 and 30. If one of them is not available, then the probability
+        is taken as the other one. If both are unavailable, then return
+        np.nan
+        """
+    if "PROB_CLASS3" in columns and "PROB_CLASS30" in columns:
+        if np.isnan(row["PROB_CLASS3"]):
+            prob = np.nan
+        else:
+            prob = row["PROB_CLASS3"] + row["PROB_CLASS30"]
+    elif "PROB_CLASS30" in columns:
+        if np.isnan(row["PROB_CLASS30"]):
+            prob = np.nan
+        else:
+            prob = row["PROB_CLASS30"]
+    elif "PROB_CLASS3" in columns:
+        if np.isnan(row["PROB_CLASS3"]):
+            prob = np.nan
+        else:
+            prob = row["PROB_CLASS3"]
+    else:
+        prob = np.nan
+    return prob
 
 
 class Model(object):
@@ -130,49 +170,11 @@ class Model(object):
             else:
                 class_labels = self.__clf.classes_
             for class_label in class_labels:
-                if row["PROB_CLASS{:d}".format(int(class_label))] > aux_prob:
-                    aux_prob = row["PROB_CLASS{:d}".format(int(class_label))]
+                if row[f"PROB_CLASS{int(class_label):d}"] > aux_prob:
+                    aux_prob = row[f"PROB_CLASS{int(class_label):d}"]
                     data_class = int(class_label)
 
         return data_class
-
-    def __find_prob(self, row, columns):
-        """ Find the probability of a instance being a quasar by
-            adding the probabilities of classes 3 and 30. If
-            the probability for this classes are not found,
-            then return np.nan
-
-            Parameters
-            ----------
-            row : pd.Series
-            A row in the DataFrame.
-
-            Returns
-            -------
-            The probability of the object being a quasar.
-            This probability is the sum of the probabilities for classes
-            3 and 30. If one of them is not available, then the probability
-            is taken as the other one. If both are unavailable, then return
-            np.nan
-            """
-        if "PROB_CLASS3" in columns and "PROB_CLASS30" in columns:
-            if np.isnan(row["PROB_CLASS3"]):
-                prob = np.nan
-            else:
-                prob = row["PROB_CLASS3"] + row["PROB_CLASS30"]
-        elif "PROB_CLASS30" in columns:
-            if np.isnan(row["PROB_CLASS30"]):
-                prob = np.nan
-            else:
-                prob = row["PROB_CLASS30"]
-        elif "PROB_CLASS3" in columns:
-            if np.isnan(row["PROB_CLASS3"]):
-                prob = np.nan
-            else:
-                prob = row["PROB_CLASS3"]
-        else:
-            prob = np.nan
-        return prob
 
     def get_settings(self):
         """ Access function for self.__settings """
@@ -216,15 +218,6 @@ class Model(object):
         names = ["LINE_NAME"]
         cols = [np.array(lines.index, dtype=str)]
 
-        desc = {
-            "WAVE": "wavelength of the line",
-            "START": "start of the peak interval",
-            "END": "end of the peak interval",
-            "BLUE_START": "start of the blue continuum interval",
-            "BLUE_END": "end of the blue continuum interval",
-            "RED_START": "start of the red continuum interval",
-            "RED_END": "end of the red continuum interval",
-        }
         names += [f"LINE_{col}" for col in lines.columns]
         cols += [lines[col] for col in lines.columns]
 
@@ -322,8 +315,9 @@ class Model(object):
 
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_high.classes_):
-                    data_frame_high["PROB_CLASS{:d}".format(
-                        int(class_label))] = data_class_probs[:, index]
+                    data_frame_high[
+                        f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
+                                                                              index]
 
             # low-z split
             # compute probabilities for each of the classes
@@ -335,16 +329,17 @@ class Model(object):
 
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_low["PROB_CLASS{:d}".format(
-                        int(class_label))] = data_class_probs[:, index]
+                    data_frame_low[
+                        f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
+                                                                              index]
 
             # non-peaks
             data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if data_frame_nonpeaks.shape[0] > 0:
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_nonpeaks["PROB_CLASS{:d}".format(
-                        int(class_label))] = np.nan
+                    data_frame_nonpeaks[
+                        f"PROB_CLASS{int(class_label):d}"] = np.nan
 
             # join datasets
             if (data_frame_high.shape[0] == 0 and
@@ -367,16 +362,17 @@ class Model(object):
 
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf.classes_):
-                    data_frame_peaks["PROB_CLASS{:d}".format(
-                        int(class_label))] = data_class_probs[:, index]
+                    data_frame_peaks[
+                        f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
+                                                                              index]
 
             # non-peaks
             data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if not data_frame_nonpeaks.shape[0] == 0:
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf.classes_):
-                    data_frame_nonpeaks["PROB_CLASS{:d}".format(
-                        int(class_label))] = np.nan
+                    data_frame_nonpeaks[
+                        f"PROB_CLASS{int(class_label):d}"] = np.nan
 
             # join datasets
             if (data_frame_peaks.shape[0] == 0 and
@@ -390,7 +386,7 @@ class Model(object):
         data_frame["CLASS_PREDICTED"] = data_frame.apply(self.__find_class,
                                                          axis=1,
                                                          args=(False,))
-        data_frame["PROB"] = data_frame.apply(self.__find_prob,
+        data_frame["PROB"] = data_frame.apply(find_prob,
                                               axis=1,
                                               args=(data_frame.columns,))
 
@@ -539,7 +535,7 @@ class Model(object):
         }
 
         # now load model options
-        # cas 1: highlow_split
+        # case 1: highlow_split
         try:
             high = {}
             header = hdul["HIGHINFO"].read_header()
@@ -562,8 +558,8 @@ class Model(object):
                     continue
                 low[key.lower()] = header[key]
             model_options = [{"high": high, "low": low}, header["random_state"]]
-        except:
-            all = {}
+        except OSError:
+            all_candidates = {}
             header = hdul["ALLINFO"].read_header()
             for key in header:
                 if key in [
@@ -572,8 +568,8 @@ class Model(object):
                         "TTYPE1", "TFORM1", "N_TREES", "N_CAT", "random_state"
                 ]:
                     continue
-                all[key.lower()] = header[key]
-            model_options = [all, header["random_state"]]
+                all_candidates[key.lower()] = header[key]
+            model_options = [all_candidates, header["random_state"]]
 
         # create instance using the constructor
         cls_instance = cls(name,
@@ -582,8 +578,7 @@ class Model(object):
                            model_options=model_options)
 
         # now update the instance to the current values
-        if "high" in model_options[0].keys() and "low" in model_options[0].keys(
-        ):
+        if "high" in model_options[0] and "low" in model_options[0]:
             cls_instance.set_clf_high(
                 RandomForestClassifier.from_fits_hdul(
                     hdul, "high", "HIGHINFO",

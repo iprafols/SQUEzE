@@ -35,16 +35,37 @@ class Spectrum(object):
         and metadata_names, must be overwritten
         """
 
+    def __init__(self, flux, ivar, wave, metadata):
+        """ Initialize class instance
+
+            Parameters
+            ----------
+            flux : np.array
+            Array containing the flux
+
+            ivar : np.array
+            Array containing the inverse variance
+
+            wave : np.array
+            Array containing the wavelength
+
+            metadata : dict
+            A dictionary where the keys are the names of the properties
+            and have type str.
+            """
+        self._flux = flux
+        self._ivar = ivar
+        self._wave = wave
+        self._metadata = metadata
+
     def flux(self):
         """ Returns the flux as a numpy.ndarray.
             Must have the same size as ivar and wavelength."""
-        # member must be declared in child class ... pylint: disable=no-member
         return self._flux
 
     def ivar(self):
         """ Returns the inverse variance as a numpy.ndarray.
             Must have the same size as flux and wavelength."""
-        # member must be declared in child class ... pylint: disable=no-member
         return self._ivar
 
     def metadata(self):
@@ -58,14 +79,12 @@ class Spectrum(object):
             In training mode, the spectra must be identifiable
             via a property named "specid"
             """
-        # member must be declared in child class ... pylint: disable=no-member
         return list(self._metadata.values())
 
     def metadata_by_key(self, key):
         """ Access one of the elements in self._metadata by name. Return
             np.nan if not found.
             """
-        # member must be declared in child class ... pylint: disable=no-member
         return self._metadata.get(key, np.nan)
 
     def metadata_names(self):
@@ -78,14 +97,13 @@ class Spectrum(object):
             In training mode, the spectra must be identifiable
             via a property named "specid"
             """
-        # member must be declared in child class ... pylint: disable=no-member
         return list(self._metadata)
 
     def rebin(self, pixel_width, extend_pixels=0):
         """ Returns a rebinned version of the flux, inverse variance and wavelength.
             New bins are centered around 4000 Angstroms and have a width specified by
             pixel_width. The rebinning is made by combining all the bins within
-            +- half the pixel width of the new pixel centers. 
+            +- half the pixel width of the new pixel centers.
 
             The flux of the new bin is computed by averaging the fluxes of the
             original array. The inverse variance of the new bin is computed by summing the
@@ -121,7 +139,6 @@ class Spectrum(object):
 
         mask[np.where((np.isnan(rebinned_flux)) |
                       (np.isnan(rebinned_ivar)))] = True
-        rebinned_wave = rebinned_wave
         rebinned_flux = np.ma.array(rebinned_flux, mask=mask)
         rebinned_ivar = np.ma.array(rebinned_ivar, mask=mask)
 
@@ -131,7 +148,7 @@ class Spectrum(object):
     def smooth(self, width):
         """ Returns a smoothed version of the flux. The smoothing is computed
             by convolving the flux with a Gaussian kernel of the specified width
-            
+
             Parameters
             ----------
             width : int
@@ -139,10 +156,8 @@ class Spectrum(object):
             """
         if width > 0:
             gauss_kernel = Gaussian1DKernel(width)
-            # member must be declared in child class ... pylint: disable=no-member
             return convolve(self._flux, gauss_kernel)
-        else:
-            return self._flux
+        return self._flux
 
     def wave(self):
         """ Returns the wavelength as a numpy.ndarray
@@ -150,7 +165,6 @@ class Spectrum(object):
             The user is responsible to make sure all wavelength
             are passed with the same units.
             Must have the same size as flux and ivar."""
-        # member must be declared in child class ... pylint: disable=no-member
         return self._wave
 
 
