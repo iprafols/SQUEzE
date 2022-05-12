@@ -10,16 +10,15 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 from math import sqrt
-import numpy as np
-from numba import prange, jit, vectorize
 import time
 
+import numpy as np
+from numba import prange, jit, vectorize
 import pandas as pd
 import fitsio
 from astropy.table import Table
 
 from squeze.common_functions import verboseprint
-from squeze.common_functions import deserialize
 from squeze.error import Error
 from squeze.model import Model
 from squeze.peak_finder import PeakFinder
@@ -32,11 +31,18 @@ from squeze.defaults import PASS_COLS_TO_RF
 from squeze.defaults import Z_PRECISION
 from squeze.defaults import PEAKFIND_WIDTH
 from squeze.defaults import PEAKFIND_SIG
-from squeze.spectrum import Spectrum
+
+# extra imports for plotting function
+PLOTTING_ERROR = None
+try:
+    import matplotlib.pyplot as plt
+except ImportError as error:
+    PLOTTING_ERROR = error
+
 
 @jit(nopython=True)
-def compute_line_ratios(wave, flux, ivar, peak_indexs, significances,
-                        try_lines, lines):
+def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
+                        lines):
     """Compute the line ratios for the specified lines for a given spectrum
 
         See equations 1 to 3 of Perez-Rafols et al. 2020 for a detailed
@@ -82,16 +88,14 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances,
 
     """
     new_candidates = []
-    for i in prange(peak_indexs.size):
-    #for peak_index, significance in zip(peak_indexs, significances):
-
-        for j in prange(len(try_lines)):
-        #for try_line in try_lines:
-
+    # pylint: disable=not-an-iterable
+    # prange is the numba equivalent to range
+    for index1 in prange(peak_indexs.size):
+        for index2 in prange(len(try_lines)):
             # compute redshift
             # 0=WAVE
-            z_try = wave[peak_indexs[i]]
-            z_try = z_try/lines[try_lines[j], 0]
+            z_try = wave[peak_indexs[index1]]
+            z_try = z_try / lines[try_lines[index2], 0]
             z_try = z_try - 1.0
             if z_try < 0.0:
                 continue
@@ -100,50 +104,53 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances,
             candidate_info = []
 
             # compute peak ratio for the different lines
-            for k in prange(lines.shape[0]):
+            for index3 in prange(lines.shape[0]):
                 # compute intervals
                 # 1=START, 2=END
-                pix_peak = np.where((wave >= oneplusz*lines[k, 1])
-                                    & (wave <= oneplusz*lines[k, 2]))[0]
+                pix_peak = np.where((wave >= oneplusz * lines[index3, 1]) &
+                                    (wave <= oneplusz * lines[index3, 2]))[0]
                 # 3=BLUE_START, 4=BLUE_END
-                pix_blue = np.where((wave >= oneplusz*lines[k, 3])
-                                    & (wave <= oneplusz*lines[k, 4]))[0]
+                pix_blue = np.where((wave >= oneplusz * lines[index3, 3]) &
+                                    (wave <= oneplusz * lines[index3, 4]))[0]
                 # 5=RED_START, 6=RED_END
-                pix_red = np.where((wave >= oneplusz*lines[k, 5])
-                                   & (wave <= oneplusz*lines[k, 6]))[0]
+                pix_red = np.where((wave >= oneplusz * lines[index3, 5]) &
+                                   (wave <= oneplusz * lines[index3, 6]))[0]
 
                 # compute peak and continuum values
                 compute_ratio = True
-                if ((pix_blue.size == 0) or (pix_peak.size == 0) or (pix_red.size == 0)
-                        or (pix_blue.size < pix_peak.size//2)
-                        or (pix_red.size < pix_peak.size//2)):
+                if ((pix_blue.size == 0) or (pix_peak.size == 0) or
+                    (pix_red.size == 0) or
+                    (pix_blue.size < pix_peak.size // 2) or
+                    (pix_red.size < pix_peak.size // 2)):
                     compute_ratio = False
                 else:
                     peak = np.mean(flux[pix_peak])
                     cont_red = np.mean(flux[pix_red])
                     cont_blue = np.mean(flux[pix_blue])
                     cont_red_and_blue = cont_red + cont_blue
-                    if (cont_red_and_blue == 0.0):
+                    if cont_red_and_blue == 0.0:
                         compute_ratio = False
-                    else:
-                        peak_ivar_sum = ivar[pix_peak].sum()
-                        if peak_ivar_sum == 0.0:
-                            peak_err_squared = np.nan
-                        else:
-                            peak_err_squared = 1.0/peak_ivar_sum
-                        blue_ivar_sum = ivar[pix_blue].sum()
-                        red_ivar_sum = ivar[pix_red].sum()
-                        if blue_ivar_sum == 0.0 or red_ivar_sum == 0.0:
-                            cont_err_squared = np.nan
-                        else:
-                            cont_err_squared = (1.0/blue_ivar_sum +
-                                                1.0/red_ivar_sum)/4.0
+
                 # compute ratios
                 if compute_ratio:
-                    ratio = 2.0*peak/cont_red_and_blue
-                    ratio2 = abs((cont_red - cont_blue)/cont_red_and_blue)
-                    err_ratio = sqrt(4.*peak_err_squared + ratio*ratio*cont_err_squared)/abs(cont_red_and_blue)
-                    ratio_sn = (ratio - 1.0)/err_ratio
+                    peak_ivar_sum = ivar[pix_peak].sum()
+                    if peak_ivar_sum == 0.0:
+                        peak_err_squared = np.nan
+                    else:
+                        peak_err_squared = 1.0 / peak_ivar_sum
+                    blue_ivar_sum = ivar[pix_blue].sum()
+                    red_ivar_sum = ivar[pix_red].sum()
+                    if blue_ivar_sum == 0.0 or red_ivar_sum == 0.0:
+                        cont_err_squared = np.nan
+                    else:
+                        cont_err_squared = (1.0 / blue_ivar_sum +
+                                            1.0 / red_ivar_sum) / 4.0
+
+                    ratio = 2.0 * peak / cont_red_and_blue
+                    ratio2 = abs((cont_red - cont_blue) / cont_red_and_blue)
+                    err_ratio = sqrt(4. * peak_err_squared + ratio * ratio *
+                                     cont_err_squared) / abs(cont_red_and_blue)
+                    ratio_sn = (ratio - 1.0) / err_ratio
                 else:
                     ratio = np.nan
                     ratio2 = np.nan
@@ -154,16 +161,17 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances,
                 candidate_info.append(ratio2)
 
             candidate_info.append(z_try)
-            candidate_info.append(significances[i])
-            candidate_info.append(float(j))
+            candidate_info.append(significances[index1])
+            candidate_info.append(float(index2))
 
             # add candidate to the list
             new_candidates.append(candidate_info)
 
     return new_candidates
 
+
 @vectorize
-def is_correct(correct_redshift, class_person):
+def compute_is_correct(correct_redshift, class_person):
     """ Returns True if a candidate is a true quasar and False otherwise.
         A true candidate is defined as a candidate having an absolute value
         of Delta_z is lower or equal than self.__z_precision.
@@ -183,12 +191,12 @@ def is_correct(correct_redshift, class_person):
         For each element in the arrays, returns True if the candidate is a
         quasar and has the correct redshift assign to it
         """
-    correct = bool(correct_redshift
-                and ((class_person == 3) or (class_person == 30)))
+    correct = bool(correct_redshift and class_person in [3, 30])
     return correct
 
+
 @vectorize
-def is_correct_redshift(delta_z, class_person, z_precision):
+def compute_is_correct_redshift(delta_z, class_person, z_precision):
     """ Returns True if a candidate has a correct redshift and False otherwise.
         A candidate is assumed to have a correct redshift if it has an absolute
         value of Delta_z lower than or equal to z_precision.
@@ -213,14 +221,14 @@ def is_correct_redshift(delta_z, class_person, z_precision):
         For each element, returns True if the candidate is not a star and the
         trial redshift is equal to the true redshift.
         """
-    correct_redshift = bool((class_person != 1)
-                            and (delta_z <= z_precision)
-                            and (delta_z >= -z_precision))
+    correct_redshift = bool((class_person != 1) and
+                            (-z_precision <= delta_z <= z_precision))
     return correct_redshift
 
+
 @jit(nopython=True)
-def is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
-            z_precision, lines):
+def compute_is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
+                    z_precision, lines):
     """ Returns True if the candidates corresponds to a valid quasar emission
         line and False otherwise. A quasar line is defined as a candidate whose
         trial redshift is correct or where any of the redshifts obtained
@@ -262,26 +270,30 @@ def is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
     is_line = np.zeros_like(is_correct)
 
     # correct identification
-    for i in prange(is_correct.size):
-        if is_correct[i]:
-            is_line[i] = True
+    # pylint: disable=not-an-iterable
+    # prange is the numba equivalent to range
+    for index1 in prange(is_correct.size):
+        if is_correct[index1]:
+            is_line[index1] = True
         # not a quasar
-        elif not ((class_person[i] == 3) or (class_person[i] == 30)):
+        elif not ((class_person[index1] == 3) or (class_person[index1] == 30)):
             continue
         # not a peak
-        elif assumed_line_index[i] == -1:
+        elif assumed_line_index[index1] == -1:
             continue
         else:
-            for j in prange(lines.shape[0]):
-            #for line in self.__lines.index:
-                if j == assumed_line_index[i]:
+            for index2 in prange(lines.shape[0]):
+                #for line in self.__lines.index:
+                if index2 == assumed_line_index[index1]:
                     continue
                 # 0=WAVE
-                z_try_line = (lines[assumed_line_index[i]][0]/lines[j][0])*(1 + z_try[i]) - 1
-                if ((z_try_line - z_true[i] <= z_precision) and
-                        (z_try_line - z_true[i] >= -z_precision)):
-                    is_line[i] = True
+                z_try_line = (lines[assumed_line_index[index1]][0] /
+                              lines[index2][0]) * (1 + z_try[index1]) - 1
+                if ((z_try_line - z_true[index1] <= z_precision) and
+                    (z_try_line - z_true[index1] >= -z_precision)):
+                    is_line[index1] = True
     return is_line
+
 
 class Candidates(object):
     """ Create and manage the candidates catalogue
@@ -293,13 +305,18 @@ class Candidates(object):
         training or appliying the model to clean the candidates list, and
         creating a final catalogue.
         """
+
     # pylint: disable=too-many-instance-attributes
     # 12 is reasonable in this case.
-    def __init__(self, lines_settings=(LINES, TRY_LINES), z_precision=Z_PRECISION,
-                 mode="operation", name="SQUEzE_candidates.fits.gz",
+    def __init__(self,
+                 lines_settings=(LINES, TRY_LINES),
+                 z_precision=Z_PRECISION,
+                 mode="operation",
+                 name="SQUEzE_candidates.fits.gz",
                  peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
                  model=None,
-                 model_options=(RANDOM_FOREST_OPTIONS, RANDOM_STATE, PASS_COLS_TO_RF),
+                 model_options=(RANDOM_FOREST_OPTIONS, RANDOM_STATE,
+                                PASS_COLS_TO_RF),
                  userprint=verboseprint):
         """ Initialize class instance.
 
@@ -334,7 +351,8 @@ class Candidates(object):
             it is supposed to be None initially, and the model will be trained
             and given as an output of the code.
 
-            model_options : (dict, int, list or None) - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE, None)
+            model_options : (dict, int, list or None)
+                            - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE, None)
             The first dictionary sets the options to be passed to the random forest
             cosntructor. If high-low split of the training is desired, the
             dictionary must contain the entries "high" and "low", and the
@@ -356,8 +374,9 @@ class Candidates(object):
         if name.endswith(".fits.gz") or name.endswith(".fits"):
             self.__name = name
         else:
-            message = "Candidates name should have .fits or .fits.gz extensions."
-            message += "Given name was {}".format(name)
+            message = (
+                "Candidates name should have .fits or .fits.gz extensions."
+                f"Given name was {name}")
             raise Error(message)
 
         # printing function
@@ -385,28 +404,33 @@ class Candidates(object):
         self.__model_options = model_options
 
         # initialize peak finder
-        self.__peak_finder = PeakFinder(self.__peakfind_width, self.__peakfind_sig)
+        self.__peak_finder = PeakFinder(self.__peakfind_width,
+                                        self.__peakfind_sig)
 
         # make sure fields in self.__lines are properly sorted
-        self.__lines = self.__lines[['WAVE', 'START', 'END', 'BLUE_START',
-                                     'BLUE_END', 'RED_START', 'RED_END']]
+        self.__lines = self.__lines[[
+            'WAVE', 'START', 'END', 'BLUE_START', 'BLUE_END', 'RED_START',
+            'RED_END'
+        ]]
 
         # compute convert try_lines strings to indexs in self.__lines array
-        self.__try_lines_indexs = np.array([np.where(self.__lines.index == item)[0][0]
-                                            for item in self.__try_lines])
-        self.__try_lines_dict = {key: value
-                                 for key, value in zip(self.__try_lines,
-                                                       self.__try_lines_indexs)}
+        self.__try_lines_indexs = np.array([
+            np.where(self.__lines.index == item)[0][0]
+            for item in self.__try_lines
+        ])
+        self.__try_lines_dict = dict(
+            zip(self.__try_lines, self.__try_lines_indexs))
         self.__try_lines_dict["none"] = -1
 
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """
-        return {"LINES": self.__lines,
-                "TRY_LINES": self.__try_lines,
-                "Z_PRECISION": self.__z_precision,
-                "PEAKFIND_WIDTH": self.__peakfind_width,
-                "PEAKFIND_SIG": self.__peakfind_sig,
-               }
+        return {
+            "LINES": self.__lines,
+            "TRY_LINES": self.__try_lines,
+            "Z_PRECISION": self.__z_precision,
+            "PEAKFIND_WIDTH": self.__peakfind_width,
+            "PEAKFIND_SIG": self.__peakfind_sig,
+        }
 
     def __find_candidates(self, spectrum):
         """
@@ -441,7 +465,7 @@ class Candidates(object):
             ratios = np.zeros(self.__lines.shape[0], dtype=float)
             ratios_sn = np.zeros_like(ratios)
             ratios2 = np.zeros_like(ratios)
-            for (ratio, ratio_sn, ratio2) in zip(ratios, ratios_sn, ratios2):
+            for _ in zip(ratios, ratios_sn, ratios2):
                 candidate_info.append(np.nan)
                 candidate_info.append(np.nan)
                 candidate_info.append(np.nan)
@@ -456,13 +480,15 @@ class Candidates(object):
             ivar = spectrum.ivar()
             metadata = spectrum.metadata()
 
-            new_candidates = compute_line_ratios(wave, flux, ivar,
-                                                 peak_indexs, significances,
+            new_candidates = compute_line_ratios(wave, flux, ivar, peak_indexs,
+                                                 significances,
                                                  self.__try_lines_indexs,
                                                  self.__lines.values)
 
-            new_candidates = [metadata + item[:-1] + [self.__try_lines[int(item[-1])]]
-                              for item in new_candidates]
+            new_candidates = [
+                metadata + item[:-1] + [self.__try_lines[int(item[-1])]]
+                for item in new_candidates
+            ]
             self.__candidates_list += new_candidates
 
     def __load_model_settings(self):
@@ -477,11 +503,12 @@ class Candidates(object):
     def save_candidates(self):
         """ Save the candidates DataFrame. """
         results = fitsio.FITS(self.__name, 'rw', clobber=True)
-        names = [col for col in self.__candidates.columns]
-        cols = [np.array(self.__candidates[col].values, dtype=str)
-                if self.__candidates[col].dtype == "object"
-                else self.__candidates[col].values
-                for col in self.__candidates.columns]
+        names = list(self.__candidates.columns)
+        cols = [
+            np.array(self.__candidates[col].values, dtype=str)
+            if self.__candidates[col].dtype == "object" else
+            self.__candidates[col].values for col in self.__candidates.columns
+        ]
         results.write(cols, names=names, extname="CANDIDATES")
         results.close()
 
@@ -508,8 +535,6 @@ class Candidates(object):
         else:
             raise Error("Invalid mode")
 
-        return
-
     def candidates_list_to_dataframe(self, columns_candidates, save=True):
         """ Format existing candidates list into a dataframe
 
@@ -525,10 +550,13 @@ class Candidates(object):
             return
 
         if "Z_TRY" not in columns_candidates:
-            for i in range(self.__lines.shape[0]):
-                columns_candidates.append("{}_RATIO".format(self.__lines.iloc[i].name.upper()))
-                columns_candidates.append("{}_RATIO_SN".format(self.__lines.iloc[i].name.upper()))
-                columns_candidates.append("{}_RATIO2".format(self.__lines.iloc[i].name.upper()))
+            for index1 in range(self.__lines.shape[0]):
+                columns_candidates.append(
+                    f"{self.__lines.iloc[index1].name.upper()}_RATIO")
+                columns_candidates.append(
+                    f"{self.__lines.iloc[index1].name.upper()}_RATIO_SN")
+                columns_candidates.append(
+                    f"{self.__lines.iloc[index1].name.upper()}_RATIO2")
             columns_candidates.append("Z_TRY")
             columns_candidates.append("PEAK_SIGNIFICANCE")
             columns_candidates.append("ASSUMED_LINE")
@@ -538,27 +566,26 @@ class Candidates(object):
 
         # add truth table if running in training or test modes
         if (self.__mode in ["training", "test"] or
-            (self.__mode == "candidates" and
-            "Z_TRUE" in aux.columns)):
+            (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
             self.__userprint("Adding control variables from truth table")
             aux["DELTA_Z"] = aux["Z_TRY"] - aux["Z_TRUE"]
             if aux.shape[0] > 0:
                 self.__userprint("    is_correct_redshift")
-                aux["CORRECT_REDSHIFT"] = is_correct_redshift(aux["DELTA_Z"].values,
-                                                              aux["CLASS_PERSON"].values,
-                                                              self.__z_precision)
+                aux["CORRECT_REDSHIFT"] = compute_is_correct_redshift(
+                    aux["DELTA_Z"].values, aux["CLASS_PERSON"].values,
+                    self.__z_precision)
                 self.__userprint("    is_correct")
-                aux["IS_CORRECT"] = is_correct(aux["CORRECT_REDSHIFT"].values,
-                                               aux["CLASS_PERSON"].values)
+                aux["IS_CORRECT"] = compute_is_correct(
+                    aux["CORRECT_REDSHIFT"].values, aux["CLASS_PERSON"].values)
                 self.__userprint("    is_line")
-                aux["IS_LINE"] = is_line(aux["IS_CORRECT"].values,
-                                         aux["CLASS_PERSON"].values,
-                                         np.array([self.__try_lines_dict.get(assumed_line)
-                                                   for assumed_line in aux["ASSUMED_LINE"]]),
-                                         aux["Z_TRUE"].values,
-                                         aux["Z_TRY"].values,
-                                         self.__z_precision,
-                                         self.__lines.iloc[self.__try_lines_indexs].values)
+                aux["IS_LINE"] = compute_is_line(
+                    aux["IS_CORRECT"].values, aux["CLASS_PERSON"].values,
+                    np.array([
+                        self.__try_lines_dict.get(assumed_line)
+                        for assumed_line in aux["ASSUMED_LINE"]
+                    ]), aux["Z_TRUE"].values, aux["Z_TRY"].values,
+                    self.__z_precision,
+                    self.__lines.iloc[self.__try_lines_indexs].values)
             else:
                 self.__userprint("    is_correct_redshift")
                 aux["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
@@ -572,8 +599,10 @@ class Candidates(object):
         if self.__candidates is None:
             self.__candidates = aux
         else:
-            self.__userprint("Concatenating dataframe with previouly exisiting candidates")
-            self.__candidates = pd.concat([self.__candidates, aux], ignore_index=True)
+            self.__userprint(
+                "Concatenating dataframe with previouly exisiting candidates")
+            self.__candidates = pd.concat([self.__candidates, aux],
+                                          ignore_index=True)
             self.__userprint("Done")
         self.__candidates_list = []
 
@@ -587,12 +616,13 @@ class Candidates(object):
         """ Create a model instance and train it. Save the resulting model"""
         # consistency checks
         if self.__mode not in ["test", "operation"]:
-            raise  Error("The function classify_candidates is available in the " +
-                         "test mode only. Detected mode is {}".format(self.__mode))
+            raise Error(
+                "The function classify_candidates is available in the " +
+                f"test mode only. Detected mode is {self.__mode}")
         if self.__candidates is None:
-            raise  Error("Attempting to run the function classify_candidates " +
-                         "but no candidates were found/loaded. Check your " +
-                         "formatter")
+            raise Error("Attempting to run the function classify_candidates " +
+                        "but no candidates were found/loaded. Check your " +
+                        "formatter")
         self.__candidates = self.__model.compute_probability(self.__candidates)
         if save:
             self.save_candidates()
@@ -609,15 +639,17 @@ class Candidates(object):
             columns_candidates : list of str
             The column names of the spectral metadata
             """
-        if self.__mode == "training" and "Z_TRUE" not in spectra[0].metadata_names():
+        if self.__mode == "training" and "Z_TRUE" not in spectra[
+                0].metadata_names():
             raise Error("Mode is set to 'training', but spectra do not " +
                         "have the property 'Z_TRUE'.")
 
-        elif self.__mode == "test" and "Z_TRUE" not in spectra[0].metadata_names():
+        if self.__mode == "test" and "Z_TRUE" not in spectra[0].metadata_names(
+        ):
             raise Error("Mode is set to 'test', but spectra do not " +
                         "have the property 'Z_TRUE'.")
 
-        elif self.__mode == "merge":
+        if self.__mode == "merge":
             raise Error("The function find_candidates is not available in " +
                         "merge mode.")
 
@@ -628,15 +660,15 @@ class Candidates(object):
 
             if len(self.__candidates_list) > MAX_CANDIDATES_TO_CONVERT:
                 self.__userprint("Converting candidates to dataframe")
-                t0 = time.time()
-                self.candidates_list_to_dataframe(columns_candidates, save=False)
-                t1 = time.time()
-                self.__userprint(f"INFO: time elapsed to convert candidates to dataframe: {(t1-t0)/60.0} minutes")
+                time0 = time.time()
+                self.candidates_list_to_dataframe(columns_candidates,
+                                                  save=False)
+                time1 = time.time()
+                self.__userprint(
+                    "INFO: time elapsed to convert candidates to dataframe: "
+                    f"{(time0-time1)/60.0} minutes")
 
-
-
-    def find_completeness_purity(self, quasars_data_frame, data_frame=None,
-                                 get_results=False):
+    def find_completeness_purity(self, quasars_data_frame, data_frame=None):
         """
             Given a DataFrame with candidates and another one with the catalogued
             quasars, compute the completeness and the purity. Upon error, return
@@ -652,94 +684,103 @@ class Candidates(object):
             DataFrame where the percentile will be computed. Must contain the
             columns "is_correct" and "specid".
 
-            get_results : boolean - Default: False
-            If True, return the computed purity, the completeness, and the total number
-            of found quasars. Otherwise, return None.
-
             Returns
             -------
-            If get_results is True, return the computed purity, the completeness, and
-            the total number of found quasars. Otherwise, return None.
+            purity : float
+            The computed purity
+
+            completeness: float
+            The computed completeness
+
+            found_quasars : int
+            The total number of found quasars.
             """
         # consistency checks
         if self.__mode not in ["training", "test"]:
-            raise  Error("The function find_completeness_purity is available in the " +
-                         "training and test modes only. Detected mode is {}".format(self.__mode))
+            raise Error(
+                "The function find_completeness_purity is available in the " +
+                f"training and test modes only. Detected mode is {self.__mode}")
 
         if data_frame is None:
             data_frame = self.__candidates
 
         if "IS_CORRECT" not in data_frame.columns:
-            raise Error("find_completeness_purity: invalid DataFrame, the column " +
-                        "'IS_CORRECT' is missing")
+            raise Error(
+                "find_completeness_purity: invalid DataFrame, the column " +
+                "'IS_CORRECT' is missing")
 
         if "SPECID" not in data_frame.columns:
-            raise Error("find_completeness_purity: invalid DataFrame, the column " +
-                        "'SPECID' is missing")
+            raise Error(
+                "find_completeness_purity: invalid DataFrame, the column " +
+                "'SPECID' is missing")
 
         found_quasars = 0
         found_quasars_zge1 = 0
         found_quasars_zge2_1 = 0
         num_quasars = quasars_data_frame.shape[0]
-        num_quasars_zge1 = quasars_data_frame[quasars_data_frame["Z_TRUE"] >= 1.0].shape[0]
-        num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["Z_TRUE"] >= 2.1].shape[0]
+        num_quasars_zge1 = quasars_data_frame[
+            quasars_data_frame["Z_TRUE"] >= 1.0].shape[0]
+        num_quasars_zge2_1 = quasars_data_frame[
+            quasars_data_frame["Z_TRUE"] >= 2.1].shape[0]
         for index in np.arange(num_quasars):
-            specid = quasars_data_frame.iloc[quasars_data_frame.index[index]]["SPECID"]
+            specid = quasars_data_frame.iloc[
+                quasars_data_frame.index[index]]["SPECID"]
             if data_frame[(data_frame["SPECID"] == specid) &
                           (data_frame["IS_CORRECT"])].shape[0] > 0:
                 found_quasars += 1
-                if quasars_data_frame.iloc[quasars_data_frame.index[index]]["Z_TRUE"] >= 2.1:
+                if quasars_data_frame.iloc[
+                        quasars_data_frame.index[index]]["Z_TRUE"] >= 2.1:
                     found_quasars_zge2_1 += 1
                     found_quasars_zge1 += 1
-                elif quasars_data_frame.iloc[quasars_data_frame.index[index]]["Z_TRUE"] >= 1:
+                elif quasars_data_frame.iloc[
+                        quasars_data_frame.index[index]]["Z_TRUE"] >= 1:
                     found_quasars_zge1 += 1
         if float(num_quasars) > 0.0:
-            completeness = float(found_quasars)/float(num_quasars)
+            completeness = float(found_quasars) / float(num_quasars)
         else:
             completeness = np.nan
         if float(num_quasars_zge1) > 0.0:
-            completeness_zge1 = float(found_quasars_zge1)/float(num_quasars_zge1)
+            completeness_zge1 = float(found_quasars_zge1) / float(
+                num_quasars_zge1)
         else:
             completeness_zge1 = np.nan
         if float(num_quasars_zge2_1) > 0.0:
-            completeness_zge2_1 = float(found_quasars_zge2_1)/float(num_quasars_zge2_1)
+            completeness_zge2_1 = float(found_quasars_zge2_1) / float(
+                num_quasars_zge2_1)
         else:
             completeness_zge2_1 = np.nan
 
-
         if float(data_frame.shape[0]) > 0.:
-            purity = float(data_frame["IS_CORRECT"].sum())/float(data_frame.shape[0])
-            purity_zge1 = (float(data_frame[data_frame["Z_TRUE"] >= 1]["IS_CORRECT"].sum())/
-                           float(data_frame[data_frame["Z_TRUE"] >= 1].shape[0]))
-            purity_zge2_1 = (float(data_frame[data_frame["Z_TRUE"] >= 2.1]["IS_CORRECT"].sum())/
-                             float(data_frame[data_frame["Z_TRUE"] >= 2.1].shape[0]))
-            line_purity = float(data_frame["IS_LINE"].sum())/float(data_frame.shape[0])
-            #purity_to_quasars = (float(data_frame[data_frame["specid"] > 0].shape[0])/
-            #                     float(data_frame.shape[0]))
-            quasar_specids = np.unique(data_frame[data_frame["SPECID"] > 0]["SPECID"])
-            specids = np.unique(data_frame["SPECID"])
-            #quasar_spectra_fraction = float(quasar_specids.size)/float(specids.size)
+            purity = float(data_frame["IS_CORRECT"].sum()) / float(
+                data_frame.shape[0])
+            purity_zge1 = (
+                float(data_frame[data_frame["Z_TRUE"] >= 1]["IS_CORRECT"].sum())
+                / float(data_frame[data_frame["Z_TRUE"] >= 1].shape[0]))
+            purity_zge2_1 = (
+                float(
+                    data_frame[data_frame["Z_TRUE"] >= 2.1]["IS_CORRECT"].sum())
+                / float(data_frame[data_frame["Z_TRUE"] >= 2.1].shape[0]))
+            line_purity = float(data_frame["IS_LINE"].sum()) / float(
+                data_frame.shape[0])
         else:
             purity = np.nan
             purity_zge1 = np.nan
             purity_zge2_1 = np.nan
             line_purity = np.nan
-            #purity_to_quasars = np.nan
-            quasar_spectra_fraction = np.nan
 
-        self.__userprint("There are {} candidates ".format(data_frame.shape[0]),)
-        self.__userprint("for {} catalogued quasars".format(num_quasars))
-        self.__userprint("number of quasars = {}".format(num_quasars))
-        self.__userprint("found quasars = {}".format(found_quasars))
-        self.__userprint("completeness = {:.2%}".format(completeness))
-        self.__userprint("completeness z>=1 = {:.2%}".format(completeness_zge1))
-        self.__userprint("completeness z>=2.1 = {:.2%}".format(completeness_zge2_1))
-        self.__userprint("purity = {:.2%}".format(purity))
-        self.__userprint("purity z >=1 = {:.2%}".format(purity_zge1))
-        self.__userprint("purity z >=2.1 = {:.2%}".format(purity_zge2_1))
-        self.__userprint("line purity = {:.2%}".format(line_purity))
-        if get_results:
-            return purity, completeness, found_quasars
+        self.__userprint(f"There are {data_frame.shape[0]} candidates ",)
+        self.__userprint(f"for {num_quasars} catalogued quasars")
+        self.__userprint(f"number of quasars = {num_quasars}")
+        self.__userprint(f"found quasars = {found_quasars}")
+        self.__userprint(f"completeness = {completeness:.2%}")
+        self.__userprint(f"completeness z>=1 = {completeness_zge1:.2%}")
+        self.__userprint(f"completeness z>=2.1 = {completeness_zge2_1:.2%}")
+        self.__userprint(f"purity = {purity:.2%}")
+        self.__userprint(f"purity z >=1 = {purity_zge1:.2%}")
+        self.__userprint(f"purity z >=2.1 = {purity_zge2_1:.2%}")
+        self.__userprint(f"line purity = {line_purity:.2%}")
+
+        return purity, completeness, found_quasars
 
     def load_candidates(self, filename=None):
         """ Load the candidates DataFrame
@@ -772,11 +813,11 @@ class Candidates(object):
             If True, save candidates before exiting
             """
         if self.__mode != "merge":
-            raise  Error("The function merge is available in the " +
-                         "merge mode only. Detected mode is {}".format(self.__mode))
+            raise Error("The function merge is available in the " +
+                        f"merge mode only. Detected mode is {self.__mode}")
 
         for index, candidates_filename in enumerate(others_list):
-            self.__userprint("Merging... {} of {}".format(index, len(others_list)))
+            self.__userprint(f"Merging... {index} of {len(others_list)}")
 
             try:
                 # load candidates
@@ -785,10 +826,12 @@ class Candidates(object):
                 del data
 
                 # append to candidates list
-                self.__candidates = self.__candidates.append(other, ignore_index=True)
+                self.__candidates = self.__candidates.append(other,
+                                                             ignore_index=True)
 
             except TypeError:
-                self.__userprint("Error occured when loading file {}.".format(candidates_filename))
+                self.__userprint(
+                    f"Error occured when loading file {candidates_filename}.")
                 self.__userprint("Ignoring file")
 
         if save:
@@ -812,21 +855,21 @@ class Candidates(object):
             -------
             The figure object
             """
-        # extra imports for this function
-        import matplotlib.pyplot as plt
-        from matplotlib import gridspec
+        if PLOTTING_ERROR is not None:
+            raise PLOTTING_ERROR
 
         # plot settings
         fontsize = 20
         labelsize = 18
         ticksize = 10
         fig = plt.figure(figsize=(10, 6))
-        axes_grid = gridspec.GridSpec(1, 1)
+        axes_grid = fig.add_gridspec.GridSpec(norws=1, ncols=1)
         axes_grid.update(hspace=0.4, wspace=0.0)
 
         # distinguish from contaminants and non-contaminants i necessary
         if self.__mode == "training":
-            contaminants_df = self.__candidates[~self.__candidates["IS_CORRECT"]]
+            contaminants_df = self.__candidates[~self.
+                                                __candidates["IS_CORRECT"]]
             correct_df = self.__candidates[self.__candidates["IS_CORRECT"]]
 
         # plot the histograms
@@ -834,22 +877,42 @@ class Candidates(object):
 
         # plot the contaminants and non-contaminants separately
         if self.__mode == "training":
-            contaminants_df[plot_col].hist(ax=fig_ax, bins=100, range=(-1, 4),
-                                           grid=False, color='r', alpha=0.5, normed=normed)
-            correct_df[plot_col].hist(ax=fig_ax, bins=100, range=(-1, 4),
-                                      grid=False, color='b', alpha=0.5, normed=normed)
+            contaminants_df[plot_col].hist(ax=fig_ax,
+                                           bins=100,
+                                           range=(-1, 4),
+                                           grid=False,
+                                           color='r',
+                                           alpha=0.5,
+                                           normed=normed)
+            correct_df[plot_col].hist(ax=fig_ax,
+                                      bins=100,
+                                      range=(-1, 4),
+                                      grid=False,
+                                      color='b',
+                                      alpha=0.5,
+                                      normed=normed)
 
         # plot the entire sample
-        self.__candidates[plot_col].hist(ax=fig_ax, bins=100, range=(-1, 4), grid=False,
-                                         histtype='step', color='k', normed=normed)
+        self.__candidates[plot_col].hist(ax=fig_ax,
+                                         bins=100,
+                                         range=(-1, 4),
+                                         grid=False,
+                                         histtype='step',
+                                         color='k',
+                                         normed=normed)
         # set axis labels
         fig_ax.set_xlabel(plot_col, fontsize=fontsize)
         if normed:
             fig_ax.set_ylabel("normalized distribution", fontsize=fontsize)
         else:
             fig_ax.set_ylabel("counts", fontsize=fontsize)
-        fig_ax.tick_params(axis='both', labelsize=labelsize, pad=0, top=True,
-                           right=True, length=ticksize, direction="inout")
+        fig_ax.tick_params(axis='both',
+                           labelsize=labelsize,
+                           pad=0,
+                           top=True,
+                           right=True,
+                           length=ticksize,
+                           direction="inout")
         return fig
 
     def plot_line_ratios_histograms(self, normed=True):
@@ -868,26 +931,27 @@ class Candidates(object):
             -------
             The figure object
             """
-        # extra imports for this function
-        import matplotlib.pyplot as plt
-        from matplotlib import gridspec
+        if PLOTTING_ERROR is not None:
+            raise PLOTTING_ERROR
 
         # get the number of plots and the names of the columns
-        plot_cols = np.array([item for item in self.__candidates.columns if "RATIO" in item])
+        plot_cols = np.array(
+            [item for item in self.__candidates.columns if "RATIO" in item])
         num_ratios = plot_cols.size
 
         # plot settings
         fontsize = 20
         labelsize = 18
         ticksize = 10
-        fig = plt.figure(figsize=(10, 6*num_ratios))
+        fig = plt.figure(figsize=(10, 6 * num_ratios))
         axes = []
-        axes_grid = gridspec.GridSpec(num_ratios, 1)
+        axes_grid = fig.add_gridspec(nrows=num_ratios, ncols=1)
         axes_grid.update(hspace=0.4, wspace=0.0)
 
         # distinguish from contaminants and non-contaminants i necessary
         if self.__mode == "training":
-            contaminants_df = self.__candidates[~self.__candidates["IS_CORRECT"]]
+            contaminants_df = self.__candidates[~self.
+                                                __candidates["IS_CORRECT"]]
             correct_df = self.__candidates[self.__candidates["IS_CORRECT"]]
 
         # plot the histograms
@@ -895,19 +959,39 @@ class Candidates(object):
             axes.append(fig.add_subplot(axes_grid[index]))
             # plot the contaminants and non-contaminants separately
             if self.__mode == "training":
-                contaminants_df[plot_col].hist(ax=axes[index], bins=100, range=(-1, 4),
-                                               grid=False, color='r', alpha=0.5, normed=normed)
-                correct_df[plot_col].hist(ax=axes[index], bins=100, range=(-1, 4),
-                                          grid=False, color='b', alpha=0.5, normed=normed)
+                contaminants_df[plot_col].hist(ax=axes[index],
+                                               bins=100,
+                                               range=(-1, 4),
+                                               grid=False,
+                                               color='r',
+                                               alpha=0.5,
+                                               normed=normed)
+                correct_df[plot_col].hist(ax=axes[index],
+                                          bins=100,
+                                          range=(-1, 4),
+                                          grid=False,
+                                          color='b',
+                                          alpha=0.5,
+                                          normed=normed)
 
             # plot the entire sample
-            self.__candidates[plot_col].hist(ax=axes[index], bins=100, range=(-1, 4),
-                                             grid=False, histtype='step', color='k', normed=normed)
+            self.__candidates[plot_col].hist(ax=axes[index],
+                                             bins=100,
+                                             range=(-1, 4),
+                                             grid=False,
+                                             histtype='step',
+                                             color='k',
+                                             normed=normed)
             # set axis labels
             axes[index].set_xlabel(plot_col, fontsize=fontsize)
             axes[index].set_ylabel("counts", fontsize=fontsize)
-            axes[index].tick_params(axis='both', labelsize=labelsize, pad=0, top=True,
-                                    right=True, length=ticksize, direction="inout")
+            axes[index].tick_params(axis='both',
+                                    labelsize=labelsize,
+                                    pad=0,
+                                    top=True,
+                                    right=True,
+                                    length=ticksize,
+                                    direction="inout")
             if normed:
                 axes[index].set_ylim(0, 4)
 
@@ -924,16 +1008,29 @@ class Candidates(object):
             """
         # consistency checks
         if self.__mode != "training":
-            raise  Error("The function train_model is available in the " +
-                         "training mode only. Detected mode is {}".format(self.__mode))
+            raise Error("The function train_model is available in the " +
+                        f"training mode only. Detected mode is {self.__mode}")
 
-        selected_cols = [col.upper() for col in self.__candidates.columns if col.endswith("RATIO_SN")]
-        selected_cols += [col.upper() for col in self.__candidates.columns if col.endswith("RATIO2")]
-        selected_cols += [col.upper() for col in self.__candidates.columns if col.endswith("RATIO")]
+        selected_cols = [
+            col.upper()
+            for col in self.__candidates.columns
+            if col.endswith("RATIO_SN")
+        ]
+        selected_cols += [
+            col.upper()
+            for col in self.__candidates.columns
+            if col.endswith("RATIO2")
+        ]
+        selected_cols += [
+            col.upper()
+            for col in self.__candidates.columns
+            if col.endswith("RATIO")
+        ]
         selected_cols += ["PEAK_SIGNIFICANCE"]
 
         # add extra columns
-        if len(self.__model_options) == 3 and self.__model_options[2] is not None:
+        if len(self.__model_options
+              ) == 3 and self.__model_options[2] is not None:
             selected_cols += [item.upper() for item in self.__model_options[2]]
 
         # add columns to compute the class in training
@@ -951,7 +1048,9 @@ class Candidates(object):
                 model_name = self.__name.replace(".fits.gz", "_model.json")
         else:
             raise Error("Invalid model name")
-        self.__model = Model(model_name, selected_cols, self.__get_settings(),
+        self.__model = Model(model_name,
+                             selected_cols,
+                             self.__get_settings(),
                              model_options=self.__model_options)
         self.__model.train(self.__candidates)
         self.__model.save_model()
@@ -982,13 +1081,15 @@ class Candidates(object):
                                        (self.__candidates["PROB"] >= prob_cut)]
 
         results = fitsio.FITS(filename, 'rw', clobber=True)
-        names = [col for col in data_frame.columns]
-        cols = [np.array(data_frame[col].values, dtype=str)
-                if data_frame[col].dtype == "object"
-                else data_frame[col].values
-                for col in data_frame.columns]
+        names = list(data_frame.columns)
+        cols = [
+            np.array(data_frame[col].values, dtype=str)
+            if data_frame[col].dtype == "object" else data_frame[col].values
+            for col in data_frame.columns
+        ]
         results.write(cols, names=names, extname="CANDIDATES")
         results.close()
+
 
 if __name__ == '__main__':
     pass

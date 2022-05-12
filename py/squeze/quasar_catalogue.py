@@ -12,6 +12,7 @@ import fitsio
 
 import pandas as pd
 
+
 class QuasarCatalogue(object):
     """
         Manage the quasar catalogue.
@@ -19,6 +20,7 @@ class QuasarCatalogue(object):
         CLASS: QuasarCatalogue
         PURPOSE: Load the quasar catalogue and format it accordingly
         """
+
     def __init__(self, filename, columns, specid_column, ztrue_column, hdu):
         """
             Initialize instance
@@ -47,7 +49,8 @@ class QuasarCatalogue(object):
         columns = [col.upper() for col in columns]
         columns.append("SPECID")
         columns.append("Z_TRUE")
-        self.__quasar_catalogue = pd.DataFrame(list(zip(*data)), columns=columns)
+        self.__quasar_catalogue = pd.DataFrame(list(zip(*data)),
+                                               columns=columns)
         catalogue_hdul.close()
 
     def quasar_catalogue(self):
@@ -68,6 +71,7 @@ class QuasarCatalogue(object):
             takeable : interpret the index/col as indexers, default False
             """
         self.__quasar_catalogue.set_value(index, col, value, takeable)
+
 
 if __name__ == "__main__":
     pass

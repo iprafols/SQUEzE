@@ -127,3 +127,13 @@ Run
 python squeze_merge_candidates.py
 ```
 for an explanation on the arguments add `-h` to the previous line
+
+### For Developers
+Before submitting a PR please make sure to:
+1. For every file you have modified run
+```yapf --style google file.py > aux
+mv aux file.py
+```
+to ensure the coding styles are maintained.
+2. Consider using pylint to help in the debug process. From the repo folder run
+```pylint py/squeze/*py```

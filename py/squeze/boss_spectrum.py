@@ -15,6 +15,7 @@ import fitsio
 from squeze.error import Error
 from squeze.spectrum import Spectrum
 
+
 class BossSpectrum(Spectrum):
     """
         Load and format a BOSS spectrum to be digested by SQUEzE
@@ -23,9 +24,17 @@ class BossSpectrum(Spectrum):
         PURPOSE: Load and format a BOSS spectrum to be digested by
         SQUEzE
         """
-    def __init__(self, spectrum_file, metadata, sky_mask, mask_jpas=False,
-                 mask_jpas_alt=False, rebin_pixels_width=0, extend_pixels=0,
-                 noise_increase=1, forbidden_wavelenghts=None):
+
+    def __init__(self,
+                 spectrum_file,
+                 metadata,
+                 sky_mask,
+                 mask_jpas=False,
+                 mask_jpas_alt=False,
+                 rebin_pixels_width=0,
+                 extend_pixels=0,
+                 noise_increase=1,
+                 forbidden_wavelenghts=None):
         """ Initialize class instance
 
             Parameters
@@ -73,8 +82,15 @@ class BossSpectrum(Spectrum):
         # open fits file
         spectrum_hdul = fitsio.FITS(spectrum_file)
 
+        # intialize arrays
+        # The 1.0 mulitplying is added to change type from >4f to np.float
+        # this is required by numba later on
+        wave = 10**spectrum_hdul[1]["LOGLAM"][:]
+        flux = 1.0 * spectrum_hdul[1]["FLUX"][:]
+        ivar = 1.0 * spectrum_hdul[1]["IVAR"][:]
+        super().__init__(flux, ivar, wave, metadata)
+
         # compute sky mask
-        self._wave = 10**spectrum_hdul[1]["LOGLAM"][:]
         masklambda = sky_mask[0]
         margin = sky_mask[1]
         self.__skymask = None
@@ -85,29 +101,26 @@ class BossSpectrum(Spectrum):
             self.__filter_wavelengths(forbidden_wavelenghts)
 
         # store the wavelength, flux and inverse variance as arrays
-        # The 1.0 mulitplying is added to change type from >4f to np.float
-        # this is required by numba later on
-        self._flux = 1.0*spectrum_hdul[1]["FLUX"][:]
-        self._ivar = 1.0*spectrum_hdul[1]["IVAR"][:]
         # mask pixels
         self._ivar[self.__skymask] = 0.0
-        self._metadata = metadata
         if noise_increase > 1:
             self.__add_noise(noise_increase)
         if rebin_pixels_width > 0:
-            self._flux, self._ivar, self._wave = self.rebin(rebin_pixels_width,
-                                                            extend_pixels=extend_pixels)
+            self._flux, self._ivar, self._wave = self.rebin(
+                rebin_pixels_width, extend_pixels=extend_pixels)
 
         # JPAS mask
         if mask_jpas:
-            pos = np.where(~((np.isin(self._wave, [3900, 4000, 4300, 4400, 4700, 4800, 5100,
-                                                 5200])) | (self._wave >= 7300)))
+            pos = np.where(~((np.isin(
+                self._wave, [3900, 4000, 4300, 4400, 4700, 4800, 5100, 5200])) |
+                             (self._wave >= 7300)))
             self._wave = self._wave[pos].copy()
             self._ivar = self._ivar[pos].copy()
             self._flux = self._flux[pos].copy()
         elif mask_jpas_alt:
-            pos = np.where(~((np.isin(self._wave, [3800, 4000, 4200, 4400, 4600, 4800, 5000,
-                                                   5200])) | (self._wave >= 7300)))
+            pos = np.where(~((np.isin(
+                self._wave, [3800, 4000, 4200, 4400, 4600, 4800, 5000, 5200])) |
+                             (self._wave >= 7300)))
             self._wave = self._wave[pos].copy()
             self._ivar = self._ivar[pos].copy()
             self._flux = self._flux[pos].copy()
@@ -119,10 +132,11 @@ class BossSpectrum(Spectrum):
             equal to the (noise_amount-1) times the given variance. Then increase the
             variance by a factor noise_amount
             """
-        sigma = 1./np.sqrt(self._ivar)
+        sigma = 1. / np.sqrt(self._ivar)
         sigma[np.where(sigma == np.inf)] = 0.
-        self._ivar = self._ivar/noise_amount
-        self._flux = self._flux + (noise_amount - 1.)*sigma*randn(self._flux.size)
+        self._ivar = self._ivar / noise_amount
+        self._flux = self._flux + (noise_amount - 1.) * sigma * randn(
+            self._flux.size)
 
     def __find_skymask(self, masklambda, margin):
         """ Compute the sky mask according to a set of wavelengths and a margin.
@@ -132,14 +146,16 @@ class BossSpectrum(Spectrum):
             """
         self.__skymask = np.zeros_like(self._wave, dtype=bool)
         for wave in masklambda:
-            self.__skymask[np.where(np.abs(np.log10(self._wave/wave)) <= margin)] = True
+            self.__skymask[np.where(
+                np.abs(np.log10(self._wave / wave)) <= margin)] = True
 
     def __filter_wavelengths(self, forbidden_wavelenghts):
         """ Mask the wavelengths in the ranges specified by the tuples in
             forbidden_wavelenghts
             """
         for item in forbidden_wavelenghts:
-            self.__skymask[np.where((self._wave >= item[0]) & (self._wave <= item[1]))] = True
+            self.__skymask[np.where((self._wave >= item[0]) &
+                                    (self._wave <= item[1]))] = True
 
 
 if __name__ == "__main__":

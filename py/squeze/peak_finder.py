@@ -1,15 +1,16 @@
 """
     SQUEzE
     ======
-    
+
     This file provides a peak finder to be used by SQUEzE
     """
 
 import numpy as np
 
+
 class PeakFinder(object):
     """ Create and manage the peak finder used by SQUEzE
-        
+
         CLASS: PeakFinder
         PURPOSE: Create and manage the peak finder used by SQUEzE. This
         peak finder looks for peaks in a smoothed spectrum by looking for
@@ -17,7 +18,7 @@ class PeakFinder(object):
         the significance of the peaks and filters the results according to
         their significances.
         """
-    
+
     def __init__(self, width, min_significance):
         """ Initialize class instance
 
@@ -32,10 +33,10 @@ class PeakFinder(object):
             """
         self.__width = width
         if self.__width > 0:
-            self.__fwhm = int(2.355*width)
+            self.__fwhm = int(2.355 * width)
         else:
             self.__fwhm = 2
-        self.__half_fwhm = int(self.__fwhm/2)
+        self.__half_fwhm = int(self.__fwhm / 2)
         self.__min_significance = min_significance
 
     def __find_peak_significance(self, spectrum, index):
@@ -46,13 +47,11 @@ class PeakFinder(object):
             full width half maximum of the Gaussian used in the smoothing.
             The continuum is measured using two windows of size FWHM/2 at each
             side of the peak.
-            
+
             Parameters
             ----------
             spectrum : Spectrum
             The spectrum where peaks are looked for
-            
-            
             """
         flux = spectrum.flux()
         ivar = spectrum.ivar()
@@ -60,14 +59,17 @@ class PeakFinder(object):
         if index < self.__fwhm or index + self.__fwhm > flux.size:
             significance = np.nan
         else:
-            peak = np.average(flux[index - self.__half_fwhm: index + self.__half_fwhm])
-            cont = np.average(flux[index - self.__fwhm: index - self.__half_fwhm])
-            cont += np.average(flux[index + self.__half_fwhm: index + self.__fwhm])
-            cont = cont/2.0
-            ivar_diff = np.sum(ivar[index - self.__fwhm: index + self.__fwhm])
+            peak = np.average(flux[index - self.__half_fwhm:index +
+                                   self.__half_fwhm])
+            cont = np.average(flux[index - self.__fwhm:index -
+                                   self.__half_fwhm])
+            cont += np.average(flux[index + self.__half_fwhm:index +
+                                    self.__fwhm])
+            cont = cont / 2.0
+            ivar_diff = np.sum(ivar[index - self.__fwhm:index + self.__fwhm])
             if ivar_diff != 0.0:
-                error = 1.0/np.sqrt(ivar_diff)
-                significance = (peak-cont)/error
+                error = 1.0 / np.sqrt(ivar_diff)
+                significance = (peak - cont) / error
             else:
                 significance = np.nan
 
@@ -75,12 +77,12 @@ class PeakFinder(object):
 
     def find_peaks(self, spectrum):
         """ Find significant peaks in a given spectrum.
-            
+
             Parameters
             ----------
             spectrum : Spectrum
             The spectrum where peaks are looked for
-            
+
             Returns
             -------
             An array with the position of the peaks
@@ -92,8 +94,9 @@ class PeakFinder(object):
         peak_indexs = []
         significances = []
         for index, flux in enumerate(smoothed_data):
-            if ((index > 0) and (index < smoothed_data.size -1) and
-                (flux > smoothed_data[index + 1]) and (flux > smoothed_data[index - 1])):
+            if ((0 < index < smoothed_data.size - 1) and
+                (flux > smoothed_data[index + 1]) and
+                (flux > smoothed_data[index - 1])):
                 # find significance of the peak
                 significance = self.__find_peak_significance(spectrum, index)
 
@@ -108,5 +111,3 @@ class PeakFinder(object):
 
         # return
         return peak_indexs, significances
-
-

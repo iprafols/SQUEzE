@@ -12,6 +12,7 @@ __version__ = "0.1"
 from squeze.error import Error
 from squeze.spectrum import Spectrum
 
+
 class MySpectrum(Spectrum):
     """
         Example of a class inheriting from Spectrum
@@ -20,15 +21,33 @@ class MySpectrum(Spectrum):
         PURPOSE: Format spectrum following the required SQUEzE
         constraints
         """
+
     # TODO: add arguments as required
-    def __init__(self):
-        """ This is the main function of the class. It should load
-            the data. The flux must be stored in a variable named self._flux,
-            the inverse variance in self._ivar, the wavelength as self._wave,
-            and the metadata in self._metadata.
-            Check the definition of Spectrum for more details"""
+    def __init__(self, flux, ivar, wave, metadata):
+        """ Initialize class instance.
+
+            This function should be modified as required or removed if no
+            specific initialization operations are required
+
+            Parameters
+            ----------
+            flux : np.array
+            Array containing the flux
+
+            ivar : np.array
+            Array containing the inverse variance
+
+            wave : np.array
+            Array containing the wavelength
+
+            metadata : dict
+            A dictionary where the keys are the names of the properties
+            and have type str.
+            """
+        super().__init__(flux, ivar, wave, metadata)
         # TODO: fill function
         raise Error("Not implemented")
+
 
 if __name__ == "__main__":
     pass
