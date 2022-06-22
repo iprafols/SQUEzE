@@ -76,9 +76,10 @@ History:
 28 Dec 2020: A.M: Example and Demo mode updated
 28 Dec 2020: A.M: Modified to be compatible with the new version of APS classifier
 16 Feb 2022: A.M: Had to move the line defining columns_candidates  few lines up just before the "find_candidates" function and feed find_candidates with the columns_candidates [To be checked by Ignasi]
-17 Feb 2022: A.M: output_catalogue parameter removed. Now the code generates the CS output name automatically. 
+             I.P: Yes, the numbaized version of "find_candidates" requires the columns_candidates variable to be defined before
+17 Feb 2022: A.M: output_catalogue parameter removed. Now the code generates the CS output name automatically.
 20 Feb 2022: A.M: prior fits file in the latest version of redrock (> 0.15) needs another column called Function with 3 options; Gaussian, Lorentzian and tophat
-topcat is the preferable function for QSO but the redrock code right now cannot handle it properly. So I added Gaussian as the default function. 
+topcat is the preferable function for QSO but the redrock code right now cannot handle it properly. So I added Gaussian as the default function.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.2"
