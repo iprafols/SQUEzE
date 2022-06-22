@@ -13,6 +13,7 @@ import pandas as pd
 from squeze.error import Error
 from squeze.spectrum import Spectrum
 
+
 class WeaveSpectrum(Spectrum):
     """
         Load and format a WEAVE spectrum to be digested by SQUEzE
@@ -21,6 +22,7 @@ class WeaveSpectrum(Spectrum):
         PURPOSE: Load and format a WEAVE spectrum to be digested by
         SQUEzE
         """
+
     def __init__(self, spectrum_dict, wave, metadata):
         """ Initialize class instance
 
@@ -42,8 +44,8 @@ class WeaveSpectrum(Spectrum):
         if "SPECID" not in metadata.keys():
             raise Error("""The property "SPECID" must be present in metadata""")
 
-        self._flux, self._ivar, self._wave = get_spectra(spectrum_dict, wave)
-        self._metadata = metadata
+        flux, ivar, wave = get_spectra(spectrum_dict, wave)
+        super().__init__(flux, ivar, wave, metadata)
 
 
 def get_spectra(spectrum_dict, wave):
@@ -69,6 +71,7 @@ def get_spectra(spectrum_dict, wave):
         -------
         A tupple with the flux, inverse_variance, and wavelength
         """
+
     # nested function to drop leading and trailing zeros
     def drop_leading_trailing_zeros(data_frame):
         """ Drop leading and trailing zeros
@@ -109,12 +112,14 @@ def get_spectra(spectrum_dict, wave):
         gap_slope = (data_frame[data_frame.index == gap[0]]["flux"].values - \
             data_frame[data_frame.index == gap[1]]["flux"].values)/(gap[0]-gap[1])
         gap_startflux = data_frame[data_frame.index == gap[0]]["flux"]
+
         def interpolate_gap(row):
             """ Interpolate data within the gap by using linear interpolation
                 between the edges """
             if row.name > gap[0] and row.name < gap[1]:
-                row["flux"] = gap_slope*(row.name - gap[0]) + gap_startflux
+                row["flux"] = gap_slope * (row.name - gap[0]) + gap_startflux
             return row
+
         data_frame = data_frame.apply(interpolate_gap, axis=1)
         return data_frame
 
@@ -135,13 +140,16 @@ def get_spectra(spectrum_dict, wave):
             -------
             A tuple with the start and end of the gap
             """
-        zeros = data_frame[(data_frame["flux"] == 0.0) & (data_frame["ivar"] == 0.0)]
-        gap_start = zeros.iloc[0].name - 4.0*delta_wave
-        gap_end = zeros.iloc[-1].name + 4.0*delta_wave
+        zeros = data_frame[(data_frame["flux"] == 0.0) &
+                           (data_frame["ivar"] == 0.0)]
+        gap_start = zeros.iloc[0].name - 4.0 * delta_wave
+        gap_end = zeros.iloc[-1].name + 4.0 * delta_wave
         return (gap_start, gap_end)
 
     # format red spectrum
-    red_dict = {key[4:]: value for key, value in spectrum_dict.items() if "red" in key}
+    red_dict = {
+        key[4:]: value for key, value in spectrum_dict.items() if "red" in key
+    }
     red_df = pd.DataFrame(red_dict, index=wave.get("red_wave"))
     # locate leading and ending zeros
     red_df = drop_leading_trailing_zeros(red_df)
@@ -151,7 +159,9 @@ def get_spectra(spectrum_dict, wave):
     red_df = fill_gap(red_df, gap)
 
     # format blue spectrum
-    blue_dict = {key[5:]: value for key, value in spectrum_dict.items() if "blue" in key}
+    blue_dict = {
+        key[5:]: value for key, value in spectrum_dict.items() if "blue" in key
+    }
     blue_df = pd.DataFrame(blue_dict, index=wave.get("blue_wave"))
     # locate leading and ending zeros
     blue_df = drop_leading_trailing_zeros(blue_df)

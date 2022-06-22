@@ -15,6 +15,7 @@ from squeze.spectrum import Spectrum
 from squeze.simple_spectrum import SimpleSpectrum
 from squeze.common_functions import quietprint
 
+
 class Spectra(object):
     """
         Manage the spectra list
@@ -22,7 +23,8 @@ class Spectra(object):
         CLASS: Spectra
         PURPOSE: Manage the spectra list
         """
-    def __init__(self, spectra_list=[]):
+
+    def __init__(self, spectra_list=None):
         """ Initialize class instance
 
             Parameters
@@ -30,6 +32,8 @@ class Spectra(object):
             spectra_list : list of Spectrum
             List of spectra
             """
+        if spectra_list is None:
+            spectra_list = []
         self.__spectra_list = spectra_list
 
     def append(self, spectrum):
@@ -57,7 +61,8 @@ class Spectra(object):
             the instances of Spectrum. For this function to work, data should have been
             serialized using the serialization method specified in `save_json` function
             present on `squeze_common_functions.py` """
-        spectra_list = list(map(SimpleSpectrum.from_json, data.get("_Spectra__spectra_list")))
+        spectra_list = list(
+            map(SimpleSpectrum.from_json, data.get("_Spectra__spectra_list")))
         return cls(spectra_list)
 
     @classmethod
@@ -77,8 +82,8 @@ class Spectra(object):
         spectra_list = []
         for targs in ob_data.data():
             if targs.fib_status.upper() != 'A':
-                userprint(("***** Reject APS_ID = {} : "
-                           "FIB_STATUS={}").format(targs.aps_id, targs.fib_status))
+                userprint(f"***** Reject APS_ID = {targs.aps_id} : "
+                          f"FIB_STATUS={targs.fib_status}")
                 continue
 
             metadata = {
@@ -89,13 +94,14 @@ class Spectra(object):
                 'APS_ID': np.int(targs.id)
             }
 
-            for specid in range(len(targs.spectra)):
-                spectra_list.append(SimpleSpectrum(targs.spectra[specid].flux,
-                                                   targs.spectra[specid].ivar,
-                                                   targs.spectra[specid].wave,
-                                                   metadata))
+            for specid, _ in enumerate(targs.spectra):
+                spectra_list.append(
+                    SimpleSpectrum(targs.spectra[specid].flux,
+                                   targs.spectra[specid].ivar,
+                                   targs.spectra[specid].wave, metadata))
 
         return cls(spectra_list)
+
 
 if __name__ == "__main__":
     pass
