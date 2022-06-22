@@ -8,6 +8,8 @@
     versions:
      1.0 By Ignasi Perez-Rafols (LPNHE, July 2020) - First version
      1.1 Modified By Alireza Molaeinezhad (APS, DEC 2020) -  APS compability
+     1.2 Modified By Alireza Molaeinezhad (APS, Feb 2022)
+     1.3 Modified By Alireza Molaeinezhad (APS, Feb 2022)
 
 
 ########### BAISC APS PARAM ###########################################################################################################
@@ -50,20 +52,16 @@ cache_Rcsr  (Optional)    |     -           |  --cache_Rcsr       (Optional)    
 ######### DEDICATED SQUEZE_WEAVE PARAM ################################################################################################
                           |                 |  --model            (Required)      | '$HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json' |
                           |                 |  --prob_cut         (Optional)      |          -        |                               |
-                          |                 |  --output_catalogue (Required)      |'headname_SQ.fits' |                               |
                           |                 |  --quiet            (Optional)      |        False      |                               |
                           |                 |  --clean_dir        (Optional)      |        True       |                               |
                           |                 |                                     |                   |                               |
 #######################################################################################################################################
 
-    '--model', '$HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json',
-    "--prob_cut", '0.0',
-    "--output_catalogue", 'headname_SQ.fits',
-    "--clean_dir", 'False',
+
 
 Example:
 
-python3 $HOME/PyAPS/CS/SQUEzE/bin/aps_squeze.py --infiles $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004074.fit $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004073.fit --outpath $HOME/PyAPS/PyAPS_results/20170930/4011/ --headname stacked_1004074__stacked_1004073 --wlranges 4200.0,6000.0 6000.0,8000.0 --aps_ids 1002,9,1007,1006 --targsrvy WL,WQ --targclass None --mask_aps_ids None --area None --mask_areas None --templates $HOME/PyAPS/PyAPS_templates/templates_SQ/ --srvyconf $HOME/PyAPS/configs/weave_cls.json --join_arms False --mp 2 --archetypes None --zall False --chi2_scan None --nminima 3 --cache_Rcsr False --debug False --overwrite True --fig True --sens_corr True --mask_gaps True --tellurics False --vacuum True --fill_gap False --arms_ratio 1.0,0.83 --model $HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json --prob_cut 0.0 --output_catalogue stacked_1004074__stacked_1004073_SQ.fits --clean_dir False
+python3 aps_squeze.py --infiles $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004074.fit $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004073.fit --outpath $HOME/PyAPS/PyAPS_results/20170930/4011/ --headname stacked_1004074__stacked_1004073 --wlranges 4200.0,6000.0 6000.0,8000.0 --aps_ids 1002,9,1007,1006 --targsrvy WL,WQ --targclass None --mask_aps_ids None --area None --mask_areas None --templates $HOME/PyAPS/PyAPS_templates/templates_SQ/ --srvyconf $HOME/PyAPS/configs/weave_cls.json --join_arms False --mp 2 --archetypes None --zall False --chi2_scan None --nminima 3 --cache_Rcsr False --debug False --overwrite True --fig True --sens_corr True --mask_gaps True --tellurics False --vacuum True --fill_gap False --arms_ratio 1.0,0.83 --model $HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json --prob_cut 0.0 --clean_dir False
 
 
 
@@ -77,13 +75,13 @@ History:
 28 Dec 2020: A.M: changed srvyconf from mandatory to optional parameter (given that for some cases we do not need it)
 28 Dec 2020: A.M: Example and Demo mode updated
 28 Dec 2020: A.M: Modified to be compatible with the new version of APS classifier
-
-
-
-
+16 Feb 2022: A.M: Had to move the line defining columns_candidates  few lines up just before the "find_candidates" function and feed find_candidates with the columns_candidates [To be checked by Ignasi]
+17 Feb 2022: A.M: output_catalogue parameter removed. Now the code generates the CS output name automatically. 
+20 Feb 2022: A.M: prior fits file in the latest version of redrock (> 0.15) needs another column called Function with 3 options; Gaussian, Lorentzian and tophat
+topcat is the preferable function for QSO but the redrock code right now cannot handle it properly. So I added Gaussian as the default function. 
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
-__version__ = "0.1"
+__version__ = "0.2"
 
 import argparse
 import os
@@ -169,9 +167,11 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
 
     # look for candidates
     userprint("Looking for candidates")
-    candidates.find_candidates(spectra.spectra_list())
 
     columns_candidates = spectra.spectra_list()[0].metadata_names()
+
+    candidates.find_candidates(spectra.spectra_list(),columns_candidates)
+
     if save_file is None:
         candidates.candidates_list_to_dataframe(columns_candidates, save=False)
     else:
@@ -391,13 +391,16 @@ def write_results(zbest, candidates_df, args):
         hdu2.header.comments[key] = desc.get(key, "")
 
     # finally save the catalogue
-    if args.output_catalogue.startswith("/"):
-        filename = args.output_catalogue
-    else:
-        filename = args.outpath + args.output_catalogue
+
+    out_fname=os.path.join(args.outpath, str(args.headname)+'_SQUEZE'+'.fits')
+    # if args.output_catalogue.startswith("/"):
+    #     out_fname = args.output_catalogue
+    # else:
+    #     out_fname = args.outpath + args.output_catalogue
+
+
     hdul = fits.HDUList([primary_hdu, hdu, hdu2])
-    hdul.writeto(filename,
-                 overwrite=True, checksum=True)
+    hdul.writeto(out_fname, overwrite=True, checksum=True)
 
 def main(options=None, comm=None):
     """ Run SQUEzE on WEAVE data
@@ -511,9 +514,9 @@ def main(options=None, comm=None):
     parser.add_argument("--prob_cut", default=0.0, type=float,
         help="Only objects with probability >= PROB_CUT will be included in the catalogue")
 
-    parser.add_argument("--output_catalogue", required=True, type=none_or_str,
-        help="Name of the fits file where the final catalogue will be stored. "
-             "If a full path is not provided, then use --outpath")
+    # parser.add_argument("--output_catalogue", required=True, type=none_or_str,
+    #     help="Name of the fits file where the final catalogue will be stored. "
+    #          "If a full path is not provided, then use --outpath")
 
     parser.add_argument("--quiet", type=str2bool, default=False,
         help="Do not print messages")
@@ -637,14 +640,18 @@ def main(options=None, comm=None):
 
     # now we make some checks for SQUEzE arguments
     # first we make sure the catalogue's folder exists
-    if args.output_catalogue.startswith("/"):
-        catalogue_path = args.output_catalogue[:args.output_catalogue.rfind("/")]
-        if not os.path.exists(catalogue_path):
-            os.makedirs(catalogue_path)
-            print("OUTPUT_CATALOGUE: %s Created!" %(catalogue_path))
-    else:
-        args.output_catalogue = os.path.join(args.outpath, args.output_catalogue)
+
+
+    # if args.output_catalogue.startswith("/"):
+    #     catalogue_path = args.output_catalogue[:args.output_catalogue.rfind("/")]
+    #     if not os.path.exists(catalogue_path):
+    #         os.makedirs(catalogue_path)
+    #         print("OUTPUT_CATALOGUE: %s Created!" %(catalogue_path))
+    # else:
+    #     args.output_catalogue = os.path.join(args.outpath, args.output_catalogue)
     # and then we make sure the model used exists
+
+
     assert os.path.exists(args.model)
     model = args.model
     # finally check that prob is a number between 0 and 1
@@ -675,7 +682,7 @@ def main(options=None, comm=None):
     ### Before running the main worker, we first make sure eveyrthing is OK
     try:
         infiles_check = l1_fileinfo(args.infiles)
-        fcheck_targs, fcheck_idt, fcheck_info, fcheck_la = gen_targlist(infiles_check['infiles'][0],
+        fcheck_targs, fcheck_idt, fcheck_info, fcheck_la, fcheck_wcs = gen_targlist(infiles_check['infiles'][0],
             infiles_check['mode'], aps_ids = aps_ids, targsrvy= targsrvy, targclass = targclass,
             mask_aps_ids = mask_aps_ids, area=area, mask_areas=mask_areas, la_out=False)
 
@@ -706,15 +713,17 @@ def main(options=None, comm=None):
 
     try:
         # run SQUEzE
-        assert (args.output_catalogue.endswith(".fit") or
-                args.output_catalogue.endswith(".fits") or
-                args.output_catalogue.endswith(".fits.gz")
-                ), "Invalid extension for output catalogue"
-        ext = args.output_catalogue[args.output_catalogue.rfind("fit")-1:]
-        save_file = args.output_catalogue.replace(ext,
-                                                  "_squeze_candidates{}".format(ext))
-        if not save_file.startswith("/"):
-            save_file = args.outpath + save_file
+        # assert (args.output_catalogue.endswith(".fit") or
+        #         args.output_catalogue.endswith(".fits") or
+        #         args.output_catalogue.endswith(".fits.gz")
+        #         ), "Invalid extension for output catalogue"
+        # ext = args.output_catalogue[args.output_catalogue.rfind("fit")-1:]
+
+        # save_file = args.output_catalogue.replace(ext,"_squeze_candidates{}".format(ext))
+        save_file = os.path.join(args.outpath, str(args.headname)+'_SQUEZE__squeze_candidates'+'.fits')
+
+        # if not save_file.startswith("/"):
+        #     save_file = args.outpath + save_file
 
         candidates_df, z_precision = squeze_worker(args.infiles, args.model,
                                                    aps_ids, targsrvy, targclass,
@@ -738,6 +747,10 @@ def main(options=None, comm=None):
             fits.Column(name="TARGETID",
                         format="I",
                         array=aux["APS_ID"]),
+            fits.Column(name="FUNCTION",
+                        format="20A",
+                        array=np.array(['gaussian'] * aux["APS_ID"].size)
+                        ),
             fits.Column(name="Z",
                         format="D",
                         array=aux["Z_TRY"]),
@@ -827,7 +840,7 @@ if __name__ == '__main__':
     '--templates', '$HOME/PyAPS/PyAPS_templates/templates_SQ/',
     '--srvyconf', '$HOME/PyAPS/configs/weave_cls.json',
     '--archetypes', '$HOME/PyAPS/PyAPS_templates/templates_ARC_SQ/',
-    '--outpath', '$HOME/PyAPS/PyAPS_results/20170930/4011/',
+    '--outpath', '$HOME/PyAPS/PyAPS_results/20170930/4011_3/',
     '--headname', 'stacked_1004074__stacked_1004073',
     '--zall', 'False',
     '--chi2_scan', 'None',
@@ -839,7 +852,7 @@ if __name__ == '__main__':
     '--mp' ,'2',
     '--model', '$HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json',
     "--prob_cut", '0.0',
-    "--output_catalogue", 'stacked_1004074__stacked_1004073_SQ.fits',
+    # "--output_catalogue", 'stacked_1004074__stacked_1004073_SQUEZE.fits',
     "--clean_dir", 'False',
     ]
 
