@@ -169,6 +169,7 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
 
     return new_candidates
 
+
 @jit(nopython=True)
 def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
                           lines):
@@ -216,36 +217,40 @@ def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
 
     """
     pixel_metrics = []
-    for i in prange(peak_indexs.size):
-    #for peak_index, significance in zip(peak_indexs, significances):
+    # pylint: disable=not-an-iterable
+    # prange is the numba equivalent to range
+    for index1 in prange(peak_indexs.size):
+        #for peak_index, significance in zip(peak_indexs, significances):
 
         candidate_info = [float(x) for x in range(0)]
 
         # compute pixel metrics
-        peak_index = peak_indexs[i]
+        peak_index = peak_indexs[index1]
         candidate_info = []
-        for j in prange(-num_pixels, 0):
-            if peak_index + j < 0:
+        for index2 in prange(-num_pixels, 0):
+            if peak_index + index2 < 0:
                 candidate_info.append(np.nan)
                 candidate_info.append(np.nan)
             else:
-                candidate_info.append(flux[peak_index + j])
-                candidate_info.append(ivar[peak_index + j])
-        for j in prange(0, num_pixels):
-            if peak_index + j >= flux.size:
+                candidate_info.append(flux[peak_index + index2])
+                candidate_info.append(ivar[peak_index + index2])
+        for index2 in prange(0, num_pixels):
+            if peak_index + index2 >= flux.size:
                 candidate_info.append(np.nan)
                 candidate_info.append(np.nan)
             else:
-                candidate_info.append(flux[peak_index + j])
-                candidate_info.append(ivar[peak_index + j])
+                candidate_info.append(flux[peak_index + index2])
+                candidate_info.append(ivar[peak_index + index2])
 
-        for j in prange(len(try_lines)):
-        #for try_line in try_lines:
+        # pylint: disable=not-an-iterable
+        # prange is the numba equivalent to range
+        for index2 in prange(len(try_lines)):
+            #for try_line in try_lines:
 
             # compute redshift
             # 0=WAVE
-            z_try = wave[peak_indexs[i]]
-            z_try = z_try/lines[try_lines[j], 0]
+            z_try = wave[peak_indexs[index1]]
+            z_try = z_try / lines[try_lines[index2], 0]
             z_try = z_try - 1.0
             if z_try < 0.0:
                 continue
@@ -255,11 +260,14 @@ def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
 
     return pixel_metrics
 
+
 def convert_dtype(dtype):
-     if dtype == "O":
-         return "15A"
-     else:
-         return dtype
+    """Convert datatype "O" to "15" to save in fits file.
+    Other types are ignored return as they are"""
+    if dtype == "O":
+        return "15A"
+    return dtype
+
 
 @vectorize
 def compute_is_correct(correct_redshift, class_person):
@@ -601,12 +609,15 @@ class Candidates(object):
 
             if self.__pixels_as_metrics:
                 pixel_metrics = compute_pixel_metrics(wave, flux, ivar,
-                                                      peak_indexs, self.__num_pixels,
+                                                      peak_indexs,
+                                                      self.__num_pixels,
                                                       self.__try_lines_indexs,
                                                       self.__lines.values)
-                new_candidates = [item + candidate_pixel_metrics
-                                  for item, candidate_pixel_metrics in
-                                  zip(new_candidates, pixel_metrics)]
+                new_candidates = [
+                    item + candidate_pixel_metrics
+                    for item, candidate_pixel_metrics in zip(
+                        new_candidates, pixel_metrics)
+                ]
 
             self.__candidates_list += new_candidates
 
@@ -683,11 +694,11 @@ class Candidates(object):
             columns_candidates.append("ASSUMED_LINE")
             if self.__pixels_as_metrics:
                 for index in range(-self.__num_pixels, 0):
-                    columns_candidates.append(f"FLUX_{i}")
-                    columns_candidates.append(f"IVAR_{i}")
+                    columns_candidates.append(f"FLUX_{index}")
+                    columns_candidates.append(f"IVAR_{index}")
                 for index in range(0, self.__num_pixels):
-                    columns_candidates.append(f"FLUX_{i}")
-                    columns_candidates.append(f"IVAR_{i}")
+                    columns_candidates.append(f"FLUX_{index}")
+                    columns_candidates.append(f"IVAR_{index}")
 
         # create dataframe
         aux = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
