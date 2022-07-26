@@ -111,5 +111,12 @@ CLASS_PREDICTED = {
 # conversion to dataframe is executed
 MAX_CANDIDATES_TO_CONVERT = 100000000
 
+
+"""
+This variable sets the number of pixels to each side of the peak to be used as
+metrics
+"""
+NUM_PIXELS = 30
+
 if __name__ == '__main__':
     pass
