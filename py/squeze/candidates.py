@@ -169,7 +169,6 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
 
     return new_candidates
 
-<<<<<<< HEAD
 @jit(nopython=True)
 def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
                           lines):
@@ -261,8 +260,6 @@ def convert_dtype(dtype):
          return "15A"
      else:
          return dtype
-=======
->>>>>>> master
 
 @vectorize
 def compute_is_correct(correct_redshift, class_person):
@@ -529,24 +526,15 @@ class Candidates(object):
 
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """
-<<<<<<< HEAD
-        return {"LINES": self.__lines,
-                "TRY_LINES": self.__try_lines,
-                "Z_PRECISION": self.__z_precision,
-                "PEAKFIND_WIDTH": self.__peakfind_width,
-                "PEAKFIND_SIG": self.__peakfind_sig,
-                "PIXELS_AS_METRICS": self.__pixels_as_metrics,
-                "NUM_PIXELS": self.__num_pixels,
-               }
-=======
         return {
             "LINES": self.__lines,
             "TRY_LINES": self.__try_lines,
             "Z_PRECISION": self.__z_precision,
             "PEAKFIND_WIDTH": self.__peakfind_width,
             "PEAKFIND_SIG": self.__peakfind_sig,
+            "PIXELS_AS_METRICS": self.__pixels_as_metrics,
+            "NUM_PIXELS": self.__num_pixels,
         }
->>>>>>> master
 
     def __find_candidates(self, spectrum):
         """
@@ -606,9 +594,10 @@ class Candidates(object):
                                                  self.__try_lines_indexs,
                                                  self.__lines.values)
 
-<<<<<<< HEAD
-            new_candidates = [metadata + item[:-1] + [self.__try_lines[int(item[-1])]]
-                              for item in new_candidates]
+            new_candidates = [
+                metadata + item[:-1] + [self.__try_lines[int(item[-1])]]
+                for item in new_candidates
+            ]
 
             if self.__pixels_as_metrics:
                 pixel_metrics = compute_pixel_metrics(wave, flux, ivar,
@@ -619,12 +608,6 @@ class Candidates(object):
                                   for item, candidate_pixel_metrics in
                                   zip(new_candidates, pixel_metrics)]
 
-=======
-            new_candidates = [
-                metadata + item[:-1] + [self.__try_lines[int(item[-1])]]
-                for item in new_candidates
-            ]
->>>>>>> master
             self.__candidates_list += new_candidates
 
     def __load_model_settings(self):
@@ -640,14 +623,6 @@ class Candidates(object):
 
     def save_candidates(self):
         """ Save the candidates DataFrame. """
-<<<<<<< HEAD
-        hdu = fits.BinTableHDU.from_columns([fits.Column(name=col,
-                                                         format=convert_dtype(dtype),
-                                                         array=self.__candidates[col])
-                                             for col, dtype in zip(self.__candidates.columns,
-                                                                   self.__candidates.dtypes)])
-        hdu.writeto(self.__name, overwrite=True)
-=======
         results = fitsio.FITS(self.__name, 'rw', clobber=True)
         names = list(self.__candidates.columns)
         cols = [
@@ -657,7 +632,6 @@ class Candidates(object):
         ]
         results.write(cols, names=names, extname="CANDIDATES")
         results.close()
->>>>>>> master
 
     def candidates(self):
         """ Access the candidates DataFrame. """
@@ -1162,16 +1136,6 @@ class Candidates(object):
             """
         # consistency checks
         if self.__mode != "training":
-<<<<<<< HEAD
-            raise  Error("The function train_model is available in the " +
-                         "training mode only. Detected mode is {}".format(self.__mode))
-
-        selected_cols = [col.upper() for col in self.__candidates.columns if col.endswith("RATIO_SN")]
-        selected_cols += [col.upper() for col in self.__candidates.columns if col.endswith("RATIO2")]
-        selected_cols += [col.upper() for col in self.__candidates.columns if col.endswith("RATIO")]
-        selected_cols += [col.upper() for col in self.__candidates.columns if col.startswith("FLUX_")]
-        selected_cols += [col.upper() for col in self.__candidates.columns if col.startswith("IVAR_")]
-=======
             raise Error("The function train_model is available in the " +
                         f"training mode only. Detected mode is {self.__mode}")
 
@@ -1190,7 +1154,16 @@ class Candidates(object):
             for col in self.__candidates.columns
             if col.endswith("RATIO")
         ]
->>>>>>> master
+        selected_cols += [
+            col.upper()
+            for col in self.__candidates.columns
+            if col.startswith("FLUX_")
+        ]
+        selected_cols += [
+            col.upper()
+            for col in self.__candidates.columns
+            if col.startswith("IVAR_")
+        ]
         selected_cols += ["PEAK_SIGNIFICANCE"]
 
         # add extra columns
