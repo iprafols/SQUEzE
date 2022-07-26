@@ -234,6 +234,18 @@ TRAINING_PARSER.add_argument(
     required=False,
     help="""Pass these columns to the random forest classifier""")
 
+TRAINING_PARSER.add_argument(
+    "--pixels-as-metrics",
+    action="store_true",
+    help="""keep pixel information as metrics""")
+
+TRAINING_PARSER.add_argument(
+    "--num-pixels",
+    type=int,
+    default=None,
+    required=False,
+    help="""Number of pixels to each side of the peak to use as metrics""")
+
 # OPERATION_PARSER contains the options used to run SQUEzE in operation mode
 OPERATION_PARSER = argparse.ArgumentParser(add_help=False,
                                            parents=[PARENT_PARSER, MODE_PARSER])
@@ -243,7 +255,7 @@ OPERATION_PARSER.add_argument(
     default=0.0,
     type=float,
     help="""Only objects with probability >= PROB_CUT will be included
-                                  in the catalogue""")
+            in the catalogue""")
 
 OPERATION_PARSER.add_argument(
     "--model",

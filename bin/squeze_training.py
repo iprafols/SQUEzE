@@ -27,6 +27,7 @@ from squeze.defaults import TRY_LINES
 from squeze.defaults import Z_PRECISION
 from squeze.defaults import PEAKFIND_WIDTH
 from squeze.defaults import PEAKFIND_SIG
+from squeze.defaults import NUM_PIXELS
 from squeze.parsers import TRAINING_PARSER
 
 
@@ -59,12 +60,17 @@ def main(cmdargs):
     random_forest_options = RANDOM_FOREST_OPTIONS if args.random_forest_options is None else load_json(args.random_forest_options)
     random_state = RANDOM_STATE if args.random_state is None else args.random_state
 
+    # load pixel metrics options
+    pixels_as_metrics = args.pixels_as_metrics
+    num_pixels = NUM_PIXELS if args.num_pixels is None else args.num_pixels
+
     # initialize candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is None:
         candidates = Candidates(lines_settings=(lines, try_line),
                                 z_precision=z_precision, mode="training",
                                 peakfind=(peakfind_width, peakfind_sig),
+                                pixel_as_metrics=(pixels_as_metrics, num_pixels),
                                 model=None, userprint=userprint,
                                 model_options=(random_forest_options, random_state,
                                                args.pass_cols_to_rf))
@@ -73,6 +79,7 @@ def main(cmdargs):
                                 z_precision=z_precision, mode="training",
                                 name=args.output_candidates,
                                 peakfind=(peakfind_width, peakfind_sig),
+                                pixel_as_metrics=(pixels_as_metrics, num_pixels),
                                 model=None, userprint=userprint,
                                 model_options=(random_forest_options, random_state,
                                                args.pass_cols_to_rf))
