@@ -98,6 +98,8 @@ def main(cmdargs):
     # loop over spectra
     userprint("Loading spectra")
     hdu = fits.open(args.input_filename)
+    metadata_dtype = {col.upper(): str(hdu[1].data[col].dtype) for col in args.keep_cols}
+    metadata_dtype["SPECID"] = "<S20"
     for row in hdu[1].data:
 
         # load data
@@ -118,8 +120,6 @@ def main(cmdargs):
         metadata = {col.upper(): row[col] for col in args.keep_cols}
         metadata["SPECID"] = int("{}{}".format(row["FLambdaDualObj.TILE_ID"],
                                                row["FLambdaDualObj.NUMBER"]))
-        metadata_dtype = {col.upper(): row[col].dtype for col in args.keep_cols}
-        metadata_dtype["SPECID"] = "<S20"
 
         # format spectrum
         spectrum = SimpleSpectrum(flux, ivar, wave , metadata, metadata_dtype)
