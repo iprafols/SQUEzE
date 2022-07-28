@@ -783,7 +783,7 @@ class Candidates(object):
         if save:
             self.save_candidates()
 
-    def find_candidates(self, spectra, columns_candidates):
+    def find_candidates(self, spectra):
         """ Find candidates for a given set of spectra, then integrate them in the
             candidates catalogue and save the new version of the catalogue.
 
@@ -791,9 +791,6 @@ class Candidates(object):
             ----------
             spectra : list of Spectrum
             The spectra in which candidates will be looked for.
-
-            columns_candidates : list of str
-            The column names of the spectral metadata
             """
         if self.__mode == "training" and "Z_TRUE" not in spectra[
                 0].metadata_names():
