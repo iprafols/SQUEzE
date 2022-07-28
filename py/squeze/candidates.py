@@ -14,7 +14,6 @@ import time
 
 import numpy as np
 from numba import prange, jit, vectorize
-import pandas as pd
 import fitsio
 from astropy.table import Table
 
@@ -491,6 +490,7 @@ class Candidates(object):
         # initialize empty catalogue
         self.__candidates_list = []
         self.__candidates = None
+        self.__candidates_dtype = None
 
         # main settings
         self.__lines = lines_settings[0]
@@ -531,6 +531,58 @@ class Candidates(object):
         self.__try_lines_dict = dict(
             zip(self.__try_lines, self.__try_lines_indexs))
         self.__try_lines_dict["none"] = -1
+
+    def __init_candidates_dtype(self, columns_candidates, spectrum):
+        """ Initializes the array dtype for the candidates
+
+            Parameters
+            ----------
+            columns_candidates : list of str
+            The column names of the spectral metadata
+
+            spectrum: Spectrum
+            A spectrum example to infer data type
+            """
+        dtype_list = []
+        # first figure out format for metadata
+        for name, value in zip(columns_candidates, spectrum.metadata())
+            if isinstance(value, int):
+                this_type = np.int64
+            if isinstance(value, float):
+                this_type = np.float64
+            if isinstance(value, str):
+                this_type = "<S15"
+            if isinstance(value, bool):
+                this_type = np.bool_
+            else:
+                raise Error(f"Unrecognized type inferred for {value}. "
+                            "Checked for int, float, bool and str.")
+        # add metrics info
+        for index1 in range(self.__lines.shape[0]):
+            dtype_list.append((f"{self.__lines.iloc[index1].name.upper()}_RATIO", np.float64))
+            dtype_list.append((f"{self.__lines.iloc[index1].name.upper()}_RATIO_SN", np.float64))
+            dtype_list.append((f"{self.__lines.iloc[index1].name.upper()}_RATIO2", np.float64))
+        dtype_list += [
+            ("Z_TRY", np.float64),
+            ("PEAK_SIGNIFICANCE", np.float64),
+            ("ASSUMED_LINE", "<S15"),
+        ]
+        if self.__pixels_as_metrics:
+            for index in range(-self.__num_pixels, 0):
+                dtype_list.append((f"FLUX_{index}", np.float64))
+                dtype_list.append((f"IVAR_{index}", np.float64))
+            for index in range(0, self.__num_pixels):
+                dtype_list.append((f"FLUX_{index}", np.float64))
+                dtype_list.append((f"IVAR_{index}", np.float64))
+        # add truth table info
+        if (self.__mode in ["training", "test"] or
+            (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
+            dtype_list.append("DELTA_Z", np.float64)
+            dtype_list.append("CORRECT_REDSHIFT", np.bool_)
+            dtype_list.append("IS_CORRECT", np.bool_)
+            dtype_list.append("IS_LINE", np.bool_)
+
+        self.__candidates_dtype = np.dtype(dtype_list)
 
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """
@@ -635,12 +687,12 @@ class Candidates(object):
     def save_candidates(self):
         """ Save the candidates DataFrame. """
         results = fitsio.FITS(self.__name, 'rw', clobber=True)
-        names = list(self.__candidates.columns)
-        cols = [
-            np.array(self.__candidates[col].values, dtype=str)
-            if self.__candidates[col].dtype == "object" else
-            self.__candidates[col].values for col in self.__candidates.columns
-        ]
+        #names = list(self.__candidates.columns)
+        #cols = [
+        #    np.array(self.__candidates[col].values, dtype=str)
+        #    if self.__candidates[col].dtype == "object" else
+        #    self.__candidates[col].values for col in self.__candidates.columns
+        #]
         results.write(cols, names=names, extname="CANDIDATES")
         results.close()
 
@@ -667,8 +719,8 @@ class Candidates(object):
         else:
             raise Error("Invalid mode")
 
-    def candidates_list_to_dataframe(self, columns_candidates, save=True):
-        """ Format existing candidates list into a dataframe
+    def candidates_list_to_array(self, columns_candidates, save=True):
+        """ Format existing candidates list into a structured array
 
             Parameters
             ----------
@@ -681,57 +733,35 @@ class Candidates(object):
         if len(self.__candidates_list) == 0:
             return
 
-        if "Z_TRY" not in columns_candidates:
-            for index1 in range(self.__lines.shape[0]):
-                columns_candidates.append(
-                    f"{self.__lines.iloc[index1].name.upper()}_RATIO")
-                columns_candidates.append(
-                    f"{self.__lines.iloc[index1].name.upper()}_RATIO_SN")
-                columns_candidates.append(
-                    f"{self.__lines.iloc[index1].name.upper()}_RATIO2")
-            columns_candidates.append("Z_TRY")
-            columns_candidates.append("PEAK_SIGNIFICANCE")
-            columns_candidates.append("ASSUMED_LINE")
-            if self.__pixels_as_metrics:
-                for index in range(-self.__num_pixels, 0):
-                    columns_candidates.append(f"FLUX_{index}")
-                    columns_candidates.append(f"IVAR_{index}")
-                for index in range(0, self.__num_pixels):
-                    columns_candidates.append(f"FLUX_{index}")
-                    columns_candidates.append(f"IVAR_{index}")
-
-        # create dataframe
-        aux = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
+        # create array
+        aux = np.array(self.__candidates_list, dtype=self.__candidates_dtype)
 
         # add truth table if running in training or test modes
         if (self.__mode in ["training", "test"] or
             (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
+
             self.__userprint("Adding control variables from truth table")
             aux["DELTA_Z"] = aux["Z_TRY"] - aux["Z_TRUE"]
-            if aux.shape[0] > 0:
-                self.__userprint("    is_correct_redshift")
-                aux["CORRECT_REDSHIFT"] = compute_is_correct_redshift(
-                    aux["DELTA_Z"].values, aux["CLASS_PERSON"].values,
-                    self.__z_precision)
-                self.__userprint("    is_correct")
-                aux["IS_CORRECT"] = compute_is_correct(
-                    aux["CORRECT_REDSHIFT"].values, aux["CLASS_PERSON"].values)
-                self.__userprint("    is_line")
-                aux["IS_LINE"] = compute_is_line(
-                    aux["IS_CORRECT"].values, aux["CLASS_PERSON"].values,
-                    np.array([
-                        self.__try_lines_dict.get(assumed_line)
-                        for assumed_line in aux["ASSUMED_LINE"]
-                    ]), aux["Z_TRUE"].values, aux["Z_TRY"].values,
-                    self.__z_precision,
-                    self.__lines.iloc[self.__try_lines_indexs].values)
-            else:
-                self.__userprint("    is_correct_redshift")
-                aux["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
-                self.__userprint("    is_correct")
-                aux["IS_CORRECT"] = pd.Series(dtype=bool)
-                self.__userprint("    is_line")
-                aux["IS_LINE"] = pd.Series(dtype=bool)
+
+            self.__userprint("    is_correct_redshift")
+            aux["CORRECT_REDSHIFT"] = compute_is_correct_redshift(
+                aux["DELTA_Z"].values, aux["CLASS_PERSON"].values,
+                self.__z_precision)
+
+            self.__userprint("    is_correct")
+            aux["IS_CORRECT"] = compute_is_correct(
+                aux["CORRECT_REDSHIFT"].values, aux["CLASS_PERSON"].values)
+
+            self.__userprint("    is_line")
+            aux["IS_LINE"] = compute_is_line(
+                aux["IS_CORRECT"].values, aux["CLASS_PERSON"].values,
+                np.array([
+                    self.__try_lines_dict.get(assumed_line)
+                    for assumed_line in aux["ASSUMED_LINE"]
+                ]), aux["Z_TRUE"].values, aux["Z_TRY"].values,
+                self.__z_precision,
+                self.__lines.iloc[self.__try_lines_indexs].values)
+
             self.__userprint("Done")
 
         # keep the results
@@ -740,8 +770,7 @@ class Candidates(object):
         else:
             self.__userprint(
                 "Concatenating dataframe with previouly exisiting candidates")
-            self.__candidates = pd.concat([self.__candidates, aux],
-                                          ignore_index=True)
+            self.__candidates = np.concatenate([self.__candidates, aux])
             self.__userprint("Done")
         self.__candidates_list = []
 
@@ -792,16 +821,19 @@ class Candidates(object):
             raise Error("The function find_candidates is not available in " +
                         "merge mode.")
 
+        if self.__candidates_dtype is None and len(spectra) > 0:
+            self.__init_candidates_dtype(spectra[0])
+
         for spectrum in spectra:
             # locate candidates in this spectrum
             # candidates are appended to self.__candidates_list
-            self.__find_candidates(spectrum)
+            self.__find_candidates(columns_candidates, spectrum)
 
             if len(self.__candidates_list) > MAX_CANDIDATES_TO_CONVERT:
                 self.__userprint("Converting candidates to dataframe")
                 time0 = time.time()
-                self.candidates_list_to_dataframe(columns_candidates,
-                                                  save=False)
+                self.candidates_list_to_array(columns_candidates,
+                                              save=False)
                 time1 = time.time()
                 self.__userprint(
                     "INFO: time elapsed to convert candidates to dataframe: "
@@ -819,7 +851,7 @@ class Candidates(object):
             DataFrame containing the quasar catalogue. The quasars must contain
             the column "specid" to identify the spectrum.
 
-            data_frame : pd.DataFrame - Default: self.__candidates
+            data_frame : np.array - Default: self.__candidates
             DataFrame where the percentile will be computed. Must contain the
             columns "is_correct" and "specid".
 
@@ -932,12 +964,8 @@ class Candidates(object):
             """
         if filename is None:
             filename = self.__name
-
-        data = Table.read(filename, format='fits')
-        candidates = data.to_pandas()
-        candidates.columns = candidates.columns.str.upper()
-        self.__candidates = candidates
-        del data, candidates
+        self.__candidates = fitsio.read(filename)
+        self.__candidates_dtype = self.__candidates.dtype
 
     def merge(self, others_list, save=True):
         """
@@ -945,8 +973,8 @@ class Candidates(object):
 
             Parameters
             ----------
-            others_list : pd.DataFrame
-            The other candidates object to merge
+            others_list : list of str
+            The filenames of the other candidates object to merge
 
             save : bool - Defaut: True
             If True, save candidates before exiting
@@ -960,13 +988,10 @@ class Candidates(object):
 
             try:
                 # load candidates
-                data = Table.read(candidates_filename, format='fits')
-                other = data.to_pandas()
-                del data
+                other = fitsio.read(candidates_filename)
 
                 # append to candidates list
-                self.__candidates = self.__candidates.append(other,
-                                                             ignore_index=True)
+                self.__candidates = np.concatenate([self.__candidates, other])
 
             except TypeError:
                 self.__userprint(
