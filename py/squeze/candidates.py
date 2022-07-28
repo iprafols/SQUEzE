@@ -267,7 +267,7 @@ def convert_dtype(dtype):
         return "15A"
     return dtype
 
-
+# TODO: deprecated funcion: remove
 @vectorize
 def compute_is_correct(correct_redshift, class_person):
     """ Returns True if a candidate is a true quasar and False otherwise.
@@ -292,7 +292,7 @@ def compute_is_correct(correct_redshift, class_person):
     correct = bool(correct_redshift and class_person in [3, 30])
     return correct
 
-
+# TODO: deprecated funcion: remove
 @vectorize
 def compute_is_correct_redshift(delta_z, class_person, z_precision):
     """ Returns True if a candidate has a correct redshift and False otherwise.
@@ -323,7 +323,7 @@ def compute_is_correct_redshift(delta_z, class_person, z_precision):
                             (-z_precision <= delta_z <= z_precision))
     return correct_redshift
 
-
+# TODO: deprecated funcion: remove
 @jit(nopython=True)
 def compute_is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
                     z_precision, lines):
@@ -797,14 +797,7 @@ class Candidates(object):
     def save_candidates(self):
         """ Save the candidates DataFrame. """
         results = fitsio.FITS(self.__name, 'rw', clobber=True)
-        #names = list(self.__candidates.columns)
-        #cols = [
-        #    np.array(self.__candidates[col].values, dtype=str)
-        #    if self.__candidates[col].dtype == "object" else
-        #    self.__candidates[col].values for col in self.__candidates.columns
-        #]
-        #results.write(cols, names=names, extname="CANDIDATES")
-        results.write(self.__candidates)
+        results.write(self.__candidates, extname="CANDIDATES")
         results.close()
 
     def candidates(self):
