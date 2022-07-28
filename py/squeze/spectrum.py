@@ -35,7 +35,7 @@ class Spectrum(object):
         and metadata_names, must be overwritten
         """
 
-    def __init__(self, flux, ivar, wave, metadata):
+    def __init__(self, flux, ivar, wave, metadata, metadata_dtype):
         """ Initialize class instance
 
             Parameters
@@ -52,11 +52,16 @@ class Spectrum(object):
             metadata : dict
             A dictionary where the keys are the names of the properties
             and have type str.
+
+            metadata : dtype
+            A dictionary where the keys are the names of the properties
+            and have type str.
             """
         self._flux = flux
         self._ivar = ivar
         self._wave = wave
         self._metadata = metadata
+        self._metadata_dtype = metadata_dtype
 
     def flux(self):
         """ Returns the flux as a numpy.ndarray.
@@ -86,6 +91,25 @@ class Spectrum(object):
             np.nan if not found.
             """
         return self._metadata.get(key, np.nan)
+
+    def metadata_dtype(self):
+        """ Returns metadata to be included in the catalogue.
+            Format must be a list of properties.
+            The names of the properties should be listed in
+            metadata_names.
+            In training mode, this must include the true redshift
+            of the spectrum in a property named "z_true". Its value
+            must be np.nan if the spectrum is not a quasar.
+            In training mode, the spectra must be identifiable
+            via a property named "specid"
+            """
+        return list(self._metadata_dtype.values())
+
+    def metadata_dtype_by_key(self, key):
+        """ Access one of the elements in self._metadata_dtype by name. Return
+            np.nan if not found.
+            """
+        return self._metadata_dtype.get(key, np.nan)
 
     def metadata_names(self):
         """ Returns the names of the properties that are returned

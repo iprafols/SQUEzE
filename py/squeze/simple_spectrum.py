@@ -38,8 +38,11 @@ class SimpleSpectrum(Spectrum):
         metadata = {
             key.upper(): value for key, value in data.get("_metadata").items()
         }
+        metadata_dtype = {
+            key.upper(): value for key, value in data.get("_metadata_dtype").items()
+        }
 
-        return cls(flux, ivar, wave, metadata)
+        return cls(flux, ivar, wave, metadata, metadata_dtype)
 
 
 if __name__ == "__main__":

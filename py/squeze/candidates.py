@@ -532,31 +532,20 @@ class Candidates(object):
             zip(self.__try_lines, self.__try_lines_indexs))
         self.__try_lines_dict["none"] = -1
 
-    def __init_candidates_dtype(self, columns_candidates, spectrum):
+    def __init_candidates_dtype(self, spectrum):
         """ Initializes the array dtype for the candidates
 
             Parameters
             ----------
-            columns_candidates : list of str
-            The column names of the spectral metadata
-
             spectrum: Spectrum
             A spectrum example to infer data type
             """
         dtype_list = []
         # first figure out format for metadata
-        for name, value in zip(columns_candidates, spectrum.metadata())
-            if isinstance(value, int):
-                this_type = np.int64
-            if isinstance(value, float):
-                this_type = np.float64
-            if isinstance(value, str):
-                this_type = "<S15"
-            if isinstance(value, bool):
-                this_type = np.bool_
-            else:
-                raise Error(f"Unrecognized type inferred for {value}. "
-                            "Checked for int, float, bool and str.")
+        dtype_list += [
+            (name, dtype)
+            for name, dtype in zip(spectrum.metadata_names(), spectrum.metadata_dtype())
+        ]
         # add metrics info
         for index1 in range(self.__lines.shape[0]):
             dtype_list.append((f"{self.__lines.iloc[index1].name.upper()}_RATIO", np.float64))
@@ -577,10 +566,12 @@ class Candidates(object):
         # add truth table info
         if (self.__mode in ["training", "test"] or
             (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
-            dtype_list.append("DELTA_Z", np.float64)
-            dtype_list.append("CORRECT_REDSHIFT", np.bool_)
-            dtype_list.append("IS_CORRECT", np.bool_)
-            dtype_list.append("IS_LINE", np.bool_)
+            dtype_list += [
+                ("DELTA_Z", np.float64),
+                ("CORRECT_REDSHIFT", np.bool_),
+                ("IS_CORRECT", np.bool_),
+                ("IS_LINE", np.bool_),
+            ]
 
         self.__candidates_dtype = np.dtype(dtype_list)
 
@@ -719,14 +710,11 @@ class Candidates(object):
         else:
             raise Error("Invalid mode")
 
-    def candidates_list_to_array(self, columns_candidates, save=True):
+    def candidates_list_to_array(self, save=True):
         """ Format existing candidates list into a structured array
 
             Parameters
             ----------
-            columns_candidates : list of str
-            The column names of the spectral metadata
-
             save : bool - default: True
             If True, then save the catalogue file after candidates are found
             """
@@ -827,13 +815,12 @@ class Candidates(object):
         for spectrum in spectra:
             # locate candidates in this spectrum
             # candidates are appended to self.__candidates_list
-            self.__find_candidates(columns_candidates, spectrum)
+            self.__find_candidates(spectrum)
 
             if len(self.__candidates_list) > MAX_CANDIDATES_TO_CONVERT:
                 self.__userprint("Converting candidates to dataframe")
                 time0 = time.time()
-                self.candidates_list_to_array(columns_candidates,
-                                              save=False)
+                self.candidates_list_to_array(save=False)
                 time1 = time.time()
                 self.__userprint(
                     "INFO: time elapsed to convert candidates to dataframe: "
