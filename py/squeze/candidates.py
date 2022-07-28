@@ -14,6 +14,7 @@ import time
 
 import numpy as np
 from numba import prange, jit, vectorize
+from numba.typed import List
 import fitsio
 from astropy.table import Table
 
@@ -84,9 +85,8 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
         Each element of the list contains the ratios of the lines, the trial
         redshift, the significance of the line and the index of the line
         assumed to be originating the emission peak
-
-    """
-    new_candidates = []
+        """
+    new_candidates = List()
     # pylint: disable=not-an-iterable
     # prange is the numba equivalent to range
     for index1 in prange(peak_indexs.size):
@@ -100,7 +100,7 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
                 continue
             oneplusz = (1.0 + z_try)
 
-            candidate_info = []
+            candidate_info = List()
 
             # compute peak ratio for the different lines
             for index3 in prange(lines.shape[0]):
@@ -392,6 +392,90 @@ def compute_is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
                     is_line[index1] = True
     return is_line
 
+@jit(nopython=True)
+def compute_truth_table(new_candidates, z_try_index, z_true, class_person,
+                  assumed_line_index, z_precision, lines):
+    """Compute the truth tables
+
+        Parameters
+        ----------
+        new_candidates : list
+        Each element of the list contains the ratios of the lines, the trial
+        redshift, the significance of the line and the index of the line
+        assumed to be originating the emission peak
+
+        z_try_index : int
+        Index of "Z_TRY" in each of the new_candidates
+
+        z_true_index : int
+        Index of "Z_TRUE" in each of the new_candidates
+
+        class_person_index : int
+        Index of "CLASS_PERSON" in each of the new_candidates
+
+        assumed_line_index : int
+        Index of "ASSUMED_LINE" in each of the new_candidates
+
+        z_precision : float
+        Tolerance with which two redshifts are considerd equal
+
+        lines : array of arrays of floats
+        Information of the lines that can be originating the emission line peaks.
+        Each of the arrays must be organised as follows:
+        0 - wavelength of the line
+
+        Returns
+        -------
+        truth_table : list
+        Each element of the list contains the truth table for the corresponding
+        element in new_candidates
+        """
+    truth_table = List()
+    for index1 in prange(len(new_candidates)):
+        candidate_truth = List()
+
+        # add delta-z
+        z_try = new_candidates[index1][z_try_index]
+        #z_true = new_candidates[index1][z_true_index]
+        delta_z = z_try - z_true
+        candidate_truth.append(delta_z)
+
+        # add is_correct_redshift
+        is_correct_redshift = bool((class_person != 1) and
+                                   (-z_precision <= delta_z <= z_precision))
+        candidate_truth.append(is_correct_redshift)
+
+        # add is_correct
+        is_correct = bool(is_correct_redshift and class_person in [3, 30])
+        candidate_truth.append(is_correct)
+
+        # add is_line
+        if is_correct:
+            is_line = True
+        # not a quasar
+        elif not (class_person in [3, 30]):
+            is_line = False
+        # not a peak
+        elif new_candidates[index1][assumed_line_index] == -1:
+            is_line = False
+        else:
+            candidate_assumed_line_index = int(new_candidates[index1][assumed_line_index])
+            for index2 in prange(lines.shape[0]):
+                #for line in self.__lines.index:
+                if index2 == candidate_assumed_line_index:
+                    continue
+                # 0=WAVE
+                z_try_line = (lines[candidate_assumed_line_index][0] /
+                              lines[index2][0]) * (1 + z_try) - 1
+                if ((z_try_line - z_true <= z_precision) and
+                    (z_try_line - z_true >= -z_precision)):
+                    is_line = True
+        candidate_truth.append(is_line)
+
+        truth_table.append(candidate_truth)
+
+    return truth_table
+
 
 class Candidates(object):
     """ Create and manage the candidates catalogue
@@ -574,6 +658,9 @@ class Candidates(object):
             ]
 
         self.__candidates_dtype = np.dtype(dtype_list)
+        self.__candidates_dtype_index = {
+            name: index
+            for index, name in enumerate(self.__candidates_dtype.names)}
 
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """
@@ -632,7 +719,21 @@ class Candidates(object):
                     candidate_info.append(np.nan)
                 for _ in range(0, self.__num_pixels):
                     candidate_info.append(np.nan)
-            self.__candidates_list.append(candidate_info)
+
+            # add truth table if running in training or test modes
+            if (self.__mode in ["training", "test"] or
+                (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
+                delta_z = np.nan
+                correct_redshift = False
+                is_correct = False
+                is_line = False
+                candidate_info.append(delta_z)
+                candidate_info.append(correct_redshift)
+                candidate_info.append(is_correct)
+                candidate_info.append(is_line)
+
+            self.__candidates_list.append(tuple(candidate_info))
+
         # if there are peaks, compute the metrics and keep the info
         else:
             wave = spectrum.wave()
@@ -640,15 +741,33 @@ class Candidates(object):
             ivar = spectrum.ivar()
             metadata = spectrum.metadata()
 
-            new_candidates = compute_line_ratios(wave, flux, ivar, peak_indexs,
+            new_ratios = compute_line_ratios(wave, flux, ivar, peak_indexs,
                                                  significances,
                                                  self.__try_lines_indexs,
                                                  self.__lines.values)
 
-            new_candidates = [
-                metadata + item[:-1] + [self.__try_lines[int(item[-1])]]
-                for item in new_candidates
-            ]
+            # add truth table and format data
+            if (self.__mode in ["training", "test"] or
+                (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
+                truth_table = compute_truth_table(
+                    new_ratios,
+                    self.__candidates_dtype_index.get("Z_TRY") - len(metadata),
+                    metadata[self.__candidates_dtype_index.get("Z_TRUE")],
+                    metadata[self.__candidates_dtype_index.get("CLASS_PERSON")],
+                    self.__candidates_dtype_index.get("ASSUMED_LINE") - len(metadata),
+                    self.__z_precision,
+                    self.__lines.values)
+
+                new_candidates = [
+                    tuple(metadata + list(item[:-1]) + [self.__try_lines[int(item[-1])]] + list(item_truth))
+                    for item, item_truth in zip(new_ratios, truth_table)
+                ]
+            # no truth table, format data
+            else:
+                new_candidates = [
+                    tuple(metadata + list(item[:-1]) + [self.__try_lines[int(item[-1])]])
+                    for item in new_ratios
+                ]
 
             if self.__pixels_as_metrics:
                 pixel_metrics = compute_pixel_metrics(wave, flux, ivar,
@@ -684,7 +803,8 @@ class Candidates(object):
         #    if self.__candidates[col].dtype == "object" else
         #    self.__candidates[col].values for col in self.__candidates.columns
         #]
-        results.write(cols, names=names, extname="CANDIDATES")
+        #results.write(cols, names=names, extname="CANDIDATES")
+        results.write(self.__candidates)
         results.close()
 
     def candidates(self):
@@ -724,34 +844,6 @@ class Candidates(object):
         # create array
         aux = np.array(self.__candidates_list, dtype=self.__candidates_dtype)
 
-        # add truth table if running in training or test modes
-        if (self.__mode in ["training", "test"] or
-            (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
-
-            self.__userprint("Adding control variables from truth table")
-            aux["DELTA_Z"] = aux["Z_TRY"] - aux["Z_TRUE"]
-
-            self.__userprint("    is_correct_redshift")
-            aux["CORRECT_REDSHIFT"] = compute_is_correct_redshift(
-                aux["DELTA_Z"].values, aux["CLASS_PERSON"].values,
-                self.__z_precision)
-
-            self.__userprint("    is_correct")
-            aux["IS_CORRECT"] = compute_is_correct(
-                aux["CORRECT_REDSHIFT"].values, aux["CLASS_PERSON"].values)
-
-            self.__userprint("    is_line")
-            aux["IS_LINE"] = compute_is_line(
-                aux["IS_CORRECT"].values, aux["CLASS_PERSON"].values,
-                np.array([
-                    self.__try_lines_dict.get(assumed_line)
-                    for assumed_line in aux["ASSUMED_LINE"]
-                ]), aux["Z_TRUE"].values, aux["Z_TRY"].values,
-                self.__z_precision,
-                self.__lines.iloc[self.__try_lines_indexs].values)
-
-            self.__userprint("Done")
-
         # keep the results
         if self.__candidates is None:
             self.__candidates = aux
@@ -790,7 +882,7 @@ class Candidates(object):
             Parameters
             ----------
             spectra : list of Spectrum
-            The spectra in which candidates will be looked for.
+            The spectra in which candidates will be looked for
             """
         if self.__mode == "training" and "Z_TRUE" not in spectra[
                 0].metadata_names():
