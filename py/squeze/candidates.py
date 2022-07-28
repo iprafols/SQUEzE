@@ -1246,27 +1246,27 @@ class Candidates(object):
 
         selected_cols = [
             col.upper()
-            for col in self.__candidates.columns
+            for col in self.__candidates.dtype.names
             if col.endswith("RATIO_SN")
         ]
         selected_cols += [
             col.upper()
-            for col in self.__candidates.columns
+            for col in self.__candidates.dtype.names
             if col.endswith("RATIO2")
         ]
         selected_cols += [
             col.upper()
-            for col in self.__candidates.columns
+            for col in self.__candidates.dtype.names
             if col.endswith("RATIO")
         ]
         selected_cols += [
             col.upper()
-            for col in self.__candidates.columns
+            for col in self.__candidates.dtype.names
             if col.startswith("FLUX_")
         ]
         selected_cols += [
             col.upper()
-            for col in self.__candidates.columns
+            for col in self.__candidates.dtype.names
             if col.startswith("IVAR_")
         ]
         selected_cols += ["PEAK_SIGNIFICANCE"]
