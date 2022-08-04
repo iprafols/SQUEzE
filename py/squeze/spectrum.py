@@ -51,11 +51,11 @@ class Spectrum(object):
 
             metadata : dict
             A dictionary where the keys are the names of the properties
-            and have type str.
+            and values are the properties values.
 
-            metadata : dtype
+            metadata_dtype : dtype
             A dictionary where the keys are the names of the properties
-            and have type str.
+            and values are the properties data type.
             """
         self._flux = flux
         self._ivar = ivar
@@ -81,8 +81,6 @@ class Spectrum(object):
             In training mode, this must include the true redshift
             of the spectrum in a property named "z_true". Its value
             must be np.nan if the spectrum is not a quasar.
-            In training mode, the spectra must be identifiable
-            via a property named "specid"
             """
         return list(self._metadata.values())
 
@@ -93,15 +91,12 @@ class Spectrum(object):
         return self._metadata.get(key, np.nan)
 
     def metadata_dtype(self):
-        """ Returns metadata to be included in the catalogue.
+        """ Returns metadata types to be included in the catalogue.
             Format must be a list of properties.
             The names of the properties should be listed in
             metadata_names.
             In training mode, this must include the true redshift
-            of the spectrum in a property named "z_true". Its value
-            must be np.nan if the spectrum is not a quasar.
-            In training mode, the spectra must be identifiable
-            via a property named "specid"
+            of the spectrum in a property named "z_true".
             """
         return list(self._metadata_dtype.values())
 
@@ -116,10 +111,8 @@ class Spectrum(object):
             by metadata.
             Format must be a list of strings.
             In training mode, this must include the true redshift
-            of the spectrum in a property named "z_true". Its value
-            must be np.nan if the spectrum is not a quasar.
-            In training mode, the spectra must be identifiable
-            via a property named "specid"
+            of the spectrum in a property named "z_true".
+            Spectra must be identifiable via a property named "specid"
             """
         return list(self._metadata)
 

@@ -51,7 +51,7 @@ class TestSquezeTraining(AbstractTest):
         self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
                                                         "_model.json")))
 
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
     def test_squeze_training_with_extra_columns(self):
         """ Run squeze_training.py """
@@ -74,7 +74,7 @@ class TestSquezeTraining(AbstractTest):
         self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
                                                         "_model.json")))
 
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
     def test_squeze_training_with_model_options(self):
         """ Run squeze_training.py """
@@ -101,7 +101,7 @@ class TestSquezeTraining(AbstractTest):
         self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
                                                         "_model.json")))
 
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
 if __name__ == '__main__':
     unittest.main()

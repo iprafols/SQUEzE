@@ -450,14 +450,15 @@ def compute_truth_table(new_candidates, z_try_index, z_true, class_person,
         candidate_truth.append(is_correct)
 
         # add is_line
+        is_line = False
         if is_correct:
             is_line = True
         # not a quasar
         elif not (class_person in [3, 30]):
-            is_line = False
+            continue
         # not a peak
         elif new_candidates[index1][assumed_line_index] == -1:
-            is_line = False
+            continue
         else:
             candidate_assumed_line_index = int(new_candidates[index1][assumed_line_index])
             for index2 in prange(lines.shape[0]):
@@ -649,7 +650,7 @@ class Candidates(object):
                 dtype_list.append((f"IVAR_{index}", np.float64))
         # add truth table info
         if (self.__mode in ["training", "test"] or
-            (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
+            (self.__mode == "candidates" and "Z_TRUE" in spectrum.metadata_names())):
             dtype_list += [
                 ("DELTA_Z", np.float64),
                 ("CORRECT_REDSHIFT", np.bool_),
@@ -722,7 +723,7 @@ class Candidates(object):
 
             # add truth table if running in training or test modes
             if (self.__mode in ["training", "test"] or
-                (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
+                (self.__mode == "candidates" and "Z_TRUE" in spectrum.metadata_names())):
                 delta_z = np.nan
                 correct_redshift = False
                 is_correct = False
@@ -748,7 +749,7 @@ class Candidates(object):
 
             # add truth table and format data
             if (self.__mode in ["training", "test"] or
-                (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
+                (self.__mode == "candidates" and "Z_TRUE" in spectrum.metadata_names())):
                 truth_table = compute_truth_table(
                     new_ratios,
                     self.__candidates_dtype_index.get("Z_TRY") - len(metadata),

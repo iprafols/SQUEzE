@@ -140,7 +140,7 @@ def main(cmdargs):
         quasar_catalogue["LOADED"] = False
 
     # make sure that quasar catalogue contains a column called class_person
-    if "CLASS_PERSON" not in quasar_catalogue.columns:
+    if "CLASS_PERSON" not in quasar_catalogue.dtype.names:
         raise  Error("Quasar catalogue does not contain the column 'CLASS_PERSON'" +
                      "Please add it using --qso-cols or on the dataframe if you load" +
                      "it using --qso-dataframe")
@@ -163,11 +163,11 @@ def main(cmdargs):
         folder = "{}{:04d}/".format(args.input_folder, plate)
 
         # loop over spectra
-        for index in quasar_catalogue[quasar_catalogue["PLATE"] == plate].index:
-            entry = quasar_catalogue.loc[index]
+        pos = np.where(quasar_catalogue["PLATE"] == plate)
+        for entry in quasar_catalogue[pos]:
             z_conf_person = entry["Z_CONF_PERSON"]
-            boss_target1 = entry["BOSS_TARGET1"].astype(int)
-            eboss_target0 = entry["EBOSS_TARGET0"].astype(int)
+            boss_target1 = entry["BOSS_TARGET1"]
+            eboss_target0 = entry["EBOSS_TARGET0"]
             if args.confident_only:
                 if (z_conf_person != 3):
                     continue
@@ -205,9 +205,11 @@ def main(cmdargs):
                         (eboss_target0 & 2**40 > 0) ):
                     continue
             metadata = {}
-            for column in quasar_catalogue.columns:
+            metadata_dtype = {}
+            for column in quasar_catalogue.dtype.names:
                 if column != "LOADED":
                     metadata[column] = entry[column]
+                    metadata_dtype[column] = entry[column].dtype
             spectrum_file = "spec-{:04d}-{:05d}-{:04d}.fits".format(plate,
                                                                     entry["MJD"].astype(int),
                                                                     entry["FIBERID"].astype(int))
@@ -215,7 +217,8 @@ def main(cmdargs):
 
             # add spectra to list
             try:
-                spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file), metadata,
+                spectra.append(BossSpectrum("{}{}".format(folder, spectrum_file),
+                                            metadata, metadata_dtype,
                                             (masklambda, args.margin),
                                             mask_jpas=args.mask_jpas,
                                             mask_jpas_alt=args.mask_jpas_alt,
@@ -225,7 +228,6 @@ def main(cmdargs):
                                             forbidden_wavelenghts=args.forbidden_wavelengths))
             except IOError:
                 missing_files.append(spectrum_file)
-                #print "missing file {}".format(spectrum_file)
 
         # save spectra in the current plate
         save_json("{}_plate{:04d}.json".format(args.out, plate), spectra)

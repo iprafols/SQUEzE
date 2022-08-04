@@ -110,7 +110,7 @@ def main(cmdargs):
         # convert to dataframe
         userprint("Converting candidates to dataframe")
         t6 = time.time()
-        candidates.candidates_list_to_dataframe()
+        candidates.candidates_list_to_array()
         t7 = time.time()
         userprint(f"INFO: time elapsed to convert candidates to dataframe: {(t7-t6)/60.0} minutes")
 

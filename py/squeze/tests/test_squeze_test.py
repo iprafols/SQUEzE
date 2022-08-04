@@ -38,7 +38,7 @@ class TestSquezeTest(AbstractTest):
                    ]
         self.run_command(command, squeze_test)
         self.assertTrue(os.path.isfile(out_file))
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
     def test_squeze_test_nostats(self):
         """ Run squeze_test.py wihtout computing stastics"""
@@ -58,7 +58,7 @@ class TestSquezeTest(AbstractTest):
                    ]
         self.run_command(command, squeze_test)
         self.assertTrue(os.path.isfile(out_file))
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
     def test_squeze_test_stats(self):
         """ Run squeze_test.py computing statistics"""
@@ -83,7 +83,7 @@ class TestSquezeTest(AbstractTest):
                    ]
         self.run_command(command, squeze_test)
         self.assertTrue(os.path.isfile(out_file))
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
 if __name__ == '__main__':
     unittest.main()

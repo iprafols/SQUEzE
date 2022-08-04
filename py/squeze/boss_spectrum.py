@@ -28,6 +28,7 @@ class BossSpectrum(Spectrum):
     def __init__(self,
                  spectrum_file,
                  metadata,
+                 metadata_dtype,
                  sky_mask,
                  mask_jpas=False,
                  mask_jpas_alt=False,
@@ -88,7 +89,7 @@ class BossSpectrum(Spectrum):
         wave = 10**spectrum_hdul[1]["LOGLAM"][:]
         flux = 1.0 * spectrum_hdul[1]["FLUX"][:]
         ivar = 1.0 * spectrum_hdul[1]["IVAR"][:]
-        super().__init__(flux, ivar, wave, metadata)
+        super().__init__(flux, ivar, wave, metadata, metadata_dtype)
 
         # compute sky mask
         masklambda = sky_mask[0]

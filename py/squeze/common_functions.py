@@ -13,6 +13,21 @@ import pandas as pd
 import numpy as np
 
 
+def join_struct_arrays(arrays):
+    """Merges a list of structured arrays
+
+    Parameters
+    ----------
+    arrays : list of np.array
+    A list of structured arrays. They must have the same dimension
+    """
+    newdtype = sum((a.dtype.descr for a in arrays), [])
+    newrecarray = np.empty(len(arrays[0]), dtype = newdtype)
+    for arr in arrays:
+        names = list(arr.dtype.names)
+        newrecarray[names] = arr[names]
+    return newrecarray
+
 def serialize(obj):
     """ Serializes complex objects. If the object type is not considered
         for this function, raise a TypeError (as per save_json documentation

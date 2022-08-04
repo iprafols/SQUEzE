@@ -60,30 +60,49 @@ class AbstractTest(unittest.TestCase):
         userprint("Running command: ", " ".join(command))
         module.main(command[2:])
 
-    def compare_data_frames(self, orig_file, new_file):
-        """ Compares two dataframes to check that they are equal """
+    def compare_candidates(self, orig_file, new_file):
+        """ Compares candidates to check that they are equal """
         # load dataframes
-        orig_candidates = Candidates()
-        orig_candidates.load_candidates(orig_file)
-        orig_df = orig_candidates.candidates()
-        new_candidates = Candidates()
-        new_candidates.load_candidates(new_file)
-        new_df = new_candidates.candidates()
+        orig = Candidates()
+        orig.load_candidates(orig_file)
+        orig_candidates = orig.candidates()
+        new = Candidates()
+        new.load_candidates(new_file)
+        new_candidates = new.candidates()
 
-        # compare them
-        equal_df = orig_df.equals(new_df)
-        if not equal_df:
-            # this bit tests if they are equal within machine z_precision
-            are_similar = True
-            for col, dtype in zip(orig_df.columns, orig_df.dtypes):
-                self.assertTrue(col in new_df.columns)
-                if (dtype == "O"):
-                    self.assertTrue(orig_df[col].equals(new_df[col]))
-                else:
-                    self.assertTrue(np.allclose(orig_df[col], new_df[col],
-                                    equal_nan=True))
-            for col in new_df.columns:
-                self.assertTrue(col in orig_df.columns)
+        try:
+            self.assertTrue(orig_candidates.dtype == new_candidates.dtype)
+        except AssertionError as error:
+            self.assertTrue(len(orig_candidates.dtype) == len(new_candidates.dtype))
+            self.assertTrue(orig_candidates.dtype.names == new_candidates.dtype.names)
+            print("Data types from original and new arrays do not match")
+            print("column orig new are_equal")
+            print("-------------------------")
+            for col in orig_candidates.dtype.names:
+                orig_dtype = orig_candidates[col].dtype
+                new_dtype = new_candidates[col].dtype
+                print(f"{col} {orig_dtype} {new_dtype} {orig_dtype == new_dtype}")
+            #raise error
+        for col in orig_candidates.dtype.names:
+            try:
+                self.assertTrue(orig_candidates[col].shape == new_candidates[col].shape)
+            except AssertionError as error:
+                print(f"Different array shapes found in column {col}")
+                print(f"Original array shape: {orig_candidates[col].shape}")
+                print(f"New array shape: {new_candidates[col].shape}")
+                raise error
+            try:
+                self.assertTrue(orig_candidates[col] == new_candidates[col] or
+                                (np.allclose(orig_candidates[col],
+                                             new_candidates[col],
+                                             equal_nan=True)))
+            except AssertionError as error:
+                print(f"Differences found in column {col}")
+                print("orig new are_equal")
+                print("---------------------------")
+                for orig, new in zip(orig_candidates[col], new_candidates[col]):
+                    print(f"{orig} {new} {orig == new or np.isclose(orig, new)}")
+                raise error
 
     def compare_fits(self, orig_file, new_file):
         """ Compares two fits files to check that they are equal """
@@ -141,6 +160,18 @@ class AbstractTest(unittest.TestCase):
                                         new_spectra_list[index].flux()))
             self.assertTrue(np.allclose(orig_spectra_list[index].ivar(),
                                         new_spectra_list[index].ivar()))
+
+            self.assertTrue(len(orig_spectra_list[index].metadata()) == len(new_spectra_list[index].metadata()))
+            for orig_item, new_item in zip(orig_spectra_list[index].metadata(),
+                                           new_spectra_list[index].metadata()):
+                self.assertTrue((orig_item == new_item) or
+                                np.isclose(orig_item, new_item))
+
+            self.assertTrue(len(orig_spectra_list[index].metadata_dtype()) == len(new_spectra_list[index].metadata_dtype()))
+            for orig_item, new_item in zip(orig_spectra_list[index].metadata_dtype(),
+                                           new_spectra_list[index].metadata_dtype()):
+                self.assertTrue(orig_item == new_item)
+
 
 
 if __name__ == '__main__':

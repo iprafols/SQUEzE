@@ -69,7 +69,7 @@ class TestModel(AbstractTest):
                    ]
         self.run_command(command, squeze_test)
         self.assertTrue(os.path.isfile(out_file))
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
     def test_json_model(self):
         """ Create a json model and test it"""
@@ -93,7 +93,7 @@ class TestModel(AbstractTest):
         self.assertTrue(os.path.isfile(out_file))
         self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
                                                         "_model.json")))
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
         # now test the model
         model_file = out_file.replace(".fits.gz", "_model.json")
@@ -111,7 +111,7 @@ class TestModel(AbstractTest):
                    ]
         self.run_command(command, squeze_test)
         self.assertTrue(os.path.isfile(out_file))
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
     def test_single_random_forest_model(self):
         """ Create a json model and test it"""
@@ -138,7 +138,7 @@ class TestModel(AbstractTest):
         self.assertTrue(os.path.isfile(out_file))
         self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
                                                         "_model.json")))
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
         # now test the model
         model_file = out_file.replace(".fits.gz", "_model.json")
@@ -156,7 +156,7 @@ class TestModel(AbstractTest):
                    ]
         self.run_command(command, squeze_test)
         self.assertTrue(os.path.isfile(out_file))
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
 if __name__ == '__main__':
     unittest.main()

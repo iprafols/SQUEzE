@@ -37,7 +37,7 @@ class TestSquezeMerge(AbstractTest):
                    ]
         self.run_command(command, squeze_merge)
         self.assertTrue(os.path.isfile(out_file))
-        self.compare_data_frames(test_file, out_file)
+        self.compare_candidates(test_file, out_file)
 
 if __name__ == '__main__':
     unittest.main()

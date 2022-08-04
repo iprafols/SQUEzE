@@ -12,13 +12,83 @@ import numpy as np
 import pandas as pd
 import fitsio
 
-from squeze.common_functions import save_json, deserialize
+from squeze.common_functions import save_json, deserialize, join_struct_arrays
 from squeze.defaults import RANDOM_STATE
 from squeze.defaults import RANDOM_FOREST_OPTIONS
 from squeze.random_forest_classifier import RandomForestClassifier
 
 
-def find_prob(row, columns):
+def find_class(candidates, train=False):
+    """ Find the class the instance belongs to. If train is set
+        to True, then find the class from class_person. For quasars
+        and galaxies add a new class if the redshift is wrong.
+        If train is False, then find the class the instance belongs
+        to from the highest of the computed probability.
+
+        Parameters
+        ----------
+        candidates : np.array
+        A structured array with the candidates info
+
+        train : bool - default: False
+        If True, then dinf the class from the truth table,
+        otherwise find it from the computed probabilities
+
+        Returns
+        -------
+        The class the instance belongs to:
+        "star": 1
+        "quasar": 3
+        "quasar, wrong z": 35
+        "quasar, bal": 30
+        "quasar, bal, wrong z": 305
+        "galaxy": 4
+        "galaxy, wrong z": 45
+        """
+    data_class = np.zeros(candidates.shape[0], dtype=int)
+    if train:
+        pos = np.where((candidates["CLASS_PERSON"] == 30) &
+                       (~candidates["CORRECT_REDSHIFT"]))
+        data_class[pos] = 305
+        pos = np.where((candidates["CLASS_PERSON"] == 3) &
+                       (~candidates["CORRECT_REDSHIFT"]))
+        data_class[pos] = 35
+        pos = np.where((candidates["CLASS_PERSON"] == 30) &
+                       (~candidates["CORRECT_REDSHIFT"]))
+        data_class[pos] = 45
+        pos = np.where(find_class == 0)
+        data_class[pos] = candidates["CLASS_PERSON"][pos]
+    else:
+        cols = [col for col in candidates.dtype.names if col.startswith("PROB_")]
+        aux_prob = np.zeros(find_class.shape[0], dtype=float)
+        for col in cols:
+            pos = np.where(candidate[f"PROB_CLASS{int(class_label):d}"] > aux_prob)
+            aux_prob[pos] = candidate[f"PROB_CLASS{int(class_label):d}"][pos]
+            data_class[pos] = class_label
+
+    return data_class
+
+def find_duplicates(candidates):
+    """ Sort the array by (SPECID, PROB) and flag the non-duplicated entries.
+    Keep unflagged the first entry for every SPECID
+
+    Parameters
+    ----------
+    candidates : np.array
+    A structured array with the candidates and probabilities info
+
+    Returns
+    -------
+    candidates : np.array
+    The modified array
+    """
+    sort_index = np.argsort(candidates, order=['SPECID','PROB'])[::-1]
+    _, aux =  np.unique(candidates[sort_index]['SPECID'], return_index = True)
+    candidates["DUPLICATED"][sort_index[aux]] = False
+
+    return candidates
+
+def find_prob(candidates):
     """ Find the probability of a instance being a quasar by
         adding the probabilities of classes 3 and 30. If
         the probability for this classes are not found,
@@ -26,11 +96,8 @@ def find_prob(row, columns):
 
         Parameters
         ----------
-        row : pd.Series
-        A row in the DataFrame.
-
-        colums: list of string
-        The column labels of the Series.
+        candidates : np.array
+        A structured array with the candidates info
 
         Returns
         -------
@@ -40,25 +107,11 @@ def find_prob(row, columns):
         is taken as the other one. If both are unavailable, then return
         np.nan
         """
-    if "PROB_CLASS3" in columns and "PROB_CLASS30" in columns:
-        if np.isnan(row["PROB_CLASS3"]):
-            prob = np.nan
-        else:
-            prob = row["PROB_CLASS3"] + row["PROB_CLASS30"]
-    elif "PROB_CLASS30" in columns:
-        if np.isnan(row["PROB_CLASS30"]):
-            prob = np.nan
-        else:
-            prob = row["PROB_CLASS30"]
-    elif "PROB_CLASS3" in columns:
-        if np.isnan(row["PROB_CLASS3"]):
-            prob = np.nan
-        else:
-            prob = row["PROB_CLASS3"]
-    else:
-        prob = np.nan
-    return prob
-
+    prob = np.nansum(np.stack((named["PROB_CLASS3"],
+                                            named["PROB_CLASS30"])), axis=0)
+    pos = np.where(np.isnan(candidates["PROB_CLASS3"]) &
+                   np.isnan(candidates["PROB_CLASS3"]))
+    prob[pos] = np.nan
 
 class Model(object):
     """ Create, train and/or execute the quasar model to find quasars
@@ -295,144 +348,108 @@ class Model(object):
         # End of model HDU(s)
         results.close()
 
-    def compute_probability(self, data_frame):
+    def compute_probability(self, candidates):
         """ Compute the probability of a list of candidates to be quasars
 
             Parameters
             ----------
-            data_frame : pd.DataFrame
-            The dataframe where the probabilities will be predicted
+            candidates : np.array
+            The array with which the model is trained
             """
+        probs_dytpe = [(f"PROB_CLASS{class_index:d}", np.float64)
+                       for class_index in [1, 3, 35, 30, 305, 4, 45]]
+        probs_dytpe += [
+            ("CLASS_PREDICTED", np.int32),
+            ("DUPLICATED", np.bool_),
+        ]
+        probs = np.zeros_like(candidates, dtype=probs_dytpe)
+        cols = [col for col in probs.dtype.names if col.startswith("PROB")]
+        for col in cols:
+            probs[col] = np.nan
+        probs["DUPLICATED"] = True
 
         if self.__highlow_split:
             # high-z split
             # compute probabilities for each of the classes
-            data_frame_high = data_frame[data_frame["Z_TRY"] >= 2.1].copy()
-            if data_frame_high.shape[0] > 0:
-                aux = data_frame_high.fillna(-9999.99)
-                data_vector = aux[self.__selected_cols[:-2]].values
+            pos = np.where(candidates["Z_TRY"] >= 2.1)
+            if candidates[pos].shape[0] > 0:
+                data_vector = np.nan_to_num(candidates[pos][self.__selected_cols[:-2]].tolist(),
+                                            nan=-9999.99)
                 data_class_probs = self.__clf_high.predict_proba(data_vector)
 
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf_high.classes_):
-                    data_frame_high[
-                        f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
-                                                                              index]
+                    probs[pos][
+                        f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,index]
 
             # low-z split
             # compute probabilities for each of the classes
-            data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1)].copy()
-            if data_frame_low.shape[0] > 0:
-                aux = data_frame_low.fillna(-9999.99)
-                data_vector = aux[self.__selected_cols[:-2]].values
-                data_class_probs = self.__clf_low.predict_proba(data_vector)
+            pos = np.where((candidates["Z_TRY"] < 2.1) & (candidates["Z_TRY"] >= 0.0))
+            if candidates[pos].shape[0] > 0:
+                data_vector = np.nan_to_num(candidates[pos][self.__selected_cols[:-2]].tolist(),
+                                            nan=-9999.99)
+                data_class_probs = self.__clf_high.predict_proba(data_vector)
 
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_low[
-                        f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
-                                                                              index]
-
-            # non-peaks
-            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
-            if data_frame_nonpeaks.shape[0] > 0:
-                # save the probability for each of the classes
-                for index, class_label in enumerate(self.__clf_low.classes_):
-                    data_frame_nonpeaks[
-                        f"PROB_CLASS{int(class_label):d}"] = np.nan
-
-            # join datasets
-            if (data_frame_high.shape[0] == 0 and
-                    data_frame_low.shape[0] == 0 and
-                    data_frame_nonpeaks.shape[0] == 0):
-                data_frame = data_frame_high
-            else:
-                data_frame = pd.concat(
-                    [data_frame_high, data_frame_low, data_frame_nonpeaks],
-                    sort=False)
+                for index, class_label in enumerate(self.__clf_high.classes_):
+                    probs[pos][
+                        f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,index]
 
         else:
             # peaks
             # compute probabilities for each of the classes
-            data_frame_peaks = data_frame[data_frame["Z_TRY"] >= 0.0].copy()
-            if data_frame_peaks.shape[0] > 0:
-                data_vector = data_frame_peaks[
-                    self.__selected_cols[:-2]].fillna(-9999.99).values
+            pos = np.where(candidates["Z_TRY"] >= 2.1)
+            if candidates[pos].shape[0] > 0:
+                data_vector = np.nan_to_num(candidates[pos][self.__selected_cols[:-2]].tolist(),
+                                            nan=-9999.99)
                 data_class_probs = self.__clf.predict_proba(data_vector)
 
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.__clf.classes_):
-                    data_frame_peaks[
-                        f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
-                                                                              index]
-
-            # non-peaks
-            data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
-            if not data_frame_nonpeaks.shape[0] == 0:
-                # save the probability for each of the classes
-                for index, class_label in enumerate(self.__clf.classes_):
-                    data_frame_nonpeaks[
-                        f"PROB_CLASS{int(class_label):d}"] = np.nan
-
-            # join datasets
-            if (data_frame_peaks.shape[0] == 0 and
-                    data_frame_nonpeaks.shape[0] == 0):
-                data_frame = data_frame_peaks
-            else:
-                data_frame = pd.concat([data_frame_peaks, data_frame_nonpeaks],
-                                       sort=False)
+                    probs[pos][
+                        f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,index]
 
         # predict class and find the probability of the candidate being a quasar
-        data_frame["CLASS_PREDICTED"] = data_frame.apply(self.__find_class,
-                                                         axis=1,
-                                                         args=(False,))
-        data_frame["PROB"] = data_frame.apply(find_prob,
-                                              axis=1,
-                                              args=(data_frame.columns,))
+        probs["CLASS_PREDICTED"] = find_class(candidates, train=False)
+        probs["PROB"] = find_prob(candidates)
+
+        # merge arrays
+        candidates = join_struct_arrays([candidates, probs])
 
         # flag duplicated instances
-        data_frame["DUPLICATED"] = data_frame.sort_values(
-            ["SPECID", "PROB"],
-            ascending=False).duplicated(subset=("SPECID",),
-                                        keep="first").sort_index()
+        candidates["DUPLICATED"] = find_duplicates(candidates)
 
-        return data_frame
+        return candidates
 
-    def train(self, data_frame):
+    def train(self, candidates):
         """ Train all the instances of the classifiers to estimate the probability
             of a candidate being a quasar
 
             Parameters
             ----------
-            data_frame : pd.DataFrame
-            The dataframe with which the model is trained
+            candidates : np.array
+            The array with which the model is trained
             """
         # train classifier
         if self.__highlow_split:
             # high-z split
-            data_frame_high = data_frame[data_frame["Z_TRY"] >= 2.1].fillna(
-                -9999.99)
-            data_vector = data_frame_high[self.__selected_cols[:-2]].values
-            data_class = data_frame_high.apply(self.__find_class,
-                                               axis=1,
-                                               args=(True,))
+            pos = np.where(candidates["Z_TRY"] >= 2.1)
+            data_vector = np.nan_to_num(candidates[pos][self.__selected_cols[:-2]].tolist(),
+                                        nan=-9999.99)
+            data_class = find_class(candidates[pos], train=True)
             self.__clf_high.fit(data_vector, data_class)
             # low-z split
-            data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1) & (
-                data_frame["Z_TRY"] >= 0.0)].fillna(-9999.99)
-            data_vector = data_frame_low[self.__selected_cols[:-2]].values
-            data_class = data_frame_low.apply(self.__find_class,
-                                              axis=1,
-                                              args=(True,))
+            pos = np.where((candidates["Z_TRY"] < 2.1) & (candidates["Z_TRY"] >= 0.0))
+            data_vector = np.nan_to_num(candidates[pos][self.__selected_cols[:-2]].tolist(),
+                                        nan=-9999.99)
+            data_class = find_class(candidates[pos], train=True)
             self.__clf_low.fit(data_vector, data_class)
 
         else:
-            data_frame = data_frame[(data_frame["Z_TRY"] >= 0.0
-                                    )][self.__selected_cols].fillna(-9999.99)
-            data_vector = data_frame[self.__selected_cols[:-2]].values
-            data_class = data_frame.apply(self.__find_class,
-                                          axis=1,
-                                          args=(True,))
+            pos = np.where((candidates["Z_TRY"] >= 0.0))
+            data_vector = np.nan_to_num(candidates[pos][self.__selected_cols[:-2]].tolist(),
+                                        nan=-9999.99)
+            data_class = find_class(candidates[pos], train=True)
             self.__clf.fit(data_vector, data_class)
 
     @classmethod
