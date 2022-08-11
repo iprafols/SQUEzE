@@ -76,6 +76,8 @@ class AbstractTest(unittest.TestCase):
             self.assertTrue(len(orig_candidates.dtype) == len(new_candidates.dtype))
             self.assertTrue(orig_candidates.dtype.names == new_candidates.dtype.names)
             print("Data types from original and new arrays do not match")
+            print(f"Original file: {orig_file}")
+            print(f"New file: {new_file}")
             print("column orig new are_equal")
             print("-------------------------")
             for col in orig_candidates.dtype.names:
@@ -88,6 +90,8 @@ class AbstractTest(unittest.TestCase):
                 self.assertTrue(orig_candidates[col].shape == new_candidates[col].shape)
             except AssertionError as error:
                 print(f"Different array shapes found in column {col}")
+                print(f"Original file: {orig_file}")
+                print(f"New file: {new_file}")
                 print(f"Original array shape: {orig_candidates[col].shape}")
                 print(f"New array shape: {new_candidates[col].shape}")
                 raise error
@@ -98,6 +102,8 @@ class AbstractTest(unittest.TestCase):
                                              equal_nan=True)))
             except AssertionError as error:
                 print(f"Differences found in column {col}")
+                print(f"Original file: {orig_file}")
+                print(f"New file: {new_file}")
                 print("orig new are_equal")
                 print("---------------------------")
                 for orig, new in zip(orig_candidates[col], new_candidates[col]):
