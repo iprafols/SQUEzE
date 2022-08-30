@@ -126,14 +126,18 @@ def main(cmdargs):
     if args.qso_dataframe is not None:
         if ((args.qso_cat is not None) or (args.qso_specid is not None) or
                 (args.qso_ztrue is not None)):
-            parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
-                         "are incompatible with --qso-dataframe")
+            parser.error("options --qso-cat, --qso-specid, and --qso-ztrue "
+                         "are incompatible with --qso-dataframe. Found: "
+                         f"--qso-cat {args.qso_cat} --qso-specid {args.qso_specid} "
+                         f"--qso-ztrue {args.qso_ztrue}")
         quasar_catalogue = deserialize(load_json(args.qso_dataframe))
         quasar_catalogue["LOADED"] = True
     else:
         if (args.qso_cat is None) or (args.qso_cols is None) or (args.qso_specid is None)  or (args.qso_ztrue is None):
             parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
-                         "required if --qso-dataframe is not passed")
+                         "required if --qso-dataframe is not passed. Found: "
+                         f"--qso-cat {args.qso_cat} --qso-specid {args.qso_specid} "
+                         f"--qso-ztrue {args.qso_ztrue}")
         quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
                                            args.qso_specid, args.qso_ztrue,
                                            args.qso_hdu).quasar_catalogue()
