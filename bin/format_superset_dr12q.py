@@ -124,8 +124,8 @@ def main(cmdargs):
     # load quasar catalogue
     userprint("loading quasar catalogue")
     if args.qso_dataframe is not None:
-        if ((args.qso_cat is not None) or (args.qso_cols is not None) or
-                (args.qso_specid is not None) or (args.qso_ztrue is not None)):
+        if ((args.qso_cat is not None) or (args.qso_specid is not None) or
+                (args.qso_ztrue is not None)):
             parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
                          "are incompatible with --qso-dataframe")
         quasar_catalogue = deserialize(load_json(args.qso_dataframe))
