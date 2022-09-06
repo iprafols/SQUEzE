@@ -13,6 +13,7 @@ import argparse
 import sys
 import time
 
+from squeze.config import Config
 from squeze.common_functions import verboseprint, quietprint
 from squeze.candidates import Candidates
 from squeze.parsers import MERGING_PARSER
@@ -24,18 +25,21 @@ def main(cmdargs):
                                      parents=[MERGING_PARSER])
     args = parser.parse_args(cmdargs)
 
+    # load default options
+    config = Config()
+    config.set_option("general", "mode", "merge")
+
     # manage verbosity
+    if args.quiet:
+        config.set_option("general", "userprint", "quietprint")
     userprint = verboseprint if not args.quiet else quietprint
 
     t0 = time.time()
     # load candidates object
-    userprint("Looking for candidates")
+    userprint("Initializing candidates object")
     if args.output_candidates is None:
-        candidates = Candidates(mode="merge", userprint=userprint)
-    else:
-        candidates = Candidates(mode="merge",
-                                name=args.output_candidates,
-                                userprint=userprint)
+        config.set_option("general", "output", args.output_candidates)
+    candidates = Candidates(config)
 
     # load the first candidates object
     userprint("Loading first candidate object")

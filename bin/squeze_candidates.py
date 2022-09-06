@@ -13,6 +13,7 @@ import argparse
 import sys
 import time
 
+from squeze.config import Config
 from squeze.common_functions import load_json
 from squeze.common_functions import deserialize
 from squeze.common_functions import verboseprint, quietprint
@@ -35,45 +36,44 @@ def main(cmdargs):
                                      parents=[CANDIDATES_PARSER])
     args = parser.parse_args(cmdargs)
 
+    # load default options
+    config = Config()
+    config.set_option("general", "mode", "candidates")
+
     # manage verbosity
+    if args.quiet:
+        config.set_option("general", "userprint", "quietprint")
     userprint = verboseprint if not args.quiet else quietprint
 
     t0 = time.time()
     # load model
     if args.model is not None:
-        userprint("Loading model")
-    model = None if args.model is None else Model.from_json(load_json(args.model))
-    t1 = time.time()
-    if args.model is not None:
-        userprint(f"INFO: time elapsed to load model: {(t1-t0)/60.0} minutes")
+        config.set_option("model", "filename", args.model)
 
     # load lines
     userprint("Loading lines")
-    lines = LINES if args.lines is None else deserialize(load_json(args.lines))
+    if args.lines is not None:
+        config.set_option("candidates", "lines", args.lines)
 
     # load try_line
-    try_line = TRY_LINES if args.try_lines is None else args.try_lines
+    if args.try_lines is not None:
+        config.set_option("candidates", "try lines", str(args.try_lines))
 
     # load redshift precision
-    z_precision = Z_PRECISION if args.z_precision is None else args.z_precision
+    if args.z_precision is not None:
+        config.set_option("candidates", "z precision", str(args.z_precision))
 
     # load peakfinder options
-    peakfind_width = PEAKFIND_WIDTH if args.peakfind_width is None else args.peakfind_width
-    peakfind_sig = PEAKFIND_SIG if args.peakfind_sig is None else args.peakfind_sig
+    if args.peakfind_width is not None:
+        config.set_option("peak finder", "width", str(args.peakfind_width))
+    if args.peakfind_sig is not None:
+        config.set_option("peak finder", "min significance", str(args.peakfind_sig))
 
     # initialize candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is None:
-        candidates = Candidates(lines_settings=(lines, try_line),
-                                z_precision=z_precision, mode="candidates",
-                                peakfind=(peakfind_width, peakfind_sig),
-                                model=model, userprint=userprint)
-    else:
-        candidates = Candidates(lines_settings=(lines, try_line),
-                                z_precision=z_precision, mode="candidates",
-                                name=args.output_candidates,
-                                peakfind=(peakfind_width, peakfind_sig),
-                                model=model, userprint=userprint)
+        config.set_option("general", "output", args.output_candidates)
+    candidates = Candidates(config)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:

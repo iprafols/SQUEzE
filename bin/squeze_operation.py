@@ -13,6 +13,7 @@ import argparse
 import sys
 import time
 
+from squeze.config import Config
 from squeze.common_functions import load_json
 from squeze.common_functions import verboseprint, quietprint
 from squeze.error import Error
@@ -28,26 +29,25 @@ def main(cmdargs):
                                      parents=[OPERATION_PARSER])
     args = parser.parse_args(cmdargs)
 
+    # load default options
+    config = Config()
+    config.set_option("general", "mode", "operation")
+
     # manage verbosity
+    if args.quiet:
+        config.set_option("general", "userprint", "quietprint")
     userprint = verboseprint if not args.quiet else quietprint
 
     t0 = time.time()
     # load model
-    userprint("Loading model")
-    if args.model.endswith(".json"):
-        model = Model.from_json(load_json(args.model))
-    else:
-        model = Model.from_fits(args.model)
-    t1 = time.time()
-    userprint(f"INFO: time elapsed to load model", (t1-t0)/60.0, 'minutes')
+    if args.model is not None:
+        config.set_option("model", "filename", args.model)
 
     # initialize candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is None:
-        candidates = Candidates(mode="operation", model=model, userprint=userprint)
-    else:
-        candidates = Candidates(mode="operation", name=args.output_candidates,
-                                model=model, userprint=userprint)
+        config.set_option("general", "output", args.output_candidates)
+    candidates = Candidates(config)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:

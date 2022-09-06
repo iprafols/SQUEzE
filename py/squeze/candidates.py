@@ -11,6 +11,7 @@ __version__ = "0.1"
 
 from math import sqrt
 import time
+import json
 
 import numpy as np
 from numba import prange, jit, vectorize
@@ -21,7 +22,8 @@ from astropy.table import Table
 from squeze.candidates_utils import (
     compute_line_ratios, compute_pixel_metrics,
     compute_is_correct, compute_is_correct_redshift, compute_is_line)
-from squeze.common_functions import verboseprint
+from squeze.common_functions import (
+    verboseprint, function_from_string, deserialize, load_json)
 from squeze.error import Error
 from squeze.model import Model
 from squeze.peak_finder import PeakFinder
@@ -42,6 +44,8 @@ try:
 except ImportError as error:
     PLOTTING_ERROR = error
 
+MODES = ["training", "test", "operation", "candidates", "merge"]
+
 
 class Candidates(object):
     """ Create and manage the candidates catalogue
@@ -56,17 +60,7 @@ class Candidates(object):
 
     # pylint: disable=too-many-instance-attributes
     # 12 is reasonable in this case.
-    def __init__(self,
-                 lines_settings=(LINES, TRY_LINES),
-                 z_precision=Z_PRECISION,
-                 mode="operation",
-                 name="SQUEzE_candidates.fits.gz",
-                 peakfind=(PEAKFIND_WIDTH, PEAKFIND_SIG),
-                 pixel_as_metrics=(False, 0),
-                 model=None,
-                 model_options=(RANDOM_FOREST_OPTIONS, RANDOM_STATE,
-                                PASS_COLS_TO_RF),
-                 userprint=verboseprint):
+    def __init__(self, config):
         """ Initialize class instance.
 
             Parameters
@@ -121,46 +115,86 @@ class Candidates(object):
             userprint : function - Default: verboseprint
             Print function to use
             """
-        if mode in ["training", "test", "operation", "candidates", "merge"]:
-            self.mode = mode
-        else:
-            raise Error("Invalid mode")
-
-        if name.endswith(".fits.gz") or name.endswith(".fits"):
-            self.name = name
-        else:
-            message = (
-                "Candidates name should have .fits or .fits.gz extensions."
-                f"Given name was {name}")
-            raise Error(message)
+        self.config = config
+        general_config = self.config.get_section("general")
 
         # printing function
-        self.userprint = userprint
+        userprint = general_config.get("userprint")
+        if userprint is None:
+            message = "Expected printing function, found None"
+            raise Error(message)
+        try:
+            self.userprint = function_from_string(userprint, "squeze.common_functions")
+        except ImportError as error:
+            raise Error(
+                f"Error loading class {peak_finder_name}, "
+                f"module {module_name} could not be loaded") from error
+        except AttributeError as error:
+            raise Error(
+                f"Error loading class {peak_finder_name}, "
+                f"module {module_name} did not contain requested class"
+            ) from error
+
+        # mode
+        self.mode = general_config.get("mode")
+        if self.mode not in MODES:
+            message = (
+                f"Invalid mode. Expected one of {', '.join(MODES)}. Found"
+                f"{self.mode}")
+            raise Error(message)
+
+        # output info
+        self.name = general_config.get("output")
+        if not (self.name.endswith(".fits.gz") or
+                self.name.endswith(".fits")):
+            message = (
+                "Candidates name should have .fits or .fits.gz extensions."
+                f"Given name was {self.name}")
+            raise Error(message)
 
         # initialize empty catalogue
         self.candidates_list = []
         self.candidates = None
 
         # main settings
-        self.lines = lines_settings[0]
-        self.try_lines = lines_settings[1]
-        self.z_precision = z_precision
+        self.lines = None
+        self.model = None
+        self.num_pixels = None
+        self.pixels_as_metrics = None
+        self.try_lines = None
+        self.try_lines_indexs = None
+        self.try_lines_dict = None
+        self.z_precision = None
+        self.__initialize_main_settings()
 
         # options to be passed to the peak finder
-        self.peakfind_width = peakfind[0]
-        self.peakfind_sig = peakfind[1]
-
-        # pixel metrics
-        self.pixels_as_metrics = pixel_as_metrics[0]
-        self.num_pixels = pixel_as_metrics[1]
+        peak_finder_config = self.config.get_section("peak finder")
+        self.peakfind_width = peak_finder_config.getfloat("width")
+        self.peakfind_sig = peak_finder_config.getfloat("min significance")
 
         # model
-        if model is None:
+        model_config = self.config.get_section("model")
+        model_filename = model_config.get("filename")
+        if model_filename is None:
             self.model = None
         else:
-            self.model = model
+            self.userprint("Loading model")
+            t0 = time.time()
+            if model_filename.endswith(".json"):
+                self.model = Model.from_json(load_json(model_filename))
+            else:
+                self.model = Model.from_fits(model_filename)
+            t1 = time.time()
+            self.userprint(f"INFO: time elapsed to load model: {(t1-t0)/60.0} minutes")
             self.__load_model_settings()
-        self.model_options = model_options
+
+        # model options
+        random_state = model_config.getint("random state")
+        random_forest_options = model_config.get("random forest options")
+        if random_forest_options is None:
+            self.model_options = ({}, random_state)
+        else:
+            self.model_options = (load_json(random_forest_options), random_state)
 
         # initialize peak finder
         self.peak_finder = PeakFinder(self.peakfind_width,
@@ -180,6 +214,43 @@ class Candidates(object):
         self.try_lines_dict = dict(
             zip(self.try_lines, self.try_lines_indexs))
         self.try_lines_dict["none"] = -1
+
+    def __initialize_main_settings(self):
+        """ Initialize main settings"""
+        settings = self.config.get_section("candidates")
+
+        # line metrics
+        lines = settings.get("lines")
+        if lines is None:
+            message = "In section [candidates], variable 'lines' is required"
+            raise Error(message)
+        self.lines = deserialize(load_json(lines))
+        if not isinstance(self.lines, pd.DataFrame):
+            message = ("Expected a DataFrame with the line information. "
+                       f"Found: {type(self.lines)}\n    lines: {lines}\n"
+                       f"self.lines: {self.lines}")
+            raise Error(message)
+
+        try_lines = settings.get("try lines")
+        self.try_lines = try_lines.split()
+        if not isinstance(self.try_lines, list):
+            message = ("Expected a list with the try lines names. "
+                       f"Found: {self.try_lines}")
+            raise Error(message)
+
+        self.z_precision = settings.getfloat("z precision")
+        if self.z_precision is None or self.z_precision <= 0:
+            message = ("z precision must be greater than 0. "
+                       f"Found {self.z_precision}")
+            raise Error(message)
+
+        self.pixels_as_metrics = settings.getboolean("pixels as metrics")
+
+        self.num_pixels = settings.getint("num pixels")
+        if self.num_pixels is None or self.num_pixels <= 0:
+            message = ("num pixels must be greater than 0. "
+                       f"Found {self.num_pixels}")
+            raise Error(message)
 
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """

@@ -13,22 +13,14 @@ import argparse
 import sys
 import time
 
-from squeze.common_functions import load_json
-from squeze.common_functions import deserialize
-from squeze.common_functions import verboseprint, quietprint
+from squeze.config import Config
 from squeze.error import Error
 from squeze.quasar_catalogue import QuasarCatalogue
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
-from squeze.defaults import LINES
-from squeze.defaults import RANDOM_FOREST_OPTIONS
-from squeze.defaults import RANDOM_STATE
-from squeze.defaults import TRY_LINES
-from squeze.defaults import Z_PRECISION
-from squeze.defaults import PEAKFIND_WIDTH
-from squeze.defaults import PEAKFIND_SIG
-from squeze.defaults import NUM_PIXELS
 from squeze.parsers import TRAINING_PARSER
+from squeze.common_functions import load_json, deserialize
+from squeze.common_functions import verboseprint, quietprint
 
 
 def main(cmdargs):
@@ -38,51 +30,58 @@ def main(cmdargs):
                                      parents=[TRAINING_PARSER])
     args = parser.parse_args(cmdargs)
 
+    # load default options
+    config = Config()
+
     # manage verbosity
+    if args.quiet:
+        config.set_option("general", "userprint", "quietprint")
     userprint = verboseprint if not args.quiet else quietprint
 
     t0 = time.time()
     # load lines
     userprint("Loading lines")
-    lines = LINES if args.lines is None else deserialize(load_json(args.lines))
+    if args.lines is not None:
+        config.set_option("candidates", "lines", args.lines)
 
     # load try_line
-    try_line = TRY_LINES if args.try_lines is None else args.try_lines
+    if args.try_lines is not None:
+        config.set_option("candidates", "try lines", str(args.try_lines))
 
     # load redshift precision
-    z_precision = Z_PRECISION if args.z_precision is None else args.z_precision
+    if args.z_precision is not None:
+        config.set_option("candidates", "z precision", str(args.z_precision))
 
     # load peakfinder options
-    peakfind_width = PEAKFIND_WIDTH if args.peakfind_width is None else args.peakfind_width
-    peakfind_sig = PEAKFIND_SIG if args.peakfind_sig is None else args.peakfind_sig
+    if args.peakfind_width is not None:
+        config.set_option("peak finder", "width", str(args.peakfind_width))
+    if args.peakfind_sig is not None:
+        config.set_option("peak finder", "min significance", str(args.peakfind_sig))
 
     # load random forest options
-    random_forest_options = RANDOM_FOREST_OPTIONS if args.random_forest_options is None else load_json(args.random_forest_options)
-    random_state = RANDOM_STATE if args.random_state is None else args.random_state
+    if args.random_forest_options is not None:
+        config.set_option("model", "random forest options", args.random_forest_options)
+    #random_forest_options = RANDOM_FOREST_OPTIONS if args.random_forest_options is None else load_json(args.random_forest_options)
+    if args.random_state is not None:
+        config.set_option("model", "random state", str(args.random_state))
+    #random_state = RANDOM_STATE if args.random_state is None else args.random_state
 
     # load pixel metrics options
-    pixels_as_metrics = args.pixels_as_metrics
-    num_pixels = NUM_PIXELS if args.num_pixels is None else args.num_pixels
+    if args.pixels_as_metrics is not None:
+        config.set_option("candidates", "pixels as metrics", str(args.pixels_as_metrics))
+    #pixels_as_metrics = args.pixels_as_metrics
+    if args.num_pixels is not None:
+        config.set_option("candidates", "num pixels", str(args.num_pixels))
+    #num_pixels = NUM_PIXELS if args.num_pixels is None else args.num_pixels
+
+    if args.model_fits is not None:
+        config.set_option("model", "fits file", str(args.model_fits))
 
     # initialize candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is None:
-        candidates = Candidates(lines_settings=(lines, try_line),
-                                z_precision=z_precision, mode="training",
-                                peakfind=(peakfind_width, peakfind_sig),
-                                pixel_as_metrics=(pixels_as_metrics, num_pixels),
-                                model=None, userprint=userprint,
-                                model_options=(random_forest_options, random_state,
-                                               args.pass_cols_to_rf))
-    else:
-        candidates = Candidates(lines_settings=(lines, try_line),
-                                z_precision=z_precision, mode="training",
-                                name=args.output_candidates,
-                                peakfind=(peakfind_width, peakfind_sig),
-                                pixel_as_metrics=(pixels_as_metrics, num_pixels),
-                                model=None, userprint=userprint,
-                                model_options=(random_forest_options, random_state,
-                                               args.pass_cols_to_rf))
+        config.set_option("general", "output", args.output_candidates)
+    candidates = Candidates(config)
 
     # load candidates dataframe if they have previously looked for
     if args.load_candidates:
