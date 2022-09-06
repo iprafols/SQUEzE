@@ -135,7 +135,7 @@ def main(cmdargs):
     if args.check_statistics:
         probs = args.check_probs if args.check_probs is not None else np.arange(0.9, 0.0, -0.05)
         userprint("Check statistics")
-        data_frame = candidates.candidates()
+        data_frame = candidates.candidates
         userprint("\n---------------")
         userprint("step 1")
         candidates.find_completeness_purity(quasar_catalogue.reset_index(), data_frame)

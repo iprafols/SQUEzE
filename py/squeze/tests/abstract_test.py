@@ -65,10 +65,10 @@ class AbstractTest(unittest.TestCase):
         # load dataframes
         orig_candidates = Candidates()
         orig_candidates.load_candidates(orig_file)
-        orig_df = orig_candidates.candidates()
+        orig_df = orig_candidates.candidates
         new_candidates = Candidates()
         new_candidates.load_candidates(new_file)
-        new_df = new_candidates.candidates()
+        new_df = new_candidates.candidates
 
         # compare them
         equal_df = orig_df.equals(new_df)

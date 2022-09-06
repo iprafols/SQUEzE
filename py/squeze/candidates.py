@@ -273,7 +273,7 @@ def convert_dtype(dtype):
 def compute_is_correct(correct_redshift, class_person):
     """ Returns True if a candidate is a true quasar and False otherwise.
         A true candidate is defined as a candidate having an absolute value
-        of Delta_z is lower or equal than self.__z_precision.
+        of Delta_z is lower or equal than self.z_precision.
 
         Parameters
         ----------
@@ -382,7 +382,7 @@ def compute_is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
             continue
         else:
             for index2 in prange(lines.shape[0]):
-                #for line in self.__lines.index:
+                #for line in self.lines.index:
                 if index2 == assumed_line_index[index1]:
                     continue
                 # 0=WAVE
@@ -473,12 +473,12 @@ class Candidates(object):
             Print function to use
             """
         if mode in ["training", "test", "operation", "candidates", "merge"]:
-            self.__mode = mode
+            self.mode = mode
         else:
             raise Error("Invalid mode")
 
         if name.endswith(".fits.gz") or name.endswith(".fits"):
-            self.__name = name
+            self.name = name
         else:
             message = (
                 "Candidates name should have .fits or .fits.gz extensions."
@@ -486,62 +486,62 @@ class Candidates(object):
             raise Error(message)
 
         # printing function
-        self.__userprint = userprint
+        self.userprint = userprint
 
         # initialize empty catalogue
-        self.__candidates_list = []
-        self.__candidates = None
+        self.candidates_list = []
+        self.candidates = None
 
         # main settings
-        self.__lines = lines_settings[0]
-        self.__try_lines = lines_settings[1]
-        self.__z_precision = z_precision
+        self.lines = lines_settings[0]
+        self.try_lines = lines_settings[1]
+        self.z_precision = z_precision
 
         # options to be passed to the peak finder
-        self.__peakfind_width = peakfind[0]
-        self.__peakfind_sig = peakfind[1]
+        self.peakfind_width = peakfind[0]
+        self.peakfind_sig = peakfind[1]
 
         # pixel metrics
-        self.__pixels_as_metrics = pixel_as_metrics[0]
-        self.__num_pixels = pixel_as_metrics[1]
+        self.pixels_as_metrics = pixel_as_metrics[0]
+        self.num_pixels = pixel_as_metrics[1]
 
         # model
         if model is None:
-            self.__model = None
+            self.model = None
         else:
-            self.__model = model
+            self.model = model
             self.__load_model_settings()
-        self.__model_options = model_options
+        self.model_options = model_options
 
         # initialize peak finder
-        self.__peak_finder = PeakFinder(self.__peakfind_width,
-                                        self.__peakfind_sig)
+        self.peak_finder = PeakFinder(self.peakfind_width,
+                                        self.peakfind_sig)
 
-        # make sure fields in self.__lines are properly sorted
-        self.__lines = self.__lines[[
+        # make sure fields in self.lines are properly sorted
+        self.lines = self.lines[[
             'WAVE', 'START', 'END', 'BLUE_START', 'BLUE_END', 'RED_START',
             'RED_END'
         ]]
 
-        # compute convert try_lines strings to indexs in self.__lines array
-        self.__try_lines_indexs = np.array([
-            np.where(self.__lines.index == item)[0][0]
-            for item in self.__try_lines
+        # compute convert try_lines strings to indexs in self.lines array
+        self.try_lines_indexs = np.array([
+            np.where(self.lines.index == item)[0][0]
+            for item in self.try_lines
         ])
-        self.__try_lines_dict = dict(
-            zip(self.__try_lines, self.__try_lines_indexs))
-        self.__try_lines_dict["none"] = -1
+        self.try_lines_dict = dict(
+            zip(self.try_lines, self.try_lines_indexs))
+        self.try_lines_dict["none"] = -1
 
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """
         return {
-            "LINES": self.__lines,
-            "TRY_LINES": self.__try_lines,
-            "Z_PRECISION": self.__z_precision,
-            "PEAKFIND_WIDTH": self.__peakfind_width,
-            "PEAKFIND_SIG": self.__peakfind_sig,
-            "PIXELS_AS_METRICS": self.__pixels_as_metrics,
-            "NUM_PIXELS": self.__num_pixels,
+            "LINES": self.lines,
+            "TRY_LINES": self.try_lines,
+            "Z_PRECISION": self.z_precision,
+            "PEAKFIND_WIDTH": self.peakfind_width,
+            "PEAKFIND_SIG": self.peakfind_sig,
+            "PIXELS_AS_METRICS": self.pixels_as_metrics,
+            "NUM_PIXELS": self.num_pixels,
         }
 
     def __find_candidates(self, spectrum):
@@ -563,7 +563,7 @@ class Candidates(object):
             A list with the candidates for the given spectrum.
             """
         # find peaks
-        peak_indexs, significances = self.__peak_finder.find_peaks(spectrum)
+        peak_indexs, significances = self.peak_finder.find_peaks(spectrum)
 
         # keep peaks in the spectrum
         # if there are no peaks, include the spectrum with redshift np.nan
@@ -574,7 +574,7 @@ class Candidates(object):
             z_try = np.nan
             significance = np.nan
             try_line = 'none'
-            ratios = np.zeros(self.__lines.shape[0], dtype=float)
+            ratios = np.zeros(self.lines.shape[0], dtype=float)
             ratios_sn = np.zeros_like(ratios)
             ratios2 = np.zeros_like(ratios)
             for _ in zip(ratios, ratios_sn, ratios2):
@@ -584,12 +584,12 @@ class Candidates(object):
             candidate_info.append(z_try)
             candidate_info.append(significance)
             candidate_info.append(try_line)
-            if self.__pixels_as_metrics:
-                for _ in range(-self.__num_pixels, 0):
+            if self.pixels_as_metrics:
+                for _ in range(-self.num_pixels, 0):
                     candidate_info.append(np.nan)
-                for _ in range(0, self.__num_pixels):
+                for _ in range(0, self.num_pixels):
                     candidate_info.append(np.nan)
-            self.__candidates_list.append(candidate_info)
+            self.candidates_list.append(candidate_info)
         # if there are peaks, compute the metrics and keep the info
         else:
             wave = spectrum.wave()
@@ -599,58 +599,50 @@ class Candidates(object):
 
             new_candidates = compute_line_ratios(wave, flux, ivar, peak_indexs,
                                                  significances,
-                                                 self.__try_lines_indexs,
-                                                 self.__lines.values)
+                                                 self.try_lines_indexs,
+                                                 self.lines.values)
 
             new_candidates = [
-                metadata + item[:-1] + [self.__try_lines[int(item[-1])]]
+                metadata + item[:-1] + [self.try_lines[int(item[-1])]]
                 for item in new_candidates
             ]
 
-            if self.__pixels_as_metrics:
+            if self.pixels_as_metrics:
                 pixel_metrics = compute_pixel_metrics(wave, flux, ivar,
                                                       peak_indexs,
-                                                      self.__num_pixels,
-                                                      self.__try_lines_indexs,
-                                                      self.__lines.values)
+                                                      self.num_pixels,
+                                                      self.try_lines_indexs,
+                                                      self.lines.values)
                 new_candidates = [
                     item + candidate_pixel_metrics
                     for item, candidate_pixel_metrics in zip(
                         new_candidates, pixel_metrics)
                 ]
 
-            self.__candidates_list += new_candidates
+            self.candidates_list += new_candidates
 
     def __load_model_settings(self):
-        """ Overload the settings with those stored in self.__model """
-        settings = self.__model.get_settings()
-        self.__lines = settings.get("LINES")
-        self.__try_lines = settings.get("TRY_LINES")
-        self.__z_precision = settings.get("Z_PRECISION")
-        self.__peakfind_width = settings.get("PEAKFIND_WIDTH")
-        self.__peakfind_sig = settings.get("PEAKFIND_SIG")
-        self.__pixels_as_metrics = settings.get("PIXELS_AS_METRICS")
-        self.__num_pixels = settings.get("NUM_PIXELS")
+        """ Overload the settings with those stored in self.model """
+        settings = self.model.get_settings()
+        self.lines = settings.get("LINES")
+        self.try_lines = settings.get("TRY_LINES")
+        self.z_precision = settings.get("Z_PRECISION")
+        self.peakfind_width = settings.get("PEAKFIND_WIDTH")
+        self.peakfind_sig = settings.get("PEAKFIND_SIG")
+        self.pixels_as_metrics = settings.get("PIXELS_AS_METRICS")
+        self.num_pixels = settings.get("NUM_PIXELS")
 
     def save_candidates(self):
         """ Save the candidates DataFrame. """
-        results = fitsio.FITS(self.__name, 'rw', clobber=True)
-        names = list(self.__candidates.columns)
+        results = fitsio.FITS(self.name, 'rw', clobber=True)
+        names = list(self.candidates.columns)
         cols = [
-            np.array(self.__candidates[col].values, dtype=str)
-            if self.__candidates[col].dtype == "object" else
-            self.__candidates[col].values for col in self.__candidates.columns
+            np.array(self.candidates[col].values, dtype=str)
+            if self.candidates[col].dtype == "object" else
+            self.candidates[col].values for col in self.candidates.columns
         ]
         results.write(cols, names=names, extname="CANDIDATES")
         results.close()
-
-    def candidates(self):
-        """ Access the candidates DataFrame. """
-        return self.__candidates
-
-    def lines(self):
-        """ Access the lines DataFrame. """
-        return self.__lines
 
     def set_mode(self, mode):
         """ Allow user to change the running mode
@@ -663,7 +655,7 @@ class Candidates(object):
         and provide a series of functions to train the model.
         """
         if mode in ["training", "test", "candidates", "operation", "merge"]:
-            self.__mode = mode
+            self.mode = mode
         else:
             raise Error("Invalid mode")
 
@@ -678,91 +670,91 @@ class Candidates(object):
             save : bool - default: True
             If True, then save the catalogue file after candidates are found
             """
-        if len(self.__candidates_list) == 0:
+        if len(self.candidates_list) == 0:
             return
 
         if "Z_TRY" not in columns_candidates:
-            for index1 in range(self.__lines.shape[0]):
+            for index1 in range(self.lines.shape[0]):
                 columns_candidates.append(
-                    f"{self.__lines.iloc[index1].name.upper()}_RATIO")
+                    f"{self.lines.iloc[index1].name.upper()}_RATIO")
                 columns_candidates.append(
-                    f"{self.__lines.iloc[index1].name.upper()}_RATIO_SN")
+                    f"{self.lines.iloc[index1].name.upper()}_RATIO_SN")
                 columns_candidates.append(
-                    f"{self.__lines.iloc[index1].name.upper()}_RATIO2")
+                    f"{self.lines.iloc[index1].name.upper()}_RATIO2")
             columns_candidates.append("Z_TRY")
             columns_candidates.append("PEAK_SIGNIFICANCE")
             columns_candidates.append("ASSUMED_LINE")
-            if self.__pixels_as_metrics:
-                for index in range(-self.__num_pixels, 0):
+            if self.pixels_as_metrics:
+                for index in range(-self.num_pixels, 0):
                     columns_candidates.append(f"FLUX_{index}")
                     columns_candidates.append(f"IVAR_{index}")
-                for index in range(0, self.__num_pixels):
+                for index in range(0, self.num_pixels):
                     columns_candidates.append(f"FLUX_{index}")
                     columns_candidates.append(f"IVAR_{index}")
 
         # create dataframe
-        aux = pd.DataFrame(self.__candidates_list, columns=columns_candidates)
+        aux = pd.DataFrame(self.candidates_list, columns=columns_candidates)
 
         # add truth table if running in training or test modes
-        if (self.__mode in ["training", "test"] or
-            (self.__mode == "candidates" and "Z_TRUE" in aux.columns)):
-            self.__userprint("Adding control variables from truth table")
+        if (self.mode in ["training", "test"] or
+            (self.mode == "candidates" and "Z_TRUE" in aux.columns)):
+            self.userprint("Adding control variables from truth table")
             aux["DELTA_Z"] = aux["Z_TRY"] - aux["Z_TRUE"]
             if aux.shape[0] > 0:
-                self.__userprint("    is_correct_redshift")
+                self.userprint("    is_correct_redshift")
                 aux["CORRECT_REDSHIFT"] = compute_is_correct_redshift(
                     aux["DELTA_Z"].values, aux["CLASS_PERSON"].values,
-                    self.__z_precision)
-                self.__userprint("    is_correct")
+                    self.z_precision)
+                self.userprint("    is_correct")
                 aux["IS_CORRECT"] = compute_is_correct(
                     aux["CORRECT_REDSHIFT"].values, aux["CLASS_PERSON"].values)
-                self.__userprint("    is_line")
+                self.userprint("    is_line")
                 aux["IS_LINE"] = compute_is_line(
                     aux["IS_CORRECT"].values, aux["CLASS_PERSON"].values,
                     np.array([
-                        self.__try_lines_dict.get(assumed_line)
+                        self.try_lines_dict.get(assumed_line)
                         for assumed_line in aux["ASSUMED_LINE"]
                     ]), aux["Z_TRUE"].values, aux["Z_TRY"].values,
-                    self.__z_precision,
-                    self.__lines.iloc[self.__try_lines_indexs].values)
+                    self.z_precision,
+                    self.lines.iloc[self.try_lines_indexs].values)
             else:
-                self.__userprint("    is_correct_redshift")
+                self.userprint("    is_correct_redshift")
                 aux["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
-                self.__userprint("    is_correct")
+                self.userprint("    is_correct")
                 aux["IS_CORRECT"] = pd.Series(dtype=bool)
-                self.__userprint("    is_line")
+                self.userprint("    is_line")
                 aux["IS_LINE"] = pd.Series(dtype=bool)
-            self.__userprint("Done")
+            self.userprint("Done")
 
         # keep the results
-        if self.__candidates is None:
-            self.__candidates = aux
+        if self.candidates is None:
+            self.candidates = aux
         else:
-            self.__userprint(
+            self.userprint(
                 "Concatenating dataframe with previouly exisiting candidates")
-            self.__candidates = pd.concat([self.__candidates, aux],
+            self.candidates = pd.concat([self.candidates, aux],
                                           ignore_index=True)
-            self.__userprint("Done")
-        self.__candidates_list = []
+            self.userprint("Done")
+        self.candidates_list = []
 
         # save the new version of the catalogue
         if save:
-            self.__userprint("Saving candidates")
+            self.userprint("Saving candidates")
             self.save_candidates()
-            self.__userprint("Done")
+            self.userprint("Done")
 
     def classify_candidates(self, save=True):
         """ Create a model instance and train it. Save the resulting model"""
         # consistency checks
-        if self.__mode not in ["test", "operation"]:
+        if self.mode not in ["test", "operation"]:
             raise Error(
                 "The function classify_candidates is available in the " +
-                f"test mode only. Detected mode is {self.__mode}")
-        if self.__candidates is None:
+                f"test mode only. Detected mode is {self.mode}")
+        if self.candidates is None:
             raise Error("Attempting to run the function classify_candidates " +
                         "but no candidates were found/loaded. Check your " +
                         "formatter")
-        self.__candidates = self.__model.compute_probability(self.__candidates)
+        self.candidates = self.model.compute_probability(self.candidates)
         if save:
             self.save_candidates()
 
@@ -778,32 +770,32 @@ class Candidates(object):
             columns_candidates : list of str
             The column names of the spectral metadata
             """
-        if self.__mode == "training" and "Z_TRUE" not in spectra[
+        if self.mode == "training" and "Z_TRUE" not in spectra[
                 0].metadata_names():
             raise Error("Mode is set to 'training', but spectra do not " +
                         "have the property 'Z_TRUE'.")
 
-        if self.__mode == "test" and "Z_TRUE" not in spectra[0].metadata_names(
+        if self.mode == "test" and "Z_TRUE" not in spectra[0].metadata_names(
         ):
             raise Error("Mode is set to 'test', but spectra do not " +
                         "have the property 'Z_TRUE'.")
 
-        if self.__mode == "merge":
+        if self.mode == "merge":
             raise Error("The function find_candidates is not available in " +
                         "merge mode.")
 
         for spectrum in spectra:
             # locate candidates in this spectrum
-            # candidates are appended to self.__candidates_list
+            # candidates are appended to self.candidates_list
             self.__find_candidates(spectrum)
 
-            if len(self.__candidates_list) > MAX_CANDIDATES_TO_CONVERT:
-                self.__userprint("Converting candidates to dataframe")
+            if len(self.candidates_list) > MAX_CANDIDATES_TO_CONVERT:
+                self.userprint("Converting candidates to dataframe")
                 time0 = time.time()
                 self.candidates_list_to_dataframe(columns_candidates,
                                                   save=False)
                 time1 = time.time()
-                self.__userprint(
+                self.userprint(
                     "INFO: time elapsed to convert candidates to dataframe: "
                     f"{(time0-time1)/60.0} minutes")
 
@@ -819,7 +811,7 @@ class Candidates(object):
             DataFrame containing the quasar catalogue. The quasars must contain
             the column "specid" to identify the spectrum.
 
-            data_frame : pd.DataFrame - Default: self.__candidates
+            data_frame : pd.DataFrame - Default: self.candidates
             DataFrame where the percentile will be computed. Must contain the
             columns "is_correct" and "specid".
 
@@ -835,13 +827,13 @@ class Candidates(object):
             The total number of found quasars.
             """
         # consistency checks
-        if self.__mode not in ["training", "test"]:
+        if self.mode not in ["training", "test"]:
             raise Error(
                 "The function find_completeness_purity is available in the " +
-                f"training and test modes only. Detected mode is {self.__mode}")
+                f"training and test modes only. Detected mode is {self.mode}")
 
         if data_frame is None:
-            data_frame = self.__candidates
+            data_frame = self.candidates
 
         if "IS_CORRECT" not in data_frame.columns:
             raise Error(
@@ -907,17 +899,17 @@ class Candidates(object):
             purity_zge2_1 = np.nan
             line_purity = np.nan
 
-        self.__userprint(f"There are {data_frame.shape[0]} candidates ",)
-        self.__userprint(f"for {num_quasars} catalogued quasars")
-        self.__userprint(f"number of quasars = {num_quasars}")
-        self.__userprint(f"found quasars = {found_quasars}")
-        self.__userprint(f"completeness = {completeness:.2%}")
-        self.__userprint(f"completeness z>=1 = {completeness_zge1:.2%}")
-        self.__userprint(f"completeness z>=2.1 = {completeness_zge2_1:.2%}")
-        self.__userprint(f"purity = {purity:.2%}")
-        self.__userprint(f"purity z >=1 = {purity_zge1:.2%}")
-        self.__userprint(f"purity z >=2.1 = {purity_zge2_1:.2%}")
-        self.__userprint(f"line purity = {line_purity:.2%}")
+        self.userprint(f"There are {data_frame.shape[0]} candidates ",)
+        self.userprint(f"for {num_quasars} catalogued quasars")
+        self.userprint(f"number of quasars = {num_quasars}")
+        self.userprint(f"found quasars = {found_quasars}")
+        self.userprint(f"completeness = {completeness:.2%}")
+        self.userprint(f"completeness z>=1 = {completeness_zge1:.2%}")
+        self.userprint(f"completeness z>=2.1 = {completeness_zge2_1:.2%}")
+        self.userprint(f"purity = {purity:.2%}")
+        self.userprint(f"purity z >=1 = {purity_zge1:.2%}")
+        self.userprint(f"purity z >=2.1 = {purity_zge2_1:.2%}")
+        self.userprint(f"line purity = {line_purity:.2%}")
 
         return purity, completeness, found_quasars
 
@@ -928,20 +920,20 @@ class Candidates(object):
             ----------
             filename : str - Default: None
             Name of the file from where to load existing candidates.
-            If None, then load from self.__name
+            If None, then load from self.name
             """
         if filename is None:
-            filename = self.__name
+            filename = self.name
 
         data = Table.read(filename, format='fits')
         candidates = data.to_pandas()
         candidates.columns = candidates.columns.str.upper()
-        self.__candidates = candidates
+        self.candidates = candidates
         del data, candidates
 
     def merge(self, others_list, save=True):
         """
-            Merge self.__candidates with another candidates object
+            Merge self.candidates with another candidates object
 
             Parameters
             ----------
@@ -951,12 +943,12 @@ class Candidates(object):
             save : bool - Defaut: True
             If True, save candidates before exiting
             """
-        if self.__mode != "merge":
+        if self.mode != "merge":
             raise Error("The function merge is available in the " +
-                        f"merge mode only. Detected mode is {self.__mode}")
+                        f"merge mode only. Detected mode is {self.mode}")
 
         for index, candidates_filename in enumerate(others_list):
-            self.__userprint(f"Merging... {index} of {len(others_list)}")
+            self.userprint(f"Merging... {index} of {len(others_list)}")
 
             try:
                 # load candidates
@@ -965,13 +957,13 @@ class Candidates(object):
                 del data
 
                 # append to candidates list
-                self.__candidates = self.__candidates.append(other,
+                self.candidates = self.candidates.append(other,
                                                              ignore_index=True)
 
             except TypeError:
-                self.__userprint(
+                self.userprint(
                     f"Error occured when loading file {candidates_filename}.")
-                self.__userprint("Ignoring file")
+                self.userprint("Ignoring file")
 
         if save:
             self.save_candidates()
@@ -1006,16 +998,16 @@ class Candidates(object):
         axes_grid.update(hspace=0.4, wspace=0.0)
 
         # distinguish from contaminants and non-contaminants i necessary
-        if self.__mode == "training":
-            contaminants_df = self.__candidates[~self.
+        if self.mode == "training":
+            contaminants_df = self.candidates[~self.
                                                 __candidates["IS_CORRECT"]]
-            correct_df = self.__candidates[self.__candidates["IS_CORRECT"]]
+            correct_df = self.candidates[self.candidates["IS_CORRECT"]]
 
         # plot the histograms
         fig_ax = fig.add_subplot(axes_grid[0])
 
         # plot the contaminants and non-contaminants separately
-        if self.__mode == "training":
+        if self.mode == "training":
             contaminants_df[plot_col].hist(ax=fig_ax,
                                            bins=100,
                                            range=(-1, 4),
@@ -1032,7 +1024,7 @@ class Candidates(object):
                                       normed=normed)
 
         # plot the entire sample
-        self.__candidates[plot_col].hist(ax=fig_ax,
+        self.candidates[plot_col].hist(ax=fig_ax,
                                          bins=100,
                                          range=(-1, 4),
                                          grid=False,
@@ -1075,7 +1067,7 @@ class Candidates(object):
 
         # get the number of plots and the names of the columns
         plot_cols = np.array(
-            [item for item in self.__candidates.columns if "RATIO" in item])
+            [item for item in self.candidates.columns if "RATIO" in item])
         num_ratios = plot_cols.size
 
         # plot settings
@@ -1088,16 +1080,16 @@ class Candidates(object):
         axes_grid.update(hspace=0.4, wspace=0.0)
 
         # distinguish from contaminants and non-contaminants i necessary
-        if self.__mode == "training":
-            contaminants_df = self.__candidates[~self.
+        if self.mode == "training":
+            contaminants_df = self.candidates[~self.
                                                 __candidates["IS_CORRECT"]]
-            correct_df = self.__candidates[self.__candidates["IS_CORRECT"]]
+            correct_df = self.candidates[self.candidates["IS_CORRECT"]]
 
         # plot the histograms
         for index, plot_col in enumerate(plot_cols):
             axes.append(fig.add_subplot(axes_grid[index]))
             # plot the contaminants and non-contaminants separately
-            if self.__mode == "training":
+            if self.mode == "training":
                 contaminants_df[plot_col].hist(ax=axes[index],
                                                bins=100,
                                                range=(-1, 4),
@@ -1114,7 +1106,7 @@ class Candidates(object):
                                           normed=normed)
 
             # plot the entire sample
-            self.__candidates[plot_col].hist(ax=axes[index],
+            self.candidates[plot_col].hist(ax=axes[index],
                                              bins=100,
                                              range=(-1, 4),
                                              grid=False,
@@ -1146,63 +1138,63 @@ class Candidates(object):
             json file.
             """
         # consistency checks
-        if self.__mode != "training":
+        if self.mode != "training":
             raise Error("The function train_model is available in the " +
-                        f"training mode only. Detected mode is {self.__mode}")
+                        f"training mode only. Detected mode is {self.mode}")
 
         selected_cols = [
             col.upper()
-            for col in self.__candidates.columns
+            for col in self.candidates.columns
             if col.endswith("RATIO_SN")
         ]
         selected_cols += [
             col.upper()
-            for col in self.__candidates.columns
+            for col in self.candidates.columns
             if col.endswith("RATIO2")
         ]
         selected_cols += [
             col.upper()
-            for col in self.__candidates.columns
+            for col in self.candidates.columns
             if col.endswith("RATIO")
         ]
         selected_cols += [
             col.upper()
-            for col in self.__candidates.columns
+            for col in self.candidates.columns
             if col.startswith("FLUX_")
         ]
         selected_cols += [
             col.upper()
-            for col in self.__candidates.columns
+            for col in self.candidates.columns
             if col.startswith("IVAR_")
         ]
         selected_cols += ["PEAK_SIGNIFICANCE"]
 
         # add extra columns
-        if len(self.__model_options
-              ) == 3 and self.__model_options[2] is not None:
-            selected_cols += [item.upper() for item in self.__model_options[2]]
+        if len(self.model_options
+              ) == 3 and self.model_options[2] is not None:
+            selected_cols += [item.upper() for item in self.model_options[2]]
 
         # add columns to compute the class in training
         selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
 
-        if self.__name.endswith(".fits"):
+        if self.name.endswith(".fits"):
             if model_fits:
-                model_name = self.__name.replace(".fits", "_model.fits.gz")
+                model_name = self.name.replace(".fits", "_model.fits.gz")
             else:
-                model_name = self.__name.replace(".fits", "_model.json")
-        elif self.__name.endswith(".fits.gz"):
+                model_name = self.name.replace(".fits", "_model.json")
+        elif self.name.endswith(".fits.gz"):
             if model_fits:
-                model_name = self.__name.replace(".fits.gz", "_model.fits.gz")
+                model_name = self.name.replace(".fits.gz", "_model.fits.gz")
             else:
-                model_name = self.__name.replace(".fits.gz", "_model.json")
+                model_name = self.name.replace(".fits.gz", "_model.json")
         else:
             raise Error("Invalid model name")
-        self.__model = Model(model_name,
+        self.model = Model(model_name,
                              selected_cols,
                              self.__get_settings(),
-                             model_options=self.__model_options)
-        self.__model.train(self.__candidates)
-        self.__model.save_model()
+                             model_options=self.model_options)
+        self.model.train(self.candidates)
+        self.model.save_model()
 
     def save_catalogue(self, filename, prob_cut):
         """ Save the final catalogue as a fits file. Only non-duplicated
@@ -1215,7 +1207,7 @@ class Candidates(object):
             ----------
             filename : str or None
             Name of the fits file the final catalogue is going to be saved to.
-            If it is None, then we will use self.__candidates with '_catalogue'
+            If it is None, then we will use self.candidates with '_catalogue'
             appended to it before the extension.
 
             prob_cut : float
@@ -1223,11 +1215,11 @@ class Candidates(object):
             with greater probability will be saved
         """
         if filename is None:
-            filename = self.__name.replace(".fits", "_catalogue.fits")
+            filename = self.name.replace(".fits", "_catalogue.fits")
 
         # filter data DataFrame
-        data_frame = self.__candidates[(~self.__candidates["DUPLICATED"]) &
-                                       (self.__candidates["PROB"] >= prob_cut)]
+        data_frame = self.candidates[(~self.candidates["DUPLICATED"]) &
+                                       (self.candidates["PROB"] >= prob_cut)]
 
         results = fitsio.FITS(filename, 'rw', clobber=True)
         names = list(data_frame.columns)
