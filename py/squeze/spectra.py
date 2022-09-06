@@ -13,7 +13,7 @@ import numpy as np
 from squeze.error import Error
 from squeze.spectrum import Spectrum
 from squeze.simple_spectrum import SimpleSpectrum
-from squeze.common_functions import quietprint
+from squeze.utils import quietprint
 
 
 class Spectra(object):
@@ -60,7 +60,7 @@ class Spectra(object):
             It uses the deserialization function of class SimpleSpectrum to reconstruct
             the instances of Spectrum. For this function to work, data should have been
             serialized using the serialization method specified in `save_json` function
-            present on `squeze_common_functions.py` """
+            present on `utils.py` """
         spectra_list = list(
             map(SimpleSpectrum.from_json, data.get("_Spectra__spectra_list")))
         return cls(spectra_list)

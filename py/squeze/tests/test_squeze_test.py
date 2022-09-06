@@ -7,12 +7,11 @@
 import unittest
 import os
 
+import squeze_test
 from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
-from squeze.common_functions import deserialize, load_json
+from squeze.utils import deserialize, load_json
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-
-import squeze_test
 
 class TestSquezeTest(AbstractTest):
     """Test the test mode

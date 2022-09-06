@@ -29,13 +29,13 @@ import numpy as np
 
 import astropy.io.fits as fits
 
-from squeze.common_functions import save_json, deserialize, load_json
-from squeze.common_functions import verboseprint, quietprint
+from squeze.boss_spectrum import BossSpectrum
 from squeze.error import Error
 from squeze.quasar_catalogue import QuasarCatalogue
-from squeze.boss_spectrum import BossSpectrum
-from squeze.spectra import Spectra
 from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
+from squeze.spectra import Spectra
+from squeze.utils import (
+    save_json, deserialize, load_json, verboseprint, quietprint)
 
 def main(cmdargs):
     """ Load BOSS spectra using the BossSpectrum Class defined in

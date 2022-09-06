@@ -8,8 +8,9 @@ import unittest
 import os
 
 from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
-from squeze.common_functions import verboseprint as userprint
-from squeze.common_functions import deserialize, load_json
+import squeze_training
+from squeze.utils import deserialize, load_json
+from squeze.utils import verboseprint as userprint
 
 try:
     import sklearn
@@ -19,7 +20,6 @@ except ModuleNotFoundError:
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-import squeze_training
 
 @unittest.skipIf(module_not_found, ("Skip training tests since sklearn was not"
                                     "installed"))

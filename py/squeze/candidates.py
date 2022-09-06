@@ -22,8 +22,6 @@ from astropy.table import Table
 from squeze.candidates_utils import (
     compute_line_ratios, compute_pixel_metrics,
     compute_is_correct, compute_is_correct_redshift, compute_is_line)
-from squeze.common_functions import (
-    verboseprint, function_from_string, deserialize, load_json)
 from squeze.error import Error
 from squeze.model import Model
 from squeze.peak_finder import PeakFinder
@@ -36,6 +34,9 @@ from squeze.defaults import PASS_COLS_TO_RF
 from squeze.defaults import Z_PRECISION
 from squeze.defaults import PEAKFIND_WIDTH
 from squeze.defaults import PEAKFIND_SIG
+from squeze.utils import (
+    verboseprint, function_from_string, deserialize, load_json)
+
 
 # extra imports for plotting function
 PLOTTING_ERROR = None
@@ -124,7 +125,7 @@ class Candidates(object):
             message = "Expected printing function, found None"
             raise Error(message)
         try:
-            self.userprint = function_from_string(userprint, "squeze.common_functions")
+            self.userprint = function_from_string(userprint, "squeze.utils")
         except ImportError as error:
             raise Error(
                 f"Error loading class {peak_finder_name}, "

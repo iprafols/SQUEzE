@@ -13,14 +13,13 @@ import argparse
 import sys
 import time
 
+from squeze.candidates import Candidates
 from squeze.config import Config
 from squeze.error import Error
 from squeze.quasar_catalogue import QuasarCatalogue
-from squeze.spectra import Spectra
-from squeze.candidates import Candidates
 from squeze.parsers import TRAINING_PARSER
-from squeze.common_functions import load_json, deserialize
-from squeze.common_functions import verboseprint, quietprint
+from squeze.spectra import Spectra
+from squeze.utils import load_json, deserialize, verboseprint, quietprint
 
 
 def main(cmdargs):

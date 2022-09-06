@@ -13,14 +13,13 @@ import argparse
 import sys
 import time
 
+from squeze.candidates import Candidates
 from squeze.config import Config
-from squeze.common_functions import load_json
-from squeze.common_functions import verboseprint, quietprint
 from squeze.error import Error
 from squeze.model import Model
-from squeze.spectra import Spectra
-from squeze.candidates import Candidates
 from squeze.parsers import OPERATION_PARSER
+from squeze.spectra import Spectra
+from squeze.utils import load_json, verboseprint, quietprint
 
 def main(cmdargs):
     """ Run SQUEzE in operation mode """

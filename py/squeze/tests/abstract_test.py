@@ -13,9 +13,9 @@ import astropy.io.fits as fits
 
 from squeze.candidates import Candidates
 from squeze.config import Config
-from squeze.common_functions import verboseprint as userprint
-from squeze.common_functions import deserialize, load_json
 from squeze.spectra import Spectra
+from squeze.utils import deserialize, load_json
+from squeze.utils import verboseprint as userprint
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))

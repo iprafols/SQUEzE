@@ -13,10 +13,10 @@ import argparse
 import sys
 import time
 
-from squeze.config import Config
-from squeze.common_functions import verboseprint, quietprint
 from squeze.candidates import Candidates
+from squeze.config import Config
 from squeze.parsers import MERGING_PARSER
+from squeze.utils import verboseprint, quietprint
 
 def main(cmdargs):
     """ Run SQUEzE in merging mode """

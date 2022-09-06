@@ -30,11 +30,10 @@ import numpy as np
 
 from desispec.io import read_spectra
 
-from squeze.common_functions import save_json
-from squeze.common_functions import verboseprint, quietprint
-from squeze.error import Error
 from squeze.desi_spectrum import DesiSpectrum
+from squeze.error import Error
 from squeze.spectra import Spectra
+from squeze.utils import save_json, verboseprint, quietprint
 
 def main(cmdargs):
     """ Load DESI spectra using the Spectra and DESISpectrum Classes

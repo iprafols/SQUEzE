@@ -19,12 +19,12 @@ import astropy.io.fits as fits
 from desispec.io import read_spectra
 
 from squeze.candidates import Candidates
-from squeze.common_functions import save_json, load_json
-from squeze.common_functions import verboseprint, quietprint
-from squeze.error import Error
 from squeze.desi_spectrum import DesiSpectrum
-from squeze.spectra import Spectra
+from squeze.error import Error
 from squeze.model import Model
+from squeze.spectra import Spectra
+from squeze.utils import save_json, load_json, verboseprint, quietprint
+
 
 def convert_dtype(dtype):
      if dtype == "O":

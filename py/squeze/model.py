@@ -12,10 +12,10 @@ import numpy as np
 import pandas as pd
 import fitsio
 
-from squeze.common_functions import save_json, deserialize
 from squeze.defaults import RANDOM_STATE
 from squeze.defaults import RANDOM_FOREST_OPTIONS
 from squeze.random_forest_classifier import RandomForestClassifier
+from squeze.utils import save_json, deserialize
 
 
 def find_prob(row, columns):
@@ -441,7 +441,7 @@ class Model(object):
             It uses the deserialization function of class SimpleSpectrum to reconstruct
             the instances of Spectrum. For this function to work, data should have been
             serialized using the serialization method specified in `save_json` function
-            present on `squeze_common_functions.py` """
+            present on `utils.py` """
 
         # create instance using the constructor
         name = data.get("_Model__name")

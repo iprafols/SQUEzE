@@ -21,9 +21,9 @@ import numpy as np
 import numba
 from numba import prange, jit
 
-from squeze.common_functions import deserialize
+from squeze.utils import deserialize
 
-# extra imports for plotting function
+# extra imports for training model
 SKLEARN_ERROR = None
 try:
     from sklearn.ensemble import RandomForestClassifier as rf_sklearn
@@ -190,7 +190,7 @@ class RandomForestClassifier(object):
             It uses the deserialization function of class SimpleSpectrum to reconstruct
             the instances of Spectrum. For this function to work, data should have been
             serialized using the serialization method specified in `save_json` function
-            present on `squeze_common_functions.py` """
+            present on `utils.py` """
 
         # create instance using the constructor
         cls_instance = cls(**data.get("_RandomForestClassifier__args"))

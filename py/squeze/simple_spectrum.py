@@ -9,7 +9,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 from squeze.spectrum import Spectrum
-from squeze.common_functions import deserialize
+from squeze.utils import deserialize
 
 
 class SimpleSpectrum(Spectrum):
@@ -29,7 +29,7 @@ class SimpleSpectrum(Spectrum):
         """ This function deserializes a json string to correclty build the class.
             For this function to work, data should have been serialized using the
             serialization method specified in `save_json` function present on
-            `squeze_common_functions.py`. The current deserialisation includes the
+            `utils.py`. The current deserialisation includes the
             possibility to interpret the flux, ivar, and wave arrays as either
             normal (np.array) or masked (np.ma.array) arrays."""
         flux = deserialize(data.get("_flux"))

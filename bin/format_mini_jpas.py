@@ -31,12 +31,11 @@ import numpy as np
 
 import astropy.io.fits as fits
 
-from squeze.common_functions import save_json
-from squeze.common_functions import verboseprint, quietprint
 from squeze.error import Error
+from squeze.parsers import PARENT_PARSER
 from squeze.simple_spectrum import SimpleSpectrum
 from squeze.spectra import Spectra
-from squeze.parsers import PARENT_PARSER
+from squeze.utils import save_json, verboseprint, quietprint
 
 def main(cmdargs):
     """ Load DESI spectra using the Spectra and DESISpectrum Classes

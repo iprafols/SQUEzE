@@ -80,7 +80,7 @@ History:
 17 Feb 2022: A.M: output_catalogue parameter removed. Now the code generates the CS output name automatically.
 20 Feb 2022: A.M: prior fits file in the latest version of redrock (> 0.15) needs another column called Function with 3 options; Gaussian, Lorentzian and tophat
 topcat is the preferable function for QSO but the redrock code right now cannot handle it properly. So I added Gaussian as the default function.
-29 Apr 2022: I.P: Fixed PROV names in primary HDU 
+29 Apr 2022: I.P: Fixed PROV names in primary HDU
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.2"
@@ -110,9 +110,9 @@ from redrock.zfind import zfind
 from redrock._version import __version__
 from redrock.archetypes import All_archetypes
 
-from squeze.common_functions import verboseprint, quietprint
+from squeze.utils import verboseprint, quietprint
 from squeze.weave_spectrum import WeaveSpectrum
-from squeze.common_functions import load_json
+from squeze.utils import load_json
 from squeze.model import Model
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates

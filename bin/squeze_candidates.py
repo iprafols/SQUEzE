@@ -14,9 +14,6 @@ import sys
 import time
 
 from squeze.config import Config
-from squeze.common_functions import load_json
-from squeze.common_functions import deserialize
-from squeze.common_functions import verboseprint, quietprint
 from squeze.error import Error
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
@@ -25,8 +22,9 @@ from squeze.defaults import TRY_LINES
 from squeze.defaults import Z_PRECISION
 from squeze.defaults import PEAKFIND_WIDTH
 from squeze.defaults import PEAKFIND_SIG
-from squeze.parsers import CANDIDATES_PARSER
 from squeze.model import Model
+from squeze.parsers import CANDIDATES_PARSER
+from squeze.utils import load_json, deserialize, verboseprint, quietprint
 
 
 def main(cmdargs):

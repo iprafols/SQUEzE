@@ -14,7 +14,7 @@ import json
 from configparser import ConfigParser
 
 from squeze.error import Error
-from squeze.common_functions import class_from_string
+from squeze.utils import class_from_string
 
 default_config = {
     "general": {
