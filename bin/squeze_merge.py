@@ -37,7 +37,7 @@ def main(cmdargs):
     t0 = time.time()
     # load candidates object
     userprint("Initializing candidates object")
-    if args.output_candidates is None:
+    if args.output_candidates is not None:
         config.set_option("general", "output", args.output_candidates)
     candidates = Candidates(config)
 
