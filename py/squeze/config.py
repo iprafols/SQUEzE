@@ -46,8 +46,6 @@ default_config = {
     },
     "peak finder": {
         "name": "PeakFinder",
-        "width": "70",
-        "min significance": "6",
     },
     "model": {
         # This variable sets the options to be passed to the random forest classifier
@@ -88,6 +86,48 @@ class Config(object):
         # parse the environ variables
         self.__parse_environ_variables()
 
+        # parse the peak finder section
+        self.__peak_finder = None
+        self.__format_peak_finder_section()
+
+    def __format_peak_finder_section(self):
+        """Format section [peak finder] into usable data"""
+        if "peak finder" not in self.config:
+            raise Error("Missing section [peak finder]")
+        section = self.config["peak finder"]
+
+        peak_finder_name = section.get("name")
+        if peak_finder_name is None:
+            raise Error("In section [peak finder], variable 'name' is required")
+        module_name = re.sub('(?<!^)(?=[A-Z])', '_', peak_finder_name).lower()
+        module_name = f"squeze.{module_name.lower()}"
+        try:
+            (PeakFinderType, default_args,
+             accepted_options) = class_from_string(peak_finder_name, module_name)
+        except ImportError as error:
+            raise Error(
+                f"Error loading class {peak_finder_name}, "
+                f"module {module_name} could not be loaded") from error
+        except AttributeError as error:
+            raise Error(
+                f"Error loading class {peak_finder_name}, "
+                f"module {module_name} did not contain requested class"
+            ) from error
+
+        for key in section:
+            if key != "name" and key not in accepted_options:
+                message = (
+                    "Unrecognised option in section [peak finder]. "
+                    f"Found: '{key}'. Accepted options are "
+                    f"{accepted_options}")
+                raise Error(message)
+
+        for key, value in default_args.items():
+            if key not in section:
+                section[key] = str(value)
+
+        self.peak_finder = (PeakFinderType, section)
+
     def __parse_environ_variables(self):
         """Read all variables and replaces the enviroment variables for their
         actual values. This assumes that enviroment variables are only used
@@ -111,7 +151,7 @@ class Config(object):
 
     def get_peak_finder(self):
         """Get the peak finder type and options"""
-        return self.__peak_finder
+        return self.peak_finder
 
     def get_section(self, section):
         """Get the required section of the configuration

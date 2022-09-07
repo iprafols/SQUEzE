@@ -24,7 +24,6 @@ from squeze.candidates_utils import (
     compute_is_correct, compute_is_correct_redshift, compute_is_line)
 from squeze.error import Error
 from squeze.model import Model
-from squeze.peak_finder import PeakFinder
 from squeze.utils import (
     verboseprint, function_from_string, deserialize, load_json)
 
@@ -115,11 +114,6 @@ class Candidates(object):
         self.z_precision = None
         self.__initialize_main_settings()
 
-        # options to be passed to the peak finder
-        peak_finder_config = self.config.get_section("peak finder")
-        self.peakfind_width = peak_finder_config.getfloat("width")
-        self.peakfind_sig = peak_finder_config.getfloat("min significance")
-
         # model
         model_config = self.config.get_section("model")
         model_filename = model_config.get("filename")
@@ -145,8 +139,7 @@ class Candidates(object):
             self.model_options = (load_json(random_forest_options), random_state)
 
         # initialize peak finder
-        self.peak_finder = PeakFinder(self.peakfind_width,
-                                        self.peakfind_sig)
+        self.__initialize_peak_finder()
 
         # make sure fields in self.lines are properly sorted
         self.lines = self.lines[[
@@ -199,6 +192,19 @@ class Candidates(object):
             message = ("num pixels must be greater than 0. "
                        f"Found {self.num_pixels}")
             raise Error(message)
+
+    def __initialize_peak_finder(self):
+        """Initialize the peak finder"""
+        # figure out which Peak Finder to load
+        PeakFinder, arguments = self.config.get_peak_finder()
+
+        # initialize peak finder
+        self.peak_finder = PeakFinder(arguments)
+
+        # some variables that will be removed later on but that for now are
+        # required for the model to work
+        self.peakfind_width = arguments.getfloat("width")
+        self.peakfind_sig = arguments.getfloat("min significance")
 
     def __get_settings(self):
         """ Pack the settings in a dictionary. Return it """
