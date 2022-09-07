@@ -105,7 +105,6 @@ class Candidates(object):
 
         # main settings
         self.lines = None
-        self.model = None
         self.num_pixels = None
         self.pixels_as_metrics = None
         self.try_lines = None
@@ -140,21 +139,6 @@ class Candidates(object):
 
         # initialize peak finder
         self.__initialize_peak_finder()
-
-        # make sure fields in self.lines are properly sorted
-        self.lines = self.lines[[
-            'WAVE', 'START', 'END', 'BLUE_START', 'BLUE_END', 'RED_START',
-            'RED_END'
-        ]]
-
-        # compute convert try_lines strings to indexs in self.lines array
-        self.try_lines_indexs = np.array([
-            np.where(self.lines.index == item)[0][0]
-            for item in self.try_lines
-        ])
-        self.try_lines_dict = dict(
-            zip(self.try_lines, self.try_lines_indexs))
-        self.try_lines_dict["none"] = -1
 
     def __initialize_main_settings(self):
         """ Initialize main settings"""
@@ -192,6 +176,21 @@ class Candidates(object):
             message = ("num pixels must be greater than 0. "
                        f"Found {self.num_pixels}")
             raise Error(message)
+
+        # make sure fields in self.lines are properly sorted
+        self.lines = self.lines[[
+            'WAVE', 'START', 'END', 'BLUE_START', 'BLUE_END', 'RED_START',
+            'RED_END'
+        ]]
+
+        # compute convert try_lines strings to indexs in self.lines array
+        self.try_lines_indexs = np.array([
+            np.where(self.lines.index == item)[0][0]
+            for item in self.try_lines
+        ])
+        self.try_lines_dict = dict(
+            zip(self.try_lines, self.try_lines_indexs))
+        self.try_lines_dict["none"] = -1
 
     def __initialize_peak_finder(self):
         """Initialize the peak finder"""
