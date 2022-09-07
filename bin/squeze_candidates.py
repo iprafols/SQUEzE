@@ -17,11 +17,6 @@ from squeze.config import Config
 from squeze.error import Error
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
-from squeze.defaults import LINES
-from squeze.defaults import TRY_LINES
-from squeze.defaults import Z_PRECISION
-from squeze.defaults import PEAKFIND_WIDTH
-from squeze.defaults import PEAKFIND_SIG
 from squeze.model import Model
 from squeze.parsers import CANDIDATES_PARSER
 from squeze.utils import load_json, deserialize, verboseprint, quietprint

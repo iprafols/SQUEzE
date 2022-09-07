@@ -25,15 +25,6 @@ from squeze.candidates_utils import (
 from squeze.error import Error
 from squeze.model import Model
 from squeze.peak_finder import PeakFinder
-from squeze.defaults import MAX_CANDIDATES_TO_CONVERT
-from squeze.defaults import LINES
-from squeze.defaults import TRY_LINES
-from squeze.defaults import RANDOM_FOREST_OPTIONS
-from squeze.defaults import RANDOM_STATE
-from squeze.defaults import PASS_COLS_TO_RF
-from squeze.defaults import Z_PRECISION
-from squeze.defaults import PEAKFIND_WIDTH
-from squeze.defaults import PEAKFIND_SIG
 from squeze.utils import (
     verboseprint, function_from_string, deserialize, load_json)
 
@@ -47,75 +38,31 @@ except ImportError as error:
 
 MODES = ["training", "test", "operation", "candidates", "merge"]
 
+# This variable sets the maximum number of candidates allowed before a partial
+# conversion to dataframe is executed
+MAX_CANDIDATES_TO_CONVERT = 100000000
 
 class Candidates(object):
     """ Create and manage the candidates catalogue
 
-        CLASS: Candidates
-        PURPOSE: Create and manage the candidates catalogue. This include
-        creating the list of candidates from a set of Spectrum instances,
-        computing cuts to maintain specific level of completeness,
-        training or appliying the model to clean the candidates list, and
-        creating a final catalogue.
-        """
+    CLASS: Candidates
+    PURPOSE: Create and manage the candidates catalogue. This include
+    creating the list of candidates from a set of Spectrum instances,
+    computing cuts to maintain specific level of completeness,
+    training or appliying the model to clean the candidates list, and
+    creating a final catalogue.
+    """
 
     # pylint: disable=too-many-instance-attributes
     # 12 is reasonable in this case.
     def __init__(self, config):
         """ Initialize class instance.
 
-            Parameters
-            ----------
-            lines_settings : (pandas.DataFrame, list) - Default: (LINES, TRY_LINES)
-            A tuple with a DataFrame with the information of the lines to compute the
-            ratios and the name of the lines to assume for each of the found peaks.
-            This names must be included in the DataFrame. This will be overloaded if
-            model is not None.
-
-            z_precision : float - Default: z_precision
-            A true candidate is defined as a candidate having an absolute value
-            of Delta_z is lower or equal than z_precision. Ignored if mode is
-            "operation". This will be overloaded if model is not None.
-
-            mode : "training", "test", "operation", "candidates", or "merge"
-            - Default: "operation"
-            Running mode. "training" mode assumes that true redshifts are known
-            and provide a series of functions to train the model.
-
-            name : string - Default: "SQUEzE_candidates.fits.gz"
-            Name of the candidates sample. The code will save an python-binary
-            with the information of the database in a csv file with this name.
-            If load is set to True, then the candidates sample will be loaded
-            from this file. Recommended extension is fits.gz.
-
-            pixel_as_metrics: (bool, int) - Default: (False, 0)
-            The first boolean specifies whether to keep pixel information as
-            metrics and the second int specifies the number of pixels to each
-            side of the peak to keep. If set, for each pixel, keep the flux and
-            ivar as metrics.
-
-            model : Model or None  - Default: None
-            Instance of the Model class defined in squeze_model or None.
-            In test and operation mode, it is supposed
-            to be the quasar model to construct the catalogue. In training mode,
-            it is supposed to be None initially, and the model will be trained
-            and given as an output of the code.
-
-            model_options : (dict, int, list or None)
-                            - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE, None)
-            The first dictionary sets the options to be passed to the random forest
-            cosntructor. If high-low split of the training is desired, the
-            dictionary must contain the entries "high" and "low", and the
-            corresponding values must be dictionaries with the options for each
-            of the classifiers. The second int is the random state passed to the
-            random forest classifiers. The third list contains columns to be passed
-            to the random forest classifiers (None for no columns). In training
-            mode, they're passed to the model instance before training.
-            Otherwise it's ignored.
-
-            userprint : function - Default: verboseprint
-            Print function to use
-            """
+        Arguments
+        ---------
+        config: Config
+        A configuration instance
+        """
         self.config = config
         general_config = self.config.get_section("general")
 
@@ -266,23 +213,25 @@ class Candidates(object):
         }
 
     def __find_candidates(self, spectrum):
+        """ Find the candidates in a spectrum.
+
+        Given a Spectrum, locate peaks in the flux. Then assume these peaks
+        correspond to the emission lines in self.try_lines and compute
+        peak-to-continuum ratios for the selected lines (see Perez-Rafols et al.
+        2020 for details).
+        For each of the peaks, report a list of candidates with their redshift
+        estimation, the computed peak-to-continuum ratios, and the metadata
+        specified in the spectrum.
+
+        Arguments
+        ---------
+        spectrum : Spectrum
+        The spectrum where candidates are looked for.
+
+        Return
+        ------
+        A list with the candidates for the given spectrum.
         """
-            Given a Spectrum, locate peaks in the flux. Then assume these peaks
-            correspond to the Lyman alpha emission line and compute peak-to-continuum
-            ratios for the selected lines.
-            For each of the peaks, report a candidate with the redshift estimation,
-            the computed peak-to-continuum ratios, and the metadata specified in the
-            spectrum.
-
-            Parameters
-            ----------
-            spectrum : Spectrum
-            The spectrum where candidates are looked for.
-
-            Returns
-            -------
-            A list with the candidates for the given spectrum.
-            """
         # find peaks
         peak_indexs, significances = self.peak_finder.find_peaks(spectrum)
 
@@ -365,32 +314,17 @@ class Candidates(object):
         results.write(cols, names=names, extname="CANDIDATES")
         results.close()
 
-    def set_mode(self, mode):
-        """ Allow user to change the running mode
-
-        Parameters
-        ----------
-        mode : "training", "test", "candidates", "operation", or "merge"
-               - Default: "operation"
-        Running mode. "training" mode assumes that true redshifts are known
-        and provide a series of functions to train the model.
-        """
-        if mode in ["training", "test", "candidates", "operation", "merge"]:
-            self.mode = mode
-        else:
-            raise Error("Invalid mode")
-
     def candidates_list_to_dataframe(self, columns_candidates, save=True):
         """ Format existing candidates list into a dataframe
 
-            Parameters
-            ----------
-            columns_candidates : list of str
-            The column names of the spectral metadata
+        Arguments
+        ---------
+        columns_candidates : list of str
+        The column names of the spectral metadata
 
-            save : bool - default: True
-            If True, then save the catalogue file after candidates are found
-            """
+        save : bool - default: True
+        If True, then save the catalogue file after candidates are found
+        """
         if len(self.candidates_list) == 0:
             return
 
@@ -465,7 +399,13 @@ class Candidates(object):
             self.userprint("Done")
 
     def classify_candidates(self, save=True):
-        """ Create a model instance and train it. Save the resulting model"""
+        """ Create a model instance and train it. Save the resulting model
+
+        Arguments
+        ---------
+        save : bool - default: True
+        If True, then save the catalogue file after predictions are made
+        """
         # consistency checks
         if self.mode not in ["test", "operation"]:
             raise Error(
@@ -480,17 +420,18 @@ class Candidates(object):
             self.save_candidates()
 
     def find_candidates(self, spectra, columns_candidates):
-        """ Find candidates for a given set of spectra, then integrate them in the
-            candidates catalogue and save the new version of the catalogue.
+        """ Find candidates for a given set of spectra
 
-            Parameters
-            ----------
-            spectra : list of Spectrum
-            The spectra in which candidates will be looked for.
+        Integrate them in the candidates catalogue.
 
-            columns_candidates : list of str
-            The column names of the spectral metadata
-            """
+        Arguments
+        ---------
+        spectra : list of Spectrum
+        The spectra in which candidates will be looked for.
+
+        columns_candidates : list of str
+        The column names of the spectral metadata
+        """
         if self.mode == "training" and "Z_TRUE" not in spectra[
                 0].metadata_names():
             raise Error("Mode is set to 'training', but spectra do not " +
@@ -521,32 +462,33 @@ class Candidates(object):
                     f"{(time0-time1)/60.0} minutes")
 
     def find_completeness_purity(self, quasars_data_frame, data_frame=None):
+        """ Find purity and completeness
+
+        Given a DataFrame with candidates and another one with the catalogued
+        quasars, compute the completeness and the purity. Upon error, return
+        np.nan
+
+        Arguments
+        ---------
+        quasars_data_frame : string
+        DataFrame containing the quasar catalogue. The quasars must contain
+        the column "specid" to identify the spectrum.
+
+        data_frame : pd.DataFrame - Default: self.candidates
+        DataFrame where the percentile will be computed. Must contain the
+        columns "is_correct" and "specid".
+
+        Return
+        ------
+        purity : float
+        The computed purity
+
+        completeness: float
+        The computed completeness
+
+        found_quasars : int
+        The total number of found quasars.
         """
-            Given a DataFrame with candidates and another one with the catalogued
-            quasars, compute the completeness and the purity. Upon error, return
-            np.nan
-
-            Parameters
-            ----------
-            quasars_data_frame : string
-            DataFrame containing the quasar catalogue. The quasars must contain
-            the column "specid" to identify the spectrum.
-
-            data_frame : pd.DataFrame - Default: self.candidates
-            DataFrame where the percentile will be computed. Must contain the
-            columns "is_correct" and "specid".
-
-            Returns
-            -------
-            purity : float
-            The computed purity
-
-            completeness: float
-            The computed completeness
-
-            found_quasars : int
-            The total number of found quasars.
-            """
         # consistency checks
         if self.mode not in ["training", "test"]:
             raise Error(
@@ -637,12 +579,12 @@ class Candidates(object):
     def load_candidates(self, filename=None):
         """ Load the candidates DataFrame
 
-            Parameters
-            ----------
-            filename : str - Default: None
-            Name of the file from where to load existing candidates.
-            If None, then load from self.name
-            """
+        Parameter
+        ---------
+        filename : str - Default: None
+        Name of the file from where to load existing candidates.
+        If None, then load from self.name
+        """
         if filename is None:
             filename = self.name
 
@@ -653,17 +595,16 @@ class Candidates(object):
         del data, candidates
 
     def merge(self, others_list, save=True):
+        """ Merge self.candidates with another candidates object
+
+        Parameter
+        ---------
+        others_list : pd.DataFrame
+        The other candidates object to merge
+
+        save : bool - Defaut: True
+        If True, save candidates before exiting
         """
-            Merge self.candidates with another candidates object
-
-            Parameters
-            ----------
-            others_list : pd.DataFrame
-            The other candidates object to merge
-
-            save : bool - Defaut: True
-            If True, save candidates before exiting
-            """
         if self.mode != "merge":
             raise Error("The function merge is available in the " +
                         f"merge mode only. Detected mode is {self.mode}")
@@ -690,23 +631,23 @@ class Candidates(object):
             self.save_candidates()
 
     def plot_histograms(self, plot_col, normed=True):
+        """ Plot the histogram of the specified column
+
+        In training mode, separate the histograms by distinguishing
+        contaminants and non-contaminants
+
+        Arguments
+        ---------
+        plot_col : str
+        Name of the column to plot
+
+        normed : bool - Default: True
+        If True, then plot the normalized histograms
+
+        Return
+        ------
+        The figure object
         """
-            Plot the histogram of the specified column
-            In training mode, separate the histograms by distinguishing
-            contaminants and non-contaminants
-
-            Parameters
-            ----------
-            plot_col : str
-            Name of the column to plot
-
-            normed : bool - Default: True
-            If True, then plot the normalized histograms
-
-            Returns
-            -------
-            The figure object
-            """
         if PLOTTING_ERROR is not None:
             raise PLOTTING_ERROR
 
@@ -768,21 +709,21 @@ class Candidates(object):
         return fig
 
     def plot_line_ratios_histograms(self, normed=True):
+        """ Plot the histogram of the ratios for the different lines.
+
+        In training mode, separate
+        the histograms by distinguishing contaminants and
+        non-contaminants
+
+        Arguments
+        ---------
+        normed : bool - Default: True
+        If True, then plot the normalized histograms
+
+        Return
+        ------
+        The figure object
         """
-            Plot the histogram of the ratios for the different lines.
-            In training mode, separate
-            the histograms by distinguishing contaminants and
-            non-contaminants
-
-            Parameters
-            ----------
-            normed : bool - Default: True
-            If True, then plot the normalized histograms
-
-            Returns
-            -------
-            The figure object
-            """
         if PLOTTING_ERROR is not None:
             raise PLOTTING_ERROR
 
@@ -852,12 +793,12 @@ class Candidates(object):
     def train_model(self, model_fits):
         """ Create a model instance and train it. Save the resulting model
 
-            Parameters
-            ----------
-            model_fits : bool
-            If True, save the model as a fits file. Otherwise, save it as a
-            json file.
-            """
+        Parameters
+        ----------
+        model_fits : bool
+        If True, save the model as a fits file. Otherwise, save it as a
+        json file.
+        """
         # consistency checks
         if self.mode != "training":
             raise Error("The function train_model is available in the " +
@@ -918,22 +859,22 @@ class Candidates(object):
         self.model.save_model()
 
     def save_catalogue(self, filename, prob_cut):
-        """ Save the final catalogue as a fits file. Only non-duplicated
-            candidates with probability greater or equal to prob_cut will
-            be included in this catalogue.
-            String columns with length greater than 15
-            characters might be truncated
+        """ Save the final catalogue as a fits file.
 
-            Parameters
-            ----------
-            filename : str or None
-            Name of the fits file the final catalogue is going to be saved to.
-            If it is None, then we will use self.candidates with '_catalogue'
-            appended to it before the extension.
+        Only non-duplicated candidates with probability greater or equal
+        to prob_cut will be included in this catalogue.
+        String columns with length greater than 15 characters might be truncated
 
-            prob_cut : float
-            Probability cut to be applied to the candidates. Only candidates
-            with greater probability will be saved
+        Arguments
+        ---------
+        filename : str or None
+        Name of the fits file the final catalogue is going to be saved to.
+        If it is None, then we will use self.candidates with '_catalogue'
+        appended to it before the extension.
+
+        prob_cut : float
+        Probability cut to be applied to the candidates. Only candidates
+        with greater probability will be saved
         """
         if filename is None:
             filename = self.name.replace(".fits", "_catalogue.fits")
