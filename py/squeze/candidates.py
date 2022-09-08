@@ -119,6 +119,7 @@ class Candidates(object):
             self.model_options = ({}, random_state)
         else:
             self.model_options = (load_json(random_forest_options), random_state)
+        self.model_fits = model_config.getboolean("fits file")
 
         # initialize peak finder
         self.__initialize_peak_finder()
@@ -881,19 +882,14 @@ class Candidates(object):
         results.write(cols, names=names, extname="CANDIDATES")
         results.close()
 
-    def train_model(self, model_fits):
-        """ Create a model instance and train it. Save the resulting model
-
-        Parameters
-        ----------
-        model_fits : bool
-        If True, save the model as a fits file. Otherwise, save it as a
-        json file.
-        """
+    def train_model(self):
+        """ Create a model instance and train it. Save the resulting model"""
         # consistency checks
         if self.mode != "training":
             raise Error("The function train_model is available in the " +
                         f"training mode only. Detected mode is {self.mode}")
+
+        t0 = time.time()
 
         selected_cols = [
             col.upper()
@@ -931,12 +927,12 @@ class Candidates(object):
         selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
 
         if self.name.endswith(".fits"):
-            if model_fits:
+            if self.model_fits:
                 model_name = self.name.replace(".fits", "_model.fits.gz")
             else:
                 model_name = self.name.replace(".fits", "_model.json")
         elif self.name.endswith(".fits.gz"):
-            if model_fits:
+            if self.model_fits:
                 model_name = self.name.replace(".fits.gz", "_model.fits.gz")
             else:
                 model_name = self.name.replace(".fits.gz", "_model.json")
@@ -948,6 +944,9 @@ class Candidates(object):
                              model_options=self.model_options)
         self.model.train(self.candidates)
         self.model.save_model()
+
+        t1 = time.time()
+        self.userprint(f"INFO: time elapsed to train model: {(t1-t0)/60.0} minutes")
 
 
 if __name__ == '__main__':

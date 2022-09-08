@@ -97,12 +97,10 @@ def main(cmdargs):
 
     # train model
     userprint("Training model")
-    t7 = time.time()
-    candidates.train_model(args.model_fits)
-    t8 = time.time()
-    userprint(f"INFO: time elapsed to train model: {(t8-t7)/60.0} minutes")
+    candidates.train_model()
 
-    userprint(f"INFO: total elapsed time: {(t8-t0)/60.0} minutes")
+    t1 = time.time()
+    userprint(f"INFO: total elapsed time: {(t1-t0)/60.0} minutes")
     userprint("Done")
 if __name__ == '__main__':
     cmdargs=sys.argv[1:]
