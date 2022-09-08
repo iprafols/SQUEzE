@@ -35,19 +35,17 @@ def main(cmdargs):
     userprint = verboseprint if not args.quiet else quietprint
 
     t0 = time.time()
+
+    # load candidates dataframe if they have previously looked for
+    config.set_option("candidates", "load candidates", "True")
+    if args.input_candidates is not None:
+        config.set_option("candidates", "input candidates", " ".join(args.input_candidates))
+
     # load candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is not None:
         config.set_option("general", "output", args.output_candidates)
     candidates = Candidates(config)
-
-    # load the first candidates object
-    userprint("Loading first candidate object")
-    candidates.load_candidates(args.input_candidates[0])
-
-    # merge the other candidates objects
-    userprint("Merging with the other candidate objects")
-    candidates.merge(args.input_candidates[1:])
 
     t1 = time.time()
     userprint(f"INFO: total elapsed time: {(t1-t0)/60.0} minutes")

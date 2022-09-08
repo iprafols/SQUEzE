@@ -14,35 +14,46 @@ import json
 from configparser import ConfigParser
 
 from squeze.error import Error
-from squeze.utils import class_from_string
+from squeze.utils import class_from_string, function_from_string
 
 default_config = {
     "general": {
-        "userprint": "verboseprint",
         "mode": "training",
         "output": "SQUEzE_candidates.fits.gz",
+        "userprint": "verboseprint",
     },
     "candidates": {
         # This variable sets the characteristics of the lines used by the code.
         # see $SQUEZE/bin/format_lines.py for details
         "lines": "$SQUEZE/data/default_lines.json",
+
+        # This variable specifies a file containing candidates to be read
+        #"input candidates": "candidates_file.fits.gz",
+
+        # This variable specifies whether or not to read candidates from file
+        "load candidates": "False",
+
+        # This variable sets the number of pixels to each side of the peak to be
+        # used as metrics. Ignored if 'pixels as metrics is false'
+        "num pixels": "30",
+
+        # This variable contains a list of columns to be passed to the random forest
+        # classifier(s). None for no columns. Columns must be in the input catalogue.
+        #"pass cols to random forest": "col1 col2",
+
+        # If this variable is True, pixels close to the peak will be passed to
+        # the random forest
+        "pixels as metrics": "False",
+
         # This variable sets the labels of each peak from where redshfit is
         # derived. Labels must be in "lines"
         "try lines": "lya civ ciii mgii hb ha",
+
         # This variable sets the redshift precision with which the code will assume
         # a candidate has the correct redshift. The truth table will be constructed
         # such that any candidates with Z_TRY = Z_TRUE +/- Z_PRECISION
         # will be considered as a true quasar.
         "z precision": "0.15",
-        # If this variable is True, pixels close to the peak will be passed to
-        # the random forest
-        "pixels as metrics": "False",
-        # This variable sets the number of pixels to each side of the peak to be
-        # used as metrics. Ignored if 'pixels as metrics is false'
-        "num pixels": "30",
-        # This variable contains a list of columns to be passed to the random forest
-        # classifier(s). None for no columns. Columns must be in the input catalogue.
-        "pass cols to random forest": "None",
     },
     "peak finder": {
         "name": "PeakFinder",
@@ -82,6 +93,9 @@ class Config(object):
             self.config.read(filename)
         else:
             print(f"WARNING: Config file not found: {filename}; using default config")
+
+        # load the printing function
+        self.load_print_function()
 
         # parse the environ variables
         self.__parse_environ_variables()
@@ -169,6 +183,24 @@ class Config(object):
                 f"Unkown section. Expected one of {self.config.keys()}. "
                 f"Found {section}")
         return self.config[section]
+
+    def load_print_function(self):
+        """Load the printing function"""
+        userprint = self.config["general"].get("userprint")
+        if userprint is None:
+            message = "In section [general], variable 'userprint' is required"
+            raise Error(message)
+        try:
+            self.userprint = function_from_string(userprint, "squeze.utils")
+        except ImportError as error:
+            raise Error(
+                f"Error loading class {peak_finder_name}, "
+                f"module {module_name} could not be loaded") from error
+        except AttributeError as error:
+            raise Error(
+                f"Error loading class {peak_finder_name}, "
+                f"module {module_name} did not contain requested class"
+            ) from error
 
     def set_option(self, section_name, key, value):
         """Sets a key from a section

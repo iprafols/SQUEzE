@@ -11,7 +11,8 @@ import sys
 import numpy as np
 import astropy.io.fits as fits
 
-from squeze.candidates import Candidates
+from squeze.candidates_utils import load_df
+
 from squeze.config import Config
 from squeze.spectra import Spectra
 from squeze.utils import deserialize, load_json
@@ -63,14 +64,9 @@ class AbstractTest(unittest.TestCase):
 
     def compare_data_frames(self, orig_file, new_file):
         """ Compares two dataframes to check that they are equal """
-        config = Config()
         # load dataframes
-        orig_candidates = Candidates(config)
-        orig_candidates.load_candidates(orig_file)
-        orig_df = orig_candidates.candidates
-        new_candidates = Candidates(config)
-        new_candidates.load_candidates(new_file)
-        new_df = new_candidates.candidates
+        orig_df = load_df(orig_file)
+        new_df = load_df(new_file)
 
         # compare them
         equal_df = orig_df.equals(new_df)

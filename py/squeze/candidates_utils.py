@@ -12,53 +12,53 @@ __version__ = "0.1"
 from math import sqrt
 from numba import prange, jit, vectorize
 import numpy as np
+from astropy.table import Table
 
 @jit(nopython=True)
 def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
                         lines):
     """Compute the line ratios for the specified lines for a given spectrum
 
-        See equations 1 to 3 of Perez-Rafols et al. 2020 for a detailed
-        description of the metrics
+    See equations 1 to 3 of Perez-Rafols et al. 2020 for a detailed
+    description of the metrics
 
-        Parameters
-        ----------
-        wave : array of float
-        The spectrum wavelength
+    Arguments
+    ---------
+    wave : array of float
+    The spectrum wavelength
 
-        flux : array of float
-        The spectrum flux
+    flux : array of float
+    The spectrum flux
 
-        ivar : array of float
-        The spectrum inverse variance
+    ivar : array of float
+    The spectrum inverse variance
 
-        peak indexs : array of int
-        The indexes on the wave array where peaks are found
+    peak indexs : array of int
+    The indexes on the wave array where peaks are found
 
-        significances : array of float
-        The significances of the peaks
+    significances : array of float
+    The significances of the peaks
 
-        try_lines : array of ints
-        Indexes of the lines to be considered as originators of the peaks
+    try_lines : array of ints
+    Indexes of the lines to be considered as originators of the peaks
 
-        lines : array of arrays of floats
-        Information of the lines where the ratios need to be computed. Each
-        of the arrays must be organised as follows:
-        0 - wavelength of the line
-        1 - wavelength of the start of the peak interval
-        2 - wavelength of the end of the peak interval
-        3 - wavelength of the start of the blue interval
-        4 - wavelength of the end of the blue interval
-        5 - wavelength of the start of the red interval
-        6 - wavelength of the end of the red interval
+    lines : array of arrays of floats
+    Information of the lines where the ratios need to be computed. Each
+    of the arrays must be organised as follows:
+    0 - wavelength of the line
+    1 - wavelength of the start of the peak interval
+    2 - wavelength of the end of the peak interval
+    3 - wavelength of the start of the blue interval
+    4 - wavelength of the end of the blue interval
+    5 - wavelength of the start of the red interval
+    6 - wavelength of the end of the red interval
 
-        Returns
-        -------
-        new_candidates : list
-        Each element of the list contains the ratios of the lines, the trial
-        redshift, the significance of the line and the index of the line
-        assumed to be originating the emission peak
-
+    Return
+    ------
+    new_candidates : list
+    Each element of the list contains the ratios of the lines, the trial
+    redshift, the significance of the line and the index of the line
+    assumed to be originating the emission peak
     """
     new_candidates = []
     # pylint: disable=not-an-iterable
@@ -148,46 +148,45 @@ def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
                           lines):
     """Compute pixel metrics.
 
-        Basically keep the pixel close to each peak as a new set of metrics.
-        For each pixel, keep the flux and the ivar. Use NaN for no coverage.
+    Basically keep the pixel close to each peak as a new set of metrics.
+    For each pixel, keep the flux and the ivar. Use NaN for no coverage.
 
-        Parameters
-        ----------
-        wave : array of float
-        The spectrum wavelength
+    Arguments
+    ---------
+    wave : array of float
+    The spectrum wavelength
 
-        flux : array of float
-        The spectrum flux
+    flux : array of float
+    The spectrum flux
 
-        ivar : array of float
-        The spectrum inverse variance
+    ivar : array of float
+    The spectrum inverse variance
 
-        peak indexs : array of int
-        The indexes on the wave array where peaks are found
+    peak indexs : array of int
+    The indexes on the wave array where peaks are found
 
-        num_pixels : int
-        The number of pixels to keep to each side of the peak
+    num_pixels : int
+    The number of pixels to keep to each side of the peak
 
-        try_lines : array of ints
-        Indexes of the lines to be considered as originators of the peaks
+    try_lines : array of ints
+    Indexes of the lines to be considered as originators of the peaks
 
-        lines : array of arrays of floats
-        Information of the lines where the ratios need to be computed. Each
-        of the arrays must be organised as follows:
-        0 - wavelength of the line
-        1 - wavelength of the start of the peak interval
-        2 - wavelength of the end of the peak interval
-        3 - wavelength of the start of the blue interval
-        4 - wavelength of the end of the blue interval
-        5 - wavelength of the start of the red interval
-        6 - wavelength of the end of the red interval
+    lines : array of arrays of floats
+    Information of the lines where the ratios need to be computed. Each
+    of the arrays must be organised as follows:
+    0 - wavelength of the line
+    1 - wavelength of the start of the peak interval
+    2 - wavelength of the end of the peak interval
+    3 - wavelength of the start of the blue interval
+    4 - wavelength of the end of the blue interval
+    5 - wavelength of the start of the red interval
+    6 - wavelength of the end of the red interval
 
-        Returns
-        -------
-        pixel_metrics : list
-        Each element of the list contains the pixel metrics associated to each
-        peak.
-
+    Return
+    ------
+    pixel_metrics : list
+    Each element of the list contains the pixel metrics associated to each
+    peak.
     """
     pixel_metrics = []
     # pylint: disable=not-an-iterable
@@ -236,7 +235,18 @@ def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
 
 def convert_dtype(dtype):
     """Convert datatype "O" to "15" to save in fits file.
-    Other types are ignored return as they are"""
+    Other types are ignored return as they are
+
+    Arguments
+    ---------
+    dtype: dtype
+    Data type
+
+    Return
+    ------
+    dtype: dtype
+    Data type
+    """
     if dtype == "O":
         return "15A"
     return dtype
@@ -245,24 +255,25 @@ def convert_dtype(dtype):
 @vectorize
 def compute_is_correct(correct_redshift, class_person):
     """ Returns True if a candidate is a true quasar and False otherwise.
-        A true candidate is defined as a candidate having an absolute value
-        of Delta_z is lower or equal than self.z_precision.
 
-        Parameters
-        ----------
-        correct_redshift : array of bool
-        Array specifying if the redhsift is correct
+    A true candidate is defined as a candidate having an absolute value
+    of Delta_z is lower or equal than self.z_precision.
 
-        class_person : array of int
-        Array specifying the actual classification. 3 and 30 stand for quasars
-        and BAL quasars respectively. 1 stands for stars and 4 stands for galaxies.
+    Arguments
+    ---------
+    correct_redshift : array of bool
+    Array specifying if the redhsift is correct
 
-        Returns
-        -------
-        correct : array of bool
-        For each element in the arrays, returns True if the candidate is a
-        quasar and has the correct redshift assign to it
-        """
+    class_person : array of int
+    Array specifying the actual classification. 3 and 30 stand for quasars
+    and BAL quasars respectively. 1 stands for stars and 4 stands for galaxies.
+
+    Return
+    ------
+    correct : array of bool
+    For each element in the arrays, returns True if the candidate is a
+    quasar and has the correct redshift assign to it
+    """
     correct = bool(correct_redshift and class_person in [3, 30])
     return correct
 
@@ -270,29 +281,30 @@ def compute_is_correct(correct_redshift, class_person):
 @vectorize
 def compute_is_correct_redshift(delta_z, class_person, z_precision):
     """ Returns True if a candidate has a correct redshift and False otherwise.
-        A candidate is assumed to have a correct redshift if it has an absolute
-        value of Delta_z lower than or equal to z_precision.
-        If the object is a star (class_person = 1), then return False.
 
-        Parameters
-        ----------
-        delta_z : array of float
-        Differences between the trial redshift (Z_TRY) and the true redshift
-        (Z_TRUE)
+    A candidate is assumed to have a correct redshift if it has an absolute
+    value of Delta_z lower than or equal to z_precision.
+    If the object is a star (class_person = 1), then return False.
 
-        class_person : array of int
-        Array specifying the actual classification. 3 and 30 stand for quasars
-        and BAL quasars respectively. 1 stands for stars and 4 stands for galaxies.
+    Arguments
+    ---------
+    delta_z : array of float
+    Differences between the trial redshift (Z_TRY) and the true redshift
+    (Z_TRUE)
 
-        z_precision : float
-        Tolerance with which two redshifts are considerd equal
+    class_person : array of int
+    Array specifying the actual classification. 3 and 30 stand for quasars
+    and BAL quasars respectively. 1 stands for stars and 4 stands for galaxies.
 
-        Returns
-        -------
-        correct_redshift : array of bool
-        For each element, returns True if the candidate is not a star and the
-        trial redshift is equal to the true redshift.
-        """
+    z_precision : float
+    Tolerance with which two redshifts are considerd equal
+
+    Return
+    ------
+    correct_redshift : array of bool
+    For each element, returns True if the candidate is not a star and the
+    trial redshift is equal to the true redshift.
+    """
     correct_redshift = bool((class_person != 1) and
                             (-z_precision <= delta_z <= z_precision))
     return correct_redshift
@@ -301,44 +313,46 @@ def compute_is_correct_redshift(delta_z, class_person, z_precision):
 @jit(nopython=True)
 def compute_is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
                     z_precision, lines):
-    """ Returns True if the candidates corresponds to a valid quasar emission
-        line and False otherwise. A quasar line is defined as a candidate whose
-        trial redshift is correct or where any of the redshifts obtained
-        assuming that the emission line is generated by any of the lines is
-        equal to the true redshift
+    """ Return True if the candidates corresponds to a valid quasar emission
+    line and False otherwise.
 
-        Parameters
-        ----------
-        is_correct : array of bool
-        Array specifying if the candidates with a correct trial redshift
+    A quasar line is defined as a candidate whose
+    trial redshift is correct or where any of the redshifts obtained
+    assuming that the emission line is generated by any of the lines is
+    equal to the true redshift
 
-        class_person : array of int
-        Array specifying the actual classification. 3 and 30 stand for quasars
-        and BAL quasars respectively. 1 stands for stars and 4 stands for galaxies.
+    Arguments
+    ---------
+    is_correct : array of bool
+    Array specifying if the candidates with a correct trial redshift
 
-        assumed_line_index : int
-        Index of the line considered as originating the peaks
+    class_person : array of int
+    Array specifying the actual classification. 3 and 30 stand for quasars
+    and BAL quasars respectively. 1 stands for stars and 4 stands for galaxies.
 
-        z_true : float
-        True redshift
+    assumed_line_index : int
+    Index of the line considered as originating the peaks
 
-        z_try : float
-        Trial redshift
+    z_true : float
+    True redshift
 
-        z_precision : float
-        Tolerance with which two redshifts are considerd equal
+    z_try : float
+    Trial redshift
 
-        lines : array of arrays of floats
-        Information of the lines that can be originating the emission line peaks.
-        Each of the arrays must be organised as follows:
-        0 - wavelength of the line
+    z_precision : float
+    Tolerance with which two redshifts are considerd equal
 
-        Returns
-        -------
-        is_line : array of bool
-        For each element, returns True if thr candidate is a quasar line and
-        False otherwise.
-        """
+    lines : array of arrays of floats
+    Information of the lines that can be originating the emission line peaks.
+    Each of the arrays must be organised as follows:
+    0 - wavelength of the line
+
+    Return
+    ------
+    is_line : array of bool
+    For each element, returns True if thr candidate is a quasar line and
+    False otherwise.
+    """
     is_line = np.zeros_like(is_correct)
 
     # correct identification
@@ -365,3 +379,21 @@ def compute_is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
                     (z_try_line - z_true[index1] >= -z_precision)):
                     is_line[index1] = True
     return is_line
+
+def load_df(filename):
+    """Read a candidates dataframe from file
+
+    Arguments
+    ---------
+    filename: str
+    The file to read
+
+    Return
+    ------
+    candidates: pd.DataFrame
+    The loaded dataframe
+    """
+    data = Table.read(filename, format='fits')
+    candidates = data.to_pandas()
+    candidates.columns = candidates.columns.str.upper()
+    return candidates

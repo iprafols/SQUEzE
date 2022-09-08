@@ -42,19 +42,17 @@ def main(cmdargs):
     if args.model is not None:
         config.set_option("model", "filename", args.model)
 
+    # load candidates dataframe if they have previously looked for
+    if args.load_candidates:
+        config.set_option("candidates", "load candidates", "True")
+        if args.input_candidates is not None:
+            config.set_option("candidates", "input candidates", args.input_candidates)
+
     # initialize candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is not None:
         config.set_option("general", "output", args.output_candidates)
     candidates = Candidates(config)
-
-    # load candidates dataframe if they have previously looked for
-    if args.load_candidates:
-        userprint("Loading existing candidates")
-        t2 = time.time()
-        candidates.load_candidates(args.input_candidates)
-        t3 = time.time()
-        userprint(f"INFO: time elapsed to load candidates: {(t3-t2)/60.0} minutes")
 
     # load spectra
     if args.input_spectra is not None:

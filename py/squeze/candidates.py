@@ -17,15 +17,14 @@ import numpy as np
 from numba import prange, jit, vectorize
 import pandas as pd
 import fitsio
-from astropy.table import Table
 
 from squeze.candidates_utils import (
-    compute_line_ratios, compute_pixel_metrics,
-    compute_is_correct, compute_is_correct_redshift, compute_is_line)
+    compute_line_ratios, compute_pixel_metrics, compute_is_correct,
+    compute_is_correct_redshift, compute_is_line, load_df)
 from squeze.error import Error
 from squeze.model import Model
 from squeze.utils import (
-    verboseprint, function_from_string, deserialize, load_json)
+    verboseprint, deserialize, load_json)
 
 
 # extra imports for plotting function
@@ -66,21 +65,7 @@ class Candidates(object):
         general_config = self.config.get_section("general")
 
         # printing function
-        userprint = general_config.get("userprint")
-        if userprint is None:
-            message = "Expected printing function, found None"
-            raise Error(message)
-        try:
-            self.userprint = function_from_string(userprint, "squeze.utils")
-        except ImportError as error:
-            raise Error(
-                f"Error loading class {peak_finder_name}, "
-                f"module {module_name} could not be loaded") from error
-        except AttributeError as error:
-            raise Error(
-                f"Error loading class {peak_finder_name}, "
-                f"module {module_name} did not contain requested class"
-            ) from error
+        self.userprint = self.config.userprint
 
         # mode
         self.mode = general_config.get("mode")
@@ -98,10 +83,6 @@ class Candidates(object):
                 "Candidates name should have .fits or .fits.gz extensions."
                 f"Given name was {self.name}")
             raise Error(message)
-
-        # initialize empty catalogue
-        self.candidates_list = []
-        self.candidates = None
 
         # main settings
         self.lines = None
@@ -139,6 +120,11 @@ class Candidates(object):
 
         # initialize peak finder
         self.__initialize_peak_finder()
+
+        # initialize candidates list
+        self.candidates_list = []
+        self.candidates = None
+        self.load_candidates()
 
     def __initialize_main_settings(self):
         """ Initialize main settings"""
@@ -590,14 +576,30 @@ class Candidates(object):
         Name of the file from where to load existing candidates.
         If None, then load from self.name
         """
-        if filename is None:
-            filename = self.name
-
-        data = Table.read(filename, format='fits')
-        candidates = data.to_pandas()
-        candidates.columns = candidates.columns.str.upper()
-        self.candidates = candidates
-        del data, candidates
+        settings = self.config.get_section("candidates")
+        load_candidates = settings.getboolean("load candidates")
+        if load_candidates is None:
+            message = (
+                "In section [candidates], variable 'load candidates' "
+                "is required")
+            raise Error(message)
+        if load_candidates:
+            self.userprint("Loading existing candidates")
+            t0 = time.time()
+            input_candidates = settings.get("input candidates")
+            if input_candidates is None:
+                input_candidates = self.name
+            input_candidates_list = input_candidates.split()
+            self.userprint(
+                f"Found {len(input_candidates_list)} file from which to "
+                "read candidates")
+            self.userprint("Loading first candidate object")
+            self.candidates = load_df(input_candidates_list[0])
+            if len(input_candidates_list) > 1:
+                self.userprint("Merging with the other candidate objects")
+                self.merge(input_candidates_list[1:])
+            t1 = time.time()
+            self.userprint(f"INFO: time elapsed to load candidates: {(t1-t0)/60.0} minutes")
 
     def merge(self, others_list, save=True):
         """ Merge self.candidates with another candidates object
@@ -619,9 +621,7 @@ class Candidates(object):
 
             try:
                 # load candidates
-                data = Table.read(candidates_filename, format='fits')
-                other = data.to_pandas()
-                del data
+                other = load_df(candidates_filename)
 
                 # append to candidates list
                 self.candidates = self.candidates.append(other,
