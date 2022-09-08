@@ -383,7 +383,7 @@ class Candidates(object):
 
     def __load_model_settings(self):
         """ Overload the settings with those stored in self.model """
-        settings = self.model.get_settings()
+        settings = self.model.settings
         self.lines = settings.get("LINES")
         self.try_lines = settings.get("TRY_LINES")
         self.z_precision = settings.get("Z_PRECISION")

@@ -63,11 +63,10 @@ def find_prob(row, columns):
 class Model(object):
     """ Create, train and/or execute the quasar model to find quasars
 
-        CLASS: Model
-        PURPOSE: Create, train and/or execute the quasar model to find
-        quasars
-        """
-
+    CLASS: Model
+    PURPOSE: Create, train and/or execute the quasar model to find
+    quasars
+    """
     def __init__(self,
                  name,
                  selected_cols,
@@ -99,29 +98,29 @@ class Model(object):
             random forest classifiers. If the tuple has more elements, they are
             ignored.
             """
-        self.__name = name
-        self.__settings = settings
-        self.__selected_cols = selected_cols
-        self.__clf_options = model_options[0]
-        self.__random_state = model_options[1]
-        if "high" in self.__clf_options.keys(
-        ) and "low" in self.__clf_options.keys():
-            self.__highlow_split = True
+        self.name = name
+        self.settings = settings
+        self.selected_cols = selected_cols
+        self.clf_options = model_options[0]
+        self.random_state = model_options[1]
+        if "high" in self.clf_options.keys(
+        ) and "low" in self.clf_options.keys():
+            self.highlow_split = True
         else:
-            self.__clf_options = {"all": model_options[0]}
-            self.__highlow_split = False
+            self.clf_options = {"all": model_options[0]}
+            self.highlow_split = False
 
         # load models
-        if self.__highlow_split:
-            self.__clf_options.get("high")["random_state"] = self.__random_state
-            self.__clf_options.get("low")["random_state"] = self.__random_state
-            self.__clf_high = RandomForestClassifier(
-                **self.__clf_options.get("high"))
-            self.__clf_low = RandomForestClassifier(
-                **self.__clf_options.get("low"))
+        if self.highlow_split:
+            self.clf_options.get("high")["random_state"] = self.random_state
+            self.clf_options.get("low")["random_state"] = self.random_state
+            self.clf_high = RandomForestClassifier(
+                **self.clf_options.get("high"))
+            self.clf_low = RandomForestClassifier(
+                **self.clf_options.get("low"))
         else:
-            self.__clf_options.get("all")["random_state"] = self.__random_state
-            self.__clf = RandomForestClassifier(**self.__clf_options.get("all"))
+            self.clf_options.get("all")["random_state"] = self.random_state
+            self.clf = RandomForestClassifier(**self.clf_options.get("all"))
 
     def __find_class(self, row, train):
         """ Find the class the instance belongs to. If train is set
@@ -165,10 +164,10 @@ class Model(object):
         else:
             data_class = -1
             aux_prob = 0.0
-            if self.__highlow_split:
-                class_labels = self.__clf_high.classes_
+            if self.highlow_split:
+                class_labels = self.clf_high.classes_
             else:
-                class_labels = self.__clf.classes_
+                class_labels = self.clf.classes_
             for class_label in class_labels:
                 if row[f"PROB_CLASS{int(class_label):d}"] > aux_prob:
                     aux_prob = row[f"PROB_CLASS{int(class_label):d}"]
@@ -176,45 +175,41 @@ class Model(object):
 
         return data_class
 
-    def get_settings(self):
-        """ Access function for self.__settings """
-        return self.__settings
-
     def save_model(self):
         """ Save the model"""
 
-        if self.__name.endswith(".json"):
-            save_json(self.__name, self)
+        if self.name.endswith(".json"):
+            save_json(self.name, self)
         else:
             self.save_model_as_fits()
 
     def save_model_as_fits(self):
         """ Save the model as a fits file"""
-        results = fitsio.FITS(self.__name.replace(".json", ".fits.gz"),
+        results = fitsio.FITS(self.name.replace(".json", ".fits.gz"),
                               'rw',
                               clobber=True)
 
-        # Create settings HDU to store items in self.__settings
+        # Create settings HDU to store items in self.settings
         header = [
             {
                 "name": "Z_PREC",
-                "value": self.__settings.get("Z_PRECISION"),
+                "value": self.settings.get("Z_PRECISION"),
                 "comment": "z_try correct if in z_true +/- Z_PRECISION",
             },
             {
                 "name": "PF_WIDTH",
-                "value": self.__settings.get("PEAKFIND_WIDTH"),
+                "value": self.settings.get("PEAKFIND_WIDTH"),
                 "comment": "smoothing used by the peak finder",
             },
             {
                 "name": "PF_SIG",
-                "value": self.__settings.get("PEAKFIND_SIG"),
+                "value": self.settings.get("PEAKFIND_SIG"),
                 "comment": "min significance used by the peak finder",
             },
         ]
         # now create the columns to store lines and try_lines.
-        lines = self.__settings.get("LINES")
-        try_lines = self.__settings.get("TRY_LINES")
+        lines = self.settings.get("LINES")
+        try_lines = self.settings.get("TRY_LINES")
         names = ["LINE_NAME"]
         cols = [np.array(lines.index, dtype=str)]
 
@@ -232,23 +227,23 @@ class Model(object):
 
         # selected_cols is stored as an array of strings
         names = ["SELECTED_COLS"]
-        cols = [np.array(self.__selected_cols, dtype=str)]
+        cols = [np.array(self.selected_cols, dtype=str)]
         results.write(cols, names=names, extname="RF_COLS")
         del names, cols
 
         # Create model HDU(s) to store the classifiers
-        if self.__highlow_split:
+        if self.highlow_split:
             classifier_names = ["high", "low"]
-            classifiers = [self.__clf_high, self.__clf_low]
+            classifiers = [self.clf_high, self.clf_low]
         else:
             classifier_names = ["all"]
-            classifiers = [self.__clf]
+            classifiers = [self.clf]
 
         for classifier_name, classifier in zip(classifier_names, classifiers):
             header = [{
                 "name": key,
                 "value": value,
-            } for key, value in self.__clf_options.get(classifier_name).items()]
+            } for key, value in self.clf_options.get(classifier_name).items()]
             if classifier_names != "all":
                 header += [{
                     "name":
@@ -304,17 +299,17 @@ class Model(object):
             The dataframe where the probabilities will be predicted
             """
 
-        if self.__highlow_split:
+        if self.highlow_split:
             # high-z split
             # compute probabilities for each of the classes
             data_frame_high = data_frame[data_frame["Z_TRY"] >= 2.1].copy()
             if data_frame_high.shape[0] > 0:
                 aux = data_frame_high.fillna(-9999.99)
-                data_vector = aux[self.__selected_cols[:-2]].values
-                data_class_probs = self.__clf_high.predict_proba(data_vector)
+                data_vector = aux[self.selected_cols[:-2]].values
+                data_class_probs = self.clf_high.predict_proba(data_vector)
 
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.__clf_high.classes_):
+                for index, class_label in enumerate(self.clf_high.classes_):
                     data_frame_high[
                         f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
                                                                               index]
@@ -324,11 +319,11 @@ class Model(object):
             data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1)].copy()
             if data_frame_low.shape[0] > 0:
                 aux = data_frame_low.fillna(-9999.99)
-                data_vector = aux[self.__selected_cols[:-2]].values
-                data_class_probs = self.__clf_low.predict_proba(data_vector)
+                data_vector = aux[self.selected_cols[:-2]].values
+                data_class_probs = self.clf_low.predict_proba(data_vector)
 
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.__clf_low.classes_):
+                for index, class_label in enumerate(self.clf_low.classes_):
                     data_frame_low[
                         f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
                                                                               index]
@@ -337,7 +332,7 @@ class Model(object):
             data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if data_frame_nonpeaks.shape[0] > 0:
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.__clf_low.classes_):
+                for index, class_label in enumerate(self.clf_low.classes_):
                     data_frame_nonpeaks[
                         f"PROB_CLASS{int(class_label):d}"] = np.nan
 
@@ -357,11 +352,11 @@ class Model(object):
             data_frame_peaks = data_frame[data_frame["Z_TRY"] >= 0.0].copy()
             if data_frame_peaks.shape[0] > 0:
                 data_vector = data_frame_peaks[
-                    self.__selected_cols[:-2]].fillna(-9999.99).values
-                data_class_probs = self.__clf.predict_proba(data_vector)
+                    self.selected_cols[:-2]].fillna(-9999.99).values
+                data_class_probs = self.clf.predict_proba(data_vector)
 
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.__clf.classes_):
+                for index, class_label in enumerate(self.clf.classes_):
                     data_frame_peaks[
                         f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
                                                                               index]
@@ -370,7 +365,7 @@ class Model(object):
             data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if not data_frame_nonpeaks.shape[0] == 0:
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.__clf.classes_):
+                for index, class_label in enumerate(self.clf.classes_):
                     data_frame_nonpeaks[
                         f"PROB_CLASS{int(class_label):d}"] = np.nan
 
@@ -408,32 +403,32 @@ class Model(object):
             The dataframe with which the model is trained
             """
         # train classifier
-        if self.__highlow_split:
+        if self.highlow_split:
             # high-z split
             data_frame_high = data_frame[data_frame["Z_TRY"] >= 2.1].fillna(
                 -9999.99)
-            data_vector = data_frame_high[self.__selected_cols[:-2]].values
+            data_vector = data_frame_high[self.selected_cols[:-2]].values
             data_class = data_frame_high.apply(self.__find_class,
                                                axis=1,
                                                args=(True,))
-            self.__clf_high.fit(data_vector, data_class)
+            self.clf_high.fit(data_vector, data_class)
             # low-z split
             data_frame_low = data_frame[(data_frame["Z_TRY"] < 2.1) & (
                 data_frame["Z_TRY"] >= 0.0)].fillna(-9999.99)
-            data_vector = data_frame_low[self.__selected_cols[:-2]].values
+            data_vector = data_frame_low[self.selected_cols[:-2]].values
             data_class = data_frame_low.apply(self.__find_class,
                                               axis=1,
                                               args=(True,))
-            self.__clf_low.fit(data_vector, data_class)
+            self.clf_low.fit(data_vector, data_class)
 
         else:
             data_frame = data_frame[(data_frame["Z_TRY"] >= 0.0
-                                    )][self.__selected_cols].fillna(-9999.99)
-            data_vector = data_frame[self.__selected_cols[:-2]].values
+                                    )][self.selected_cols].fillna(-9999.99)
+            data_vector = data_frame[self.selected_cols[:-2]].values
             data_class = data_frame.apply(self.__find_class,
                                           axis=1,
                                           args=(True,))
-            self.__clf.fit(data_vector, data_class)
+            self.clf.fit(data_vector, data_class)
 
     @classmethod
     def from_file(cls, filename):
@@ -471,19 +466,19 @@ class Model(object):
             present on `utils.py` """
 
         # create instance using the constructor
-        name = data.get("_Model__name")
-        selected_cols = data.get("_Model__selected_cols")
+        name = data.get("name")
+        selected_cols = data.get("selected_cols")
         selected_cols = [col.upper() for col in selected_cols]
         settings = {
             key.upper(): value
-            for key, value in data.get("_Model__settings").items()
+            for key, value in data.get("settings").items()
         }
         lines = deserialize(settings.get("LINES"))
         lines.columns = [col.upper() for col in lines.columns]
         settings["LINES"] = lines
         model_options = [
-            data.get("_Model__clf_options"),
-            data.get("_Model__random_state")
+            data.get("clf_options"),
+            data.get("random_state")
         ]
         cls_instance = cls(name,
                            selected_cols,
@@ -491,15 +486,14 @@ class Model(object):
                            model_options=model_options)
 
         # now update the instance to the current values
-        if "high" in model_options[0].keys() and "low" in model_options[0].keys(
-        ):
-            cls_instance.set_clf_high(
-                RandomForestClassifier.from_json(data.get("_Model__clf_high")))
-            cls_instance.set_clf_low(
-                RandomForestClassifier.from_json(data.get("_Model__clf_low")))
+        if cls_instance.highlow_split:
+            cls_instance.clf_high = RandomForestClassifier.from_json(
+                data.get("clf_high"))
+            cls_instance.clf_low = RandomForestClassifier.from_json(
+                data.get("clf_low"))
         else:
-            cls_instance.set_clf(
-                RandomForestClassifier.from_json(data.get("_Model__clf")))
+            cls_instance.clf = RandomForestClassifier.from_json(
+                data.get("clf"))
 
         return cls_instance
 
@@ -605,36 +599,18 @@ class Model(object):
                            model_options=model_options)
 
         # now update the instance to the current values
-        if "high" in model_options[0] and "low" in model_options[0]:
-            cls_instance.set_clf_high(
-                RandomForestClassifier.from_fits_hdul(
-                    hdul, "high", "HIGHINFO",
-                    args=model_options[0].get("high")))
-            cls_instance.set_clf_low(
-                RandomForestClassifier.from_fits_hdul(
-                    hdul, "low", "LOWINFO", args=model_options[0].get("low")))
+        if cls_instance.highlow_split:
+            cls_instance.clf_high = RandomForestClassifier.from_fits_hdul(
+                hdul, "high", "HIGHINFO",
+                args=model_options[0].get("high"))
+            cls_instance.clf_low = RandomForestClassifier.from_fits_hdul(
+                hdul, "low", "LOWINFO", args=model_options[0].get("low"))
         else:
-            cls_instance.set_clf(
-                RandomForestClassifier.from_fits_hdul(hdul,
-                                                      "all",
-                                                      "ALLINFO",
-                                                      args=model_options[0]))
+            cls_instance.clf = RandomForestClassifier.from_fits_hdul(
+                hdul, "all", "ALLINFO", args=model_options[0])
 
         hdul.close()
         return cls_instance
-
-    def set_clf_high(self, clf_high):
-        """ Set the variable __clf_high. Should only be called from the method from_json"""
-        self.__clf_high = clf_high
-
-    def set_clf_low(self, clf_low):
-        """ Set the variable __clf_low. Should only be called from the method from_json"""
-        self.__clf_low = clf_low
-
-    def set_clf(self, clf):
-        """ Set the variable __clf. Should only be called from the method from_json"""
-        self.__clf = clf
-
 
 if __name__ == '__main__':
     pass
