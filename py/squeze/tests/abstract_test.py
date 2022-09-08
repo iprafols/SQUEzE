@@ -20,10 +20,12 @@ from squeze.utils import verboseprint as userprint
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+os.environ["THIS_DIR"] = THIS_DIR
 SQUEZE_BIN = THIS_DIR.split("py/squeze")[0]+"bin/"
 if SQUEZE_BIN not in sys.path:
     sys.path.append(SQUEZE_BIN)
 
+import run_squeze
 
 class AbstractTest(unittest.TestCase):
     """Test the training mode
@@ -37,30 +39,39 @@ class AbstractTest(unittest.TestCase):
         if not os.path.exists("{}/results/".format(THIS_DIR)):
             os.makedirs("{}/results/".format(THIS_DIR))
 
-    def run_command(self, command, module):
-        """ Run a specified command and check it is completed properly
+    def run_squeze(self, filename, out_file, test_file, json_model=False,
+                   fits_model=False):
+        """ Run a squeze with the specified configuration and check the results
 
-        Parameters
-        ----------
-        command : list
-        A list of items with the script to run and its options
+        Arguments
+        ---------
+        filename : string
+        The config file
 
-        module : package
-        A module with a function main that accepts a list of arguments
+        out_file: string
+        Name of the output file
 
-        Examples
-        --------
-        Assuming test is an instance inheriting from AbstractTest:
-        `test.run_command(["python"
-                           f"{SQUEZE_BIN}/squeze_training.py",
-                           "--output-candidates",
-                           out_file,
-                           "--input-spectra",
-                           in_file,
-                           ], squeze_training)`
+        test_file: string
+        Name of the test file
+
+        json_model: boolean - Default: True
+        If True, check for the existance of a json model
+
+        json_model: boolean - Default: True
+        If True, check for the existance of a fits model
         """
+        command = ["python", f"{SQUEZE_BIN}/run_squeze.py", filename]
         userprint("Running command: ", " ".join(command))
-        module.main(command[2:])
+        run_squeze.main(command[2:])
+
+        self.assertTrue(os.path.isfile(out_file))
+        if json_model:
+            self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
+                                                            "_model.json")))
+        if fits_model:
+            self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
+                                                            "_model.fits.gz")))
+        self.compare_data_frames(test_file, out_file)
 
     def compare_data_frames(self, orig_file, new_file):
         """ Compares two dataframes to check that they are equal """

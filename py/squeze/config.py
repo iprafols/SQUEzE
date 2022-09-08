@@ -138,8 +138,8 @@ class Config(object):
         # load default configuration
         self.config.read_dict(default_config)
         # now read the configuration file
-        if filename is not None and os.path.isfile(filename):
-            self.config.read(filename)
+        if filename is not None and os.path.isfile(os.path.expandvars(filename)):
+            self.config.read(os.path.expandvars(filename))
         else:
             print(f"WARNING: Config file not found: {filename}; using default config")
 

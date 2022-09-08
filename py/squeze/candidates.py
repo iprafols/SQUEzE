@@ -419,12 +419,12 @@ class Candidates(object):
         # load truth table
         t0 = time.time()
         self.userprint("Loading quasar catalogue")
-        qso_dataframe = stats_settings.get("qso dataframe")
-        if qso_dataframe is not None:
-            quasar_catalogue = deserialize(load_json(qso_dataframe))
+        quasar_catalogue_settings = self.config.get_section("quasar catalogue")
+        qso_filename = quasar_catalogue_settings.get("filename")
+        if qso_filename is not None:
+            quasar_catalogue = deserialize(load_json(qso_filename))
             quasar_catalogue["LOADED"] = True
         else:
-            quasar_catalogue_settings = self.config.get_section("quasar catalogue")
             quasar_catalogue = QuasarCatalogue(quasar_catalogue_settings).quasar_catalogue
             quasar_catalogue["LOADED"] = False
         t1 = time.time()
@@ -673,6 +673,8 @@ class Candidates(object):
     def load_spectra(self):
         """ Load spectra and find candidates out of them"""
         if self.input_spectra is None:
+            self.userprint(
+                f"There are no files with spectra to be loaded")
             return
         self.userprint("Loading spectra")
         t0 = time.time()

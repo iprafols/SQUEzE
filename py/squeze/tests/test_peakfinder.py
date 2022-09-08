@@ -11,6 +11,7 @@ from numpy.random import randn
 
 from squeze.simple_spectrum import SimpleSpectrum
 from squeze.peak_finder import PeakFinder
+from squeze.tests.test_utils import gaussian
 
 class TestPeakFinder(unittest.TestCase):
     """Test the peak finder.
@@ -20,24 +21,6 @@ class TestPeakFinder(unittest.TestCase):
         """
     def setUp(self):
         """Create dummy spectra to test."""
-        def gaussian(wave, amp, mu, sig):
-            """Return a peak with a Gaussian shape
-
-            Parameters
-            ----------
-            wave : array of floats
-            Wavelength array where the peak will be added
-
-            amp : float
-            Amplitude of the peak
-
-            mu : float
-            Peak center position
-
-            sig : float
-            Squared root of the Gaussian variance
-            """
-            return amp*np.exp(-(wave-mu)**2./(2*sig**2.))
 
         # create arrays
         wave = np.arange(4000, 9000, 1, dtype=float)

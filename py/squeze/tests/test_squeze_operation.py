@@ -7,7 +7,6 @@
 import unittest
 import os
 
-import squeze_operation
 from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
 from squeze.utils import deserialize, load_json
 
@@ -20,24 +19,12 @@ class TestSquezeOperation(AbstractTest):
         PURPOSE: Test operation mode of squeze
         """
     def test_squeze_operation(self):
-        """ Run squeze_operation.py"""
-
-        in_file = "{}/data/formatted_boss_test2.json".format(THIS_DIR)
+        """ Run run_squeze.py in operation mode"""
+        in_file = f"{THIS_DIR}/data/configs/test_squeze_operation.ini"
         out_file = "{}/results/operation_boss_test2.fits.gz".format(THIS_DIR)
         test_file = "{}/data/candidates_operation_boss_test2_pred.fits.gz".format(THIS_DIR)
-        model_file = "{}/data/candidates_boss_test1_nopred_model.json".format(THIS_DIR)
 
-        command = ["python",
-                   f"{SQUEZE_BIN}/squeze_operation.py",
-                   "--model", model_file,
-                   "--output-candidates",
-                   out_file,
-                   "--input-spectra",
-                   in_file,
-                   ]
-        self.run_command(command, squeze_operation)
-        self.assertTrue(os.path.isfile(out_file))
-        self.compare_data_frames(test_file, out_file)
-
+        self.run_squeze(in_file, out_file, test_file)
+        
 if __name__ == '__main__':
     unittest.main()
