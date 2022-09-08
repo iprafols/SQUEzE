@@ -21,6 +21,7 @@ import fitsio
 from squeze.candidates_utils import (
     compute_line_ratios, compute_pixel_metrics, compute_is_correct,
     compute_is_correct_redshift, compute_is_line, load_df)
+from squeze.config import Config
 from squeze.error import Error
 from squeze.model import Model
 from squeze.quasar_catalogue import QuasarCatalogue
@@ -52,9 +53,6 @@ class Candidates(object):
     training or appliying the model to clean the candidates list, and
     creating a final catalogue.
     """
-
-    # pylint: disable=too-many-instance-attributes
-    # 12 is reasonable in this case.
     def __init__(self, config):
         """ Initialize class instance.
 
@@ -100,35 +98,10 @@ class Candidates(object):
         self.__initialize_main_settings()
 
         # model
-        #model_config = self.config.get_section("model")
-        #model_filename = model_config.get("filename")
-        #if model_filename is None:
-        #    self.model = None
-        #else:
-        #    self.userprint("Loading model")
-        #    t0 = time.time()
-        #    if model_filename.endswith(".json"):
-        #        self.model = Model.from_json(load_json(model_filename))
-        #    else:
-        #        self.model = Model.from_fits(model_filename)
-        #    t1 = time.time()
-        #    self.userprint(f"INFO: time elapsed to load model: {(t1-t0)/60.0} minutes")
-        #    self.__load_model_settings()
-
-        # model options
-        #random_state = model_config.getint("random state")
-        #random_forest_options = model_config.get("random forest options")
-        #if random_forest_options is None:
-        #    self.model_options = ({}, random_state)
-        #else:
-        #    self.model_options = (load_json(random_forest_options), random_state)
-        #self.model_fits = model_config.getboolean("fits file")
-
+        self.__initialize_model()
+        
         # initialize peak finder
         self.__initialize_peak_finder()
-
-        # model
-        self.__initialize_model()
 
         # initialize candidates list
         self.candidates_list = []
@@ -151,7 +124,7 @@ class Candidates(object):
         if lines is None:
             message = "In section [candidates], variable 'lines' is required"
             raise Error(message)
-        self.lines = deserialize(load_json(lines))
+        self.lines = deserialize(load_json(os.path.expandvars(lines)))
         if not isinstance(self.lines, pd.DataFrame):
             message = ("Expected a DataFrame with the line information. "
                        f"Found: {type(self.lines)}\n    lines: {lines}\n"
@@ -231,14 +204,7 @@ class Candidates(object):
                                   for item in pass_cols_to_random_forest.split()]
             # add columns to compute the class in training
             selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
-
-            # load model options
-            random_state = model_config.getint("random state")
-            random_forest_options = model_config.get("random forest options")
-            if random_forest_options is None:
-                self.model_options = ({}, random_state)
-            else:
-                self.model_options = (load_json(random_forest_options), random_state)
+            self.config.set_option("model", "selected cols", " ".join(selected_cols))
 
             model_fits = model_config.getboolean("fits file")
             if self.name.endswith(".fits"):
@@ -253,29 +219,33 @@ class Candidates(object):
                     model_name = self.name.replace(".fits.gz", "_model.json")
             else:
                 raise Error("Invalid model name")
+            self.config.set_option("model", "filename", model_name)
 
-            #self.config.set_option("model", "selected cols", " ".join(selected_cols))
-            self.model = Model(model_name,
-                              selected_cols,
-                              self.__get_settings(),
-                              model_options=self.model_options)
+            self.model = Model(self.config)
         # read trained model from file
         else:
             self.userprint("Loading model")
-            if not os.path.exists(model_filename):
-                message = f"Could not read model file {os.path.exists(model_filename)}"
+            if not os.path.exists(os.path.expandvars(model_filename)):
+                message = (
+                    "Could not read model file "
+                    f"{os.path.expandvars(model_filename)} in original form "
+                    f"{model_filename}")
                 raise Error(message)
             t0 = time.time()
-            #if model_filename.endswith(".json"):
-            #    model_config_file = model_filename.replace(".json", ".ini")
-            #else:
-            #    model_config_file = model_filename.replace(".fits.gz", ".ini")
-            #model_config = Config(model_config_file)
-            #self.model = Model.from_file(model_config, model_filename)
-            self.model = Model.from_file(model_filename)
+            if model_filename.endswith(".json"):
+                model_config_file = model_filename.replace(".json", ".ini")
+            else:
+                model_config_file = model_filename.replace(".fits.gz", ".ini")
+            print("#######################")
+            print(model_config_file)
+            print(os.path.expandvars(model_config_file))
+            print(os.path.exists(os.path.expandvars(model_config_file)))
+            print("#######################")
+            model_config = Config(model_config_file)
+            self.model = Model.from_file(model_config, model_filename)
             t1 = time.time()
             self.userprint(f"INFO: time elapsed to load model: {(t1-t0)/60.0} minutes")
-            #self.config.update_from_model(self.model.config)
+            self.config.update_from_model(self.model.config)
 
     def __initialize_peak_finder(self):
         """Initialize the peak finder"""
@@ -289,18 +259,6 @@ class Candidates(object):
         # required for the model to work
         self.peakfind_width = arguments.getfloat("width")
         self.peakfind_sig = arguments.getfloat("min significance")
-
-    def __get_settings(self):
-        """ Pack the settings in a dictionary. Return it """
-        return {
-            "LINES": self.lines,
-            "TRY_LINES": self.try_lines,
-            "Z_PRECISION": self.z_precision,
-            "PEAKFIND_WIDTH": self.peakfind_width,
-            "PEAKFIND_SIG": self.peakfind_sig,
-            "PIXELS_AS_METRICS": self.pixels_as_metrics,
-            "NUM_PIXELS": self.num_pixels,
-        }
 
     def __find_candidates(self, spectrum):
         """ Find the candidates in a spectrum.
@@ -758,7 +716,7 @@ class Candidates(object):
                 f"Loading spectra from {spectra_filename} "
                 f"({index}/{len(self.input_spectra)})")
             t10 = time.time()
-            spectra = Spectra.from_json(load_json(spectra_filename))
+            spectra = Spectra.from_json(load_json(os.path.expandvars(spectra_filename)))
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
 
@@ -1026,61 +984,8 @@ class Candidates(object):
                         f"training mode only. Detected mode is {self.mode}")
 
         t0 = time.time()
-
-        #selected_cols = [
-        #    col.upper()
-        #    for col in self.candidates.columns
-        #    if col.endswith("RATIO_SN")
-        #]
-        #selected_cols += [
-        #    col.upper()
-        #    for col in self.candidates.columns
-        #    if col.endswith("RATIO2")
-        #]
-        #selected_cols += [
-        #    col.upper()
-        #    for col in self.candidates.columns
-        #    if col.endswith("RATIO")
-        #]
-        #selected_cols += [
-        #    col.upper()
-        #    for col in self.candidates.columns
-        #    if col.startswith("FLUX_")
-        #]
-        #selected_cols += [
-        #    col.upper()
-        #    for col in self.candidates.columns
-        #    if col.startswith("IVAR_")
-        #]
-        #selected_cols += ["PEAK_SIGNIFICANCE"]
-
-        # add extra columns
-        #if len(self.model_options
-        #      ) == 3 and self.model_options[2] is not None:
-        #    selected_cols += [item.upper() for item in self.model_options[2]]
-
-        # add columns to compute the class in training
-        #selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
-
-        #if self.name.endswith(".fits"):
-        #    if self.model_fits:
-        #        model_name = self.name.replace(".fits", "_model.fits.gz")
-        #    else:
-        #        model_name = self.name.replace(".fits", "_model.json")
-        #elif self.name.endswith(".fits.gz"):
-        #    if self.model_fits:
-        #        model_name = self.name.replace(".fits.gz", "_model.fits.gz")
-        #    else:
-        #        model_name = self.name.replace(".fits.gz", "_model.json")
-        #else:
-        #    raise Error("Invalid model name")
-        #self.model = Model(model_name,
-        #                     selected_cols,
-        #                     self.__get_settings(),
-        #                     model_options=self.model_options)
         self.model.train(self.candidates)
         self.model.save_model()
-
         t1 = time.time()
         self.userprint(f"INFO: time elapsed to train model: {(t1-t0)/60.0} minutes")
 

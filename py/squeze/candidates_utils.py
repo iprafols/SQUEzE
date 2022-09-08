@@ -9,6 +9,7 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
+import os
 from math import sqrt
 from numba import prange, jit, vectorize
 import numpy as np
@@ -393,7 +394,7 @@ def load_df(filename):
     candidates: pd.DataFrame
     The loaded dataframe
     """
-    data = Table.read(filename, format='fits')
+    data = Table.read(os.path.expandvars(filename), format='fits')
     candidates = data.to_pandas()
     candidates.columns = candidates.columns.str.upper()
     return candidates

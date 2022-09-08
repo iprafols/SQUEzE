@@ -130,28 +130,26 @@ class Config(object):
     PURPOSE: Manage run-time options for SQUEzE
     """
 
-    def __init__(self, filename=None):
+    def __init__(self, filename):
         """ Initialize class instance.
 
         Parameters
         ----------
-        filename : str or None - Default: None
-        The configuration file. None for default configuration
+        filename : str
+        The configuration file
         """
         self.config = ConfigParser()
         # load default configuration
         self.config.read_dict(default_config)
         # now read the configuration file
-        if filename is not None and os.path.isfile(os.path.expandvars(filename)):
+        if os.path.exists(os.path.expandvars(filename)):
             self.config.read(os.path.expandvars(filename))
         else:
-            print(f"WARNING: Config file not found: {filename}; using default config")
+            message = f"Config file not found: {filename}; using default config"
+            raise Error(message)
 
         # load the printing function
         self.load_print_function()
-
-        # parse the environ variables
-        self.__parse_environ_variables()
 
         # parse the peak finder section
         self.__peak_finder = None
@@ -194,27 +192,6 @@ class Config(object):
                 section[key] = str(value)
 
         self.peak_finder = (PeakFinderType, section)
-
-    def __parse_environ_variables(self):
-        """Read all variables and replaces the enviroment variables for their
-        actual values. This assumes that enviroment variables are only used
-        at the beggining of the paths.
-
-        Raise
-        -----
-        ConfigError if an environ variable was not defined
-        """
-        for section in self.config:
-            for key, value in self.config[section].items():
-                if value.startswith("$"):
-                    pos = value.find("/")
-                    if os.getenv(value[1:pos]) is None:
-                        raise Error(
-                            f"In section [{section}], undefined "
-                            f"environment variable {value[1:pos]} "
-                            "was found")
-                    self.config[section][key] = value.replace(
-                        value[:pos], os.getenv(value[1:pos]))
 
     def get_peak_finder(self):
         """Get the peak finder type and options"""
@@ -271,3 +248,25 @@ class Config(object):
         """
         section = self.config[section_name]
         section[key] = value
+
+    def update_from_model(self, other):
+        """Update the configuration file to the values read from a trained model
+
+        Arguments
+        ---------
+        other: Config
+        A configuration instance
+        """
+        self.config["candidates"] = other.get_section("candidates")
+        self.config["peak finder"] = other.get_section("peak finder")
+        self.config["model"] = other.get_section("model")
+
+    def write(self, config_file):
+        """Write the configuration to file
+
+        Arguments
+        ---------
+        config_file: File
+        An open file in write mode
+        """
+        self.config.write(config_file)

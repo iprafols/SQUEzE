@@ -9,7 +9,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import importlib
-
+import os
 import json
 import pandas as pd
 import numpy as np
@@ -194,7 +194,7 @@ def deserialize(json_dict):
 def save_json(filename, user_object):
     """ Saves object into filename. Encoding file as a json object.
         Complex object are saved using their __dict__ property"""
-    with open(filename, 'w', encoding="UTF-8") as outfile:
+    with open(os.path.expandvars(filename), 'w', encoding="UTF-8") as outfile:
         json.dump(user_object, outfile, indent=0, default=serialize)
 
 
@@ -205,7 +205,7 @@ def load_json(filename):
         -------
         The loaded object
         """
-    with open(filename, encoding="UTF-8") as json_file:
+    with open(os.path.expandvars(filename), encoding="UTF-8") as json_file:
         user_object = json.load(json_file)
     return user_object
 

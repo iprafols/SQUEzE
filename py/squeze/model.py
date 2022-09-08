@@ -8,12 +8,16 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
+import os
+from configparser import ConfigParser
+
 import numpy as np
 import pandas as pd
 import fitsio
 
-from squeze.defaults import RANDOM_STATE
-from squeze.defaults import RANDOM_FOREST_OPTIONS
+#from squeze.defaults import RANDOM_STATE
+#from squeze.defaults import RANDOM_FOREST_OPTIONS
+from squeze.error import Error
 from squeze.random_forest_classifier import RandomForestClassifier
 from squeze.utils import save_json, deserialize, load_json
 
@@ -59,7 +63,6 @@ def find_prob(row, columns):
         prob = np.nan
     return prob
 
-
 class Model(object):
     """ Create, train and/or execute the quasar model to find quasars
 
@@ -67,88 +70,83 @@ class Model(object):
     PURPOSE: Create, train and/or execute the quasar model to find
     quasars
     """
-    def __init__(self,
-                 name,
-                 selected_cols,
-                 settings,
-                 model_options=(RANDOM_FOREST_OPTIONS, RANDOM_STATE)):
+    def __init__(self, config):
         """ Initialize class instance.
 
-            Parameters
-            ----------
-            name : string
-            Name of the model
+        Arguments
+        ---------
+        config: Config
+        A configuration instance
+        """
+        self.config = config
+        model_config = self.config.get_section("model")
 
-            selected_cols : list
-            List of the columns to be considered for training
+        self.name = model_config.get("filename")
+        if self.name is None:
+            message = "In section [model], variable 'filename' is required"
+            raise Error(message)
 
-            settings : dict
-            A dictionary containing the settings used to find the
-            candidates
+        selected_cols = model_config.get("selected cols")
+        if selected_cols is None:
+            message = "In section [model], variable 'selected cols' is required"
+            raise Error(message)
+        self.selected_cols = selected_cols.split()
 
-            random_state : int - Default: RANDOM_STATE
-            Integer to set the sandom states of the classifier
+        random_state = model_config.getint("random state")
+        if random_state is None:
+            message = "In section [model], variable 'random state' is required"
+            raise Error(message)
 
-            model_options : (dict, int, :) - Defaut: (RANDOM_FOREST_OPTIONS, RANDOM_STATE)
-            The first dictionary sets the options to be passed to the random forest
-            cosntructor. If high-low split of the training is desired, the
-            dictionary must contain the entries "high" and "low", and the
-            corresponding values must be dictionaries with the options for each
-            of the classifiers. The second int is the random state passed to the
-            random forest classifiers. If the tuple has more elements, they are
-            ignored.
-            """
-        self.name = name
-        self.settings = settings
-        self.selected_cols = selected_cols
-        self.clf_options = model_options[0]
-        self.random_state = model_options[1]
-        if "high" in self.clf_options.keys(
-        ) and "low" in self.clf_options.keys():
+        clf_options = model_config.get("random forest options")
+        if selected_cols is None:
+            message = (
+                "In section [model], variable 'random forest options' is required")
+            raise Error(message)
+        self.clf_options = load_json(os.path.expandvars(clf_options))
+
+        # initialize random forest classifier(s)
+        if "high" in self.clf_options.keys() and "low" in self.clf_options.keys():
             self.highlow_split = True
-        else:
-            self.clf_options = {"all": model_options[0]}
-            self.highlow_split = False
-
-        # load models
-        if self.highlow_split:
-            self.clf_options.get("high")["random_state"] = self.random_state
-            self.clf_options.get("low")["random_state"] = self.random_state
+            self.clf_options.get("high")["random_state"] = random_state
+            self.clf_options.get("low")["random_state"] = random_state
             self.clf_high = RandomForestClassifier(
                 **self.clf_options.get("high"))
             self.clf_low = RandomForestClassifier(
                 **self.clf_options.get("low"))
         else:
-            self.clf_options.get("all")["random_state"] = self.random_state
+            self.highlow_split = False
+            self.clf_options = {"all": self.clf_options}
+            self.clf_options.get("all")["random_state"] = random_state
             self.clf = RandomForestClassifier(**self.clf_options.get("all"))
 
     def __find_class(self, row, train):
-        """ Find the class the instance belongs to. If train is set
-            to True, then find the class from class_person. For quasars
-            and galaxies add a new class if the redshift is wrong.
-            If train is False, then find the class the instance belongs
-            to from the highest of the computed probability.
+        """ Find the class the instance belongs to.
 
-            Parameters
-            ----------
-            row : pd.Series
-            A row in the DataFrame.
+        If train is set to True, then find the class from class_person.
+        For quasars and galaxies add a new class if the redshift is wrong.
+        If train is False, then find the class the instance belongs
+        to from the highest of the computed probability.
 
-            train : bool
-            If True, then dinf the class from the truth table,
-            otherwise find it from the computed probabilities
+        Arguments
+        ---------
+        row : pd.Series
+        A row in the DataFrame.
 
-            Returns
-            -------
-            The class the instance belongs to:
-            "star": 1
-            "quasar": 3
-            "quasar, wrong z": 35
-            "quasar, bal": 30
-            "quasar, bal, wrong z": 305
-            "galaxy": 4
-            "galaxy, wrong z": 45
-            """
+        train : bool
+        If True, then dinf the class from the truth table,
+        otherwise find it from the computed probabilities
+
+        Return
+        ------
+        The class the instance belongs to:
+        "star": 1
+        "quasar": 3
+        "quasar, wrong z": 35
+        "quasar, bal": 30
+        "quasar, bal, wrong z": 305
+        "galaxy": 4
+        "galaxy, wrong z": 45
+        """
         # find class from the truth table
         if train:
             if row["CLASS_PERSON"] == 30 and not row["CORRECT_REDSHIFT"]:
@@ -179,57 +177,23 @@ class Model(object):
         """ Save the model"""
 
         if self.name.endswith(".json"):
-            save_json(self.name, self)
+            self.save_model_as_json()
         else:
             self.save_model_as_fits()
+        self.save_model_config()
+
+    def save_model_as_json(self):
+        """ Save the model as a json file"""
+        config = self.config
+        del self.config
+        save_json(os.path.expandvars(self.name), self)
+        self.config = config
 
     def save_model_as_fits(self):
         """ Save the model as a fits file"""
         results = fitsio.FITS(self.name.replace(".json", ".fits.gz"),
                               'rw',
                               clobber=True)
-
-        # Create settings HDU to store items in self.settings
-        header = [
-            {
-                "name": "Z_PREC",
-                "value": self.settings.get("Z_PRECISION"),
-                "comment": "z_try correct if in z_true +/- Z_PRECISION",
-            },
-            {
-                "name": "PF_WIDTH",
-                "value": self.settings.get("PEAKFIND_WIDTH"),
-                "comment": "smoothing used by the peak finder",
-            },
-            {
-                "name": "PF_SIG",
-                "value": self.settings.get("PEAKFIND_SIG"),
-                "comment": "min significance used by the peak finder",
-            },
-        ]
-        # now create the columns to store lines and try_lines.
-        lines = self.settings.get("LINES")
-        try_lines = self.settings.get("TRY_LINES")
-        names = ["LINE_NAME"]
-        cols = [np.array(lines.index, dtype=str)]
-
-        names += [f"LINE_{col}" for col in lines.columns]
-        cols += [lines[col] for col in lines.columns]
-
-        # try lines is stored as an array of booleans
-        # (True if the value in LINES_NAME is in try_lines, and
-        # false otherwise)
-        names += ["TRY_LINES"]
-        cols += [lines.index.isin(try_lines)]
-
-        results.write(cols, names=names, header=header, extname="SETTINGS")
-        del header, names, cols
-
-        # selected_cols is stored as an array of strings
-        names = ["SELECTED_COLS"]
-        cols = [np.array(self.selected_cols, dtype=str)]
-        results.write(cols, names=names, extname="RF_COLS")
-        del names, cols
 
         # Create model HDU(s) to store the classifiers
         if self.highlow_split:
@@ -289,6 +253,15 @@ class Model(object):
 
         # End of model HDU(s)
         results.close()
+
+    def save_model_config(self):
+        """ Save the model configuration"""
+        if self.name.endswith(".json"):
+            outname = os.path.expandvars(self.name.replace(".json", ".ini"))
+        else:
+            outname = os.path.expandvars(self.name.replace(".fits.gz", ".ini"))
+        with open(outname, 'w', encoding="utf-8") as config_file:
+            self.config.write(config_file)
 
     def compute_probability(self, data_frame):
         """ Compute the probability of a list of candidates to be quasars
@@ -431,8 +404,7 @@ class Model(object):
             self.clf.fit(data_vector, data_class)
 
     @classmethod
-    def from_file(cls, filename):
-    #def from_file(cls, config, filename):
+    def from_file(cls, config, filename):
         """ Construct model from file
 
         Arguments
@@ -450,42 +422,38 @@ class Model(object):
         The loaded instance
         """
         if filename.endswith(".json"):
-            #cls_instance = cls.from_json(config, filename)
-            cls_instance = cls.from_json(load_json(filename))
+            cls_instance = cls.from_json(config, filename)
         else:
-            #cls_instance = cls.from_fits(config, filename)
-            cls_instance = cls.from_fits(filename)
+            cls_instance = cls.from_fits(config, filename)
         return cls_instance
 
     @classmethod
-    def from_json(cls, data):
+    def from_json(cls, config, filename):
         """ This function deserializes a json string to correclty build the class.
-            It uses the deserialization function of class SimpleSpectrum to reconstruct
-            the instances of Spectrum. For this function to work, data should have been
-            serialized using the serialization method specified in `save_json` function
-            present on `utils.py` """
 
-        # create instance using the constructor
-        name = data.get("name")
-        selected_cols = data.get("selected_cols")
-        selected_cols = [col.upper() for col in selected_cols]
-        settings = {
-            key.upper(): value
-            for key, value in data.get("settings").items()
-        }
-        lines = deserialize(settings.get("LINES"))
-        lines.columns = [col.upper() for col in lines.columns]
-        settings["LINES"] = lines
-        model_options = [
-            data.get("clf_options"),
-            data.get("random_state")
-        ]
-        cls_instance = cls(name,
-                           selected_cols,
-                           settings,
-                           model_options=model_options)
+        It uses the deserialization function of class SimpleSpectrum to reconstruct
+        the instances of Spectrum. For this function to work, data should have been
+        serialized using the serialization method specified in `save_json` function
+        present on `utils.py`
+
+        Arguments
+        ---------
+        config: Config
+        A configuration instance
+
+        filename: str
+        The name of the json file containing the model. The corresponding
+        configuration file (ending with ini extension) must also exist
+
+        Return
+        ------
+        cls_instance: Model
+        The loaded instance
+        """
+        cls_instance = cls(config)
 
         # now update the instance to the current values
+        data = load_json(filename)
         if cls_instance.highlow_split:
             cls_instance.clf_high = RandomForestClassifier.from_json(
                 data.get("clf_high"))
@@ -498,116 +466,39 @@ class Model(object):
         return cls_instance
 
     @classmethod
-    def from_fits(cls, filename):
+    def from_fits(cls, config, filename):
         """ This function loads the model information from a fits file.
-            The expected shape for the fits file is that provided by the
-            function save_model_as_fits.
 
-            Parameters
-            ----------
-            filename : string
-            Name of the fits file
+        The expected shape for the fits file is that provided by the
+        function save_model_as_fits.
 
-            """
-        hdul = fitsio.FITS(filename)
+        Arguments
+        ---------
+        config: Config
+        A configuration instance
 
-        name = filename.replace("fits.gz", "json")
+        filename: str
+        The name of the json file containing the model. The corresponding
+        configuration file (ending with ini extension) must also exist
 
-        # load lines
-        selected_cols = [
-            sel_col.strip() for sel_col in hdul["RF_COLS"]["SELECTED_COLS"][:]
-        ]
-
-        cols = {
-            "LINE_NAME": "LINE",
-            "LINE_WAVE": "WAVE",
-            "LINE_START": "START",
-            "LINE_END": "END",
-            "LINE_BLUE_START": "BLUE_START",
-            "LINE_BLUE_END": "BLUE_END",
-            "LINE_RED_START": "RED_START",
-            "LINE_RED_END": "RED_END",
-        }
-        dtypes = [
-            str, np.float64, np.float64, np.float64, np.float64, np.float64,
-            np.float64, np.float64
-        ]
-        dat = {
-            col.upper(): hdul["SETTINGS"][col][:].astype(dtype)
-            for col, dtype in zip(cols, dtypes)
-        }
-        lines = pd.DataFrame(dat)
-        lines = lines.rename(columns=cols).set_index("LINE")
-
-        # load try_lines
-        pos = np.where(hdul["SETTINGS"]["TRY_LINES"][:])
-        try_lines = [
-            try_line.strip() for try_line in hdul["SETTINGS"]["LINE_NAME"][pos]
-        ]
-
-        # load settings used to find the candidates
-        header = hdul["SETTINGS"].read_header()
-        settings = {
-            "LINES": lines,
-            "TRY_LINES": try_lines,
-            "Z_PRECISION": header["Z_PREC"],
-            "PEAKFIND_WIDTH": header["PF_WIDTH"],
-            "PEAKFIND_SIG": header["PF_SIG"],
-        }
-
-        # now load model options
-        # case 1: highlow_split
-        try:
-            high = {}
-            header = hdul["HIGHINFO"].read_header()
-            for key in header:
-                if key in [
-                        "XTENSION", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2",
-                        "PCOUNT", "GCOUNT", "TFIELDS", "EXTNAME", "COMMENT",
-                        "TTYPE1", "TFORM1", "N_TREES", "N_CAT", "random_state"
-                ]:
-                    continue
-                high[key.lower()] = header[key]
-            low = {}
-            header = hdul["LOWINFO"].read_header()
-            for key in header:
-                if key in [
-                        "XTENSION", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2",
-                        "PCOUNT", "GCOUNT", "TFIELDS", "EXTNAME", "COMMENT",
-                        "TTYPE1", "TFORM1", "N_TREES", "N_CAT", "random_state"
-                ]:
-                    continue
-                low[key.lower()] = header[key]
-            model_options = [{"high": high, "low": low}, header["random_state"]]
-        except OSError:
-            all_candidates = {}
-            header = hdul["ALLINFO"].read_header()
-            for key in header:
-                if key in [
-                        "XTENSION", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2",
-                        "PCOUNT", "GCOUNT", "TFIELDS", "EXTNAME", "COMMENT",
-                        "TTYPE1", "TFORM1", "N_TREES", "N_CAT", "random_state"
-                ]:
-                    continue
-                all_candidates[key.lower()] = header[key]
-            model_options = [all_candidates, header["random_state"]]
-
-        # create instance using the constructor
-        cls_instance = cls(name,
-                           selected_cols,
-                           settings,
-                           model_options=model_options)
+        Return
+        ------
+        cls_instance: Model
+        The loaded instance
+        """
+        cls_instance = cls(config)
 
         # now update the instance to the current values
+        hdul = fitsio.FITS(os.path.expandvars(filename))
         if cls_instance.highlow_split:
             cls_instance.clf_high = RandomForestClassifier.from_fits_hdul(
                 hdul, "high", "HIGHINFO",
-                args=model_options[0].get("high"))
+                args=cls_instance.clf_options.get("high"))
             cls_instance.clf_low = RandomForestClassifier.from_fits_hdul(
-                hdul, "low", "LOWINFO", args=model_options[0].get("low"))
+                hdul, "low", "LOWINFO", args=cls_instance.clf_options.get("low"))
         else:
             cls_instance.clf = RandomForestClassifier.from_fits_hdul(
-                hdul, "all", "ALLINFO", args=model_options[0])
+                hdul, "all", "ALLINFO", args=cls_instance.clf_options)
 
         hdul.close()
         return cls_instance
