@@ -90,6 +90,8 @@ class Candidates(object):
         self.lines = None
         self.num_pixels = None
         self.pixels_as_metrics = None
+        self.prob_cut = None
+        self.save_catalogue_flag = None
         self.try_lines = None
         self.try_lines_indexs = None
         self.try_lines_dict = None
@@ -152,6 +154,27 @@ class Candidates(object):
                        f"self.lines: {self.lines}")
             raise Error(message)
 
+        self.num_pixels = settings.getint("num pixels")
+        if self.num_pixels is None or self.num_pixels <= 0:
+            message = ("num pixels must be greater than 0. "
+                       f"Found {self.num_pixels}")
+            raise Error(message)
+
+        self.pixels_as_metrics = settings.getboolean("pixels as metrics")
+
+        self.prob_cut = settings.getfloat("prob cut")
+        if self.prob_cut is None or self.prob_cut < 0.0:
+            message = ("prob cut must be greater than or equal to 0.0. "
+                       f"Found {self.prob_cut}")
+            raise Error(message)
+
+        self.save_catalogue_flag = settings.getboolean("save catalogue")
+        if self.save_catalogue is None:
+            message = (
+                "In section [candidates], variable 'save catalogue' is required")
+            raise Error(message)
+
+        # try lines
         try_lines = settings.get("try lines")
         self.try_lines = try_lines.split()
         if not isinstance(self.try_lines, list):
@@ -159,18 +182,11 @@ class Candidates(object):
                        f"Found: {self.try_lines}")
             raise Error(message)
 
+        # redsift precision
         self.z_precision = settings.getfloat("z precision")
         if self.z_precision is None or self.z_precision <= 0:
             message = ("z precision must be greater than 0. "
                        f"Found {self.z_precision}")
-            raise Error(message)
-
-        self.pixels_as_metrics = settings.getboolean("pixels as metrics")
-
-        self.num_pixels = settings.getint("num pixels")
-        if self.num_pixels is None or self.num_pixels <= 0:
-            message = ("num pixels must be greater than 0. "
-                       f"Found {self.num_pixels}")
             raise Error(message)
 
         # make sure fields in self.lines are properly sorted
@@ -404,9 +420,14 @@ class Candidates(object):
             raise Error("Attempting to run the function classify_candidates " +
                         "but no candidates were found/loaded. Check your " +
                         "formatter")
+        t0 = time.time()
+        self.userprint("Computing probabilities")
         self.candidates = self.model.compute_probability(self.candidates)
         if save:
             self.save_candidates()
+
+        t1 = time.time()
+        self.userprint(f"INFO: time elapsed to classify candidates: {(t1-t0)/60.0} minutes")
 
     def find_candidates(self, spectra, columns_candidates):
         """ Find candidates for a given set of spectra
@@ -847,30 +868,21 @@ class Candidates(object):
         results.write(cols, names=names, extname="CANDIDATES")
         results.close()
 
-    def save_catalogue(self, filename, prob_cut):
+    def save_catalogue(self):
         """ Save the final catalogue as a fits file.
 
         Only non-duplicated candidates with probability greater or equal
-        to prob_cut will be included in this catalogue.
+        to self.prob_cut will be included in this catalogue.
         String columns with length greater than 15 characters might be truncated
-
-        Arguments
-        ---------
-        filename : str or None
-        Name of the fits file the final catalogue is going to be saved to.
-        If it is None, then we will use self.candidates with '_catalogue'
-        appended to it before the extension.
-
-        prob_cut : float
-        Probability cut to be applied to the candidates. Only candidates
-        with greater probability will be saved
         """
-        if filename is None:
-            filename = self.name.replace(".fits", "_catalogue.fits")
+        if not self.save_catalogue_flag:
+            return
+
+        filename = self.name.replace(".fits", "_catalogue.fits")
 
         # filter data DataFrame
         data_frame = self.candidates[(~self.candidates["DUPLICATED"]) &
-                                       (self.candidates["PROB"] >= prob_cut)]
+                                       (self.candidates["PROB"] >= self.prob_cut)]
 
         results = fitsio.FITS(filename, 'rw', clobber=True)
         names = list(data_frame.columns)

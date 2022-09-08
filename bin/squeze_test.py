@@ -71,6 +71,11 @@ def main(cmdargs):
     if args.input_spectra is not None:
         config.set_option("candidates", "input spectra", " ".join(args.input_spectra))
 
+    # settings to save catalogue
+    if args.no_save_catalogue is not None:
+        config.set_option("candidates", "save catalogue flag", str(~args.no_save_catalogue))
+        config.set_option("candidates", "prob cut", str(args.prob_cut))
+
     # initialize candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is not None:
@@ -81,11 +86,7 @@ def main(cmdargs):
     candidates.load_spectra()
 
     # compute probabilities
-    userprint("Computing probabilities")
-    t10 = time.time()
     candidates.classify_candidates()
-    t11 = time.time()
-    userprint(f"INFO: time elapsed to classify candidates: {(t11-t10)/60.0} minutes")
 
     # check completeness
     if args.check_statistics:
@@ -105,8 +106,7 @@ def main(cmdargs):
                                                 )
 
     # save the catalogue as a fits file
-    if not args.no_save_catalogue:
-        candidates.save_catalogue(args.output_catalogue, args.prob_cut)
+    candidates.save_catalogue()
 
     t12 = time.time()
     userprint(f"INFO: total elapsed time: {(t12-t0)/60.0} minutes")

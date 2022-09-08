@@ -48,6 +48,14 @@ default_config = {
         # the random forest
         "pixels as metrics": "False",
 
+        # Only objects with probability >= PROB_CUT will be included in the
+        # catalogue
+        "prob cut": "0.0",
+
+        # This variable controls whether final catalogue (not including
+        # duplicates) is saved
+        "save catalogue flag": "False",
+
         # This variable sets the labels of each peak from where redshfit is
         # derived. Labels must be in "lines"
         "try lines": "lya civ ciii mgii hb ha",
