@@ -30,6 +30,9 @@ default_config = {
         # This variable specifies a file containing candidates to be read
         #"input candidates": "candidates_file.fits.gz",
 
+        # This variable specifies a file containing spectra to be read
+        #"input spectra": "spectra1.json spectra2.json",
+
         # This variable specifies whether or not to read candidates from file
         "load candidates": "False",
 

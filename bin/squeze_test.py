@@ -67,6 +67,10 @@ def main(cmdargs):
         if args.input_candidates is not None:
             config.set_option("candidates", "input candidates", args.input_candidates)
 
+    # setting to load spectra
+    if args.input_spectra is not None:
+        config.set_option("candidates", "input spectra", " ".join(args.input_spectra))
+
     # initialize candidates object
     userprint("Initializing candidates object")
     if args.output_candidates is not None:
@@ -74,50 +78,7 @@ def main(cmdargs):
     candidates = Candidates(config)
 
     # load spectra
-    if args.input_spectra is not None:
-        userprint("Loading spectra")
-        t6 = time.time()
-        columns_candidates = []
-        userprint("There are {} files with spectra to be loaded".format(len(args.input_spectra)))
-        for index, spectra_filename in enumerate(args.input_spectra):
-            userprint("Loading spectra from {} ({}/{})".format(spectra_filename, index,
-                                                               len(args.input_spectra)))
-            t60 = time.time()
-            spectra = Spectra.from_json(load_json(spectra_filename))
-            if not isinstance(spectra, Spectra):
-                raise Error("Invalid list of spectra")
-
-            if index == 0:
-                columns_candidates += spectra.spectra_list()[0].metadata_names()
-
-            # flag loaded quasars as such
-            if args.check_statistics:
-                for spec in spectra.spectra_list():
-                    if quasar_catalogue[
-                            quasar_catalogue["SPECID"] == spec.metadata_by_key("SPECID")].shape[0] > 0:
-                        index2 = quasar_catalogue.index[
-                            quasar_catalogue["SPECID"] == spec.metadata_by_key("SPECID")].tolist()[0]
-                        quasar_catalogue.at[index2, "LOADED"] = True
-
-            # look for candidates
-            userprint("Looking for candidates")
-            candidates.find_candidates(spectra.spectra_list(), columns_candidates)
-
-            t61 = time.time()
-            userprint(f"INFO: time elapsed to find candidates from {spectra_filename}:"
-                      f" {(t61-t60)/60.0} minutes")
-
-
-
-        t7 = time.time()
-        userprint(f"INFO: time elapsed to find candidates: {(t7-t6)/60.0} minutes")
-
-        # convert to dataframe
-        userprint("Converting candidates to dataframe")
-        t8 = time.time()
-        candidates.candidates_list_to_dataframe(columns_candidates)
-        t9 = time.time()
-        userprint(f"INFO: time elapsed to convert candidates to dataframe: {(t9-t8)/60.0} minutes")
+    candidates.load_spectra()
 
     # compute probabilities
     userprint("Computing probabilities")

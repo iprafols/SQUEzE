@@ -3,7 +3,7 @@
     ======
 
     This file implements the class Candidates, that is used to generate the
-    list of quasar candidates, trains or applies the model required for the
+    list of quasar candidates, train or apply the model required for the
     cleaning process, and construct the final catalogue
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
@@ -23,6 +23,7 @@ from squeze.candidates_utils import (
     compute_is_correct_redshift, compute_is_line, load_df)
 from squeze.error import Error
 from squeze.model import Model
+from squeze.spectra import Spectra
 from squeze.utils import (
     verboseprint, deserialize, load_json)
 
@@ -85,6 +86,7 @@ class Candidates(object):
             raise Error(message)
 
         # main settings
+        self.input_spectra = None
         self.lines = None
         self.num_pixels = None
         self.pixels_as_metrics = None
@@ -129,6 +131,13 @@ class Candidates(object):
     def __initialize_main_settings(self):
         """ Initialize main settings"""
         settings = self.config.get_section("candidates")
+
+        # input spectra
+        input_spectra = settings.get("input spectra")
+        if input_spectra is None:
+            self.input_spectra = input_spectra
+        else:
+            self.input_spectra = input_spectra.split()
 
         # line metrics
         lines = settings.get("lines")
@@ -292,18 +301,6 @@ class Candidates(object):
         self.peakfind_sig = settings.get("PEAKFIND_SIG")
         self.pixels_as_metrics = settings.get("PIXELS_AS_METRICS")
         self.num_pixels = settings.get("NUM_PIXELS")
-
-    def save_candidates(self):
-        """ Save the candidates DataFrame. """
-        results = fitsio.FITS(self.name, 'rw', clobber=True)
-        names = list(self.candidates.columns)
-        cols = [
-            np.array(self.candidates[col].values, dtype=str)
-            if self.candidates[col].dtype == "object" else
-            self.candidates[col].values for col in self.candidates.columns
-        ]
-        results.write(cols, names=names, extname="CANDIDATES")
-        results.close()
 
     def candidates_list_to_dataframe(self, columns_candidates, save=True):
         """ Format existing candidates list into a dataframe
@@ -601,6 +598,48 @@ class Candidates(object):
             t1 = time.time()
             self.userprint(f"INFO: time elapsed to load candidates: {(t1-t0)/60.0} minutes")
 
+    def load_spectra(self):
+        """ Load spectra and find candidates out of them"""
+        if self.input_spectra is None:
+            return
+        self.userprint("Loading spectra")
+        t0 = time.time()
+        columns_candidates = []
+        self.userprint(
+            f"There are {len(self.input_spectra)} files with spectra to be loaded")
+        for index, spectra_filename in enumerate(self.input_spectra):
+            self.userprint(
+                f"Loading spectra from {spectra_filename} "
+                f"({index}/{len(self.input_spectra)})")
+            t10 = time.time()
+            spectra = Spectra.from_json(load_json(spectra_filename))
+            if not isinstance(spectra, Spectra):
+                raise Error("Invalid list of spectra")
+
+            if index == 0:
+                columns_candidates += spectra.spectra_list()[0].metadata_names()
+
+            # look for candidates
+            self.userprint("Looking for candidates")
+            self.find_candidates(spectra.spectra_list(), columns_candidates)
+            t11 = time.time()
+            self.userprint(
+                f"INFO: time elapsed to find candidates from {spectra_filename}:"
+                f" {(t11-t10)/60.0} minutes")
+
+        t1 = time.time()
+        self.userprint(
+            f"INFO: time elapsed to find candidates: {(t1-t0)/60.0} minutes")
+
+        # convert to dataframe
+        self.userprint("Converting candidates to dataframe")
+        t0 = time.time()
+        self.candidates_list_to_dataframe(columns_candidates)
+        t1 = time.time()
+        self.userprint(
+            "INFO: time elapsed to convert candidates to dataframe: "
+            f"{(t1-t0)/60.0} minutes")
+
     def merge(self, others_list, save=True):
         """ Merge self.candidates with another candidates object
 
@@ -795,6 +834,53 @@ class Candidates(object):
 
         return fig
 
+    def save_candidates(self):
+        """ Save the candidates DataFrame. """
+        results = fitsio.FITS(self.name, 'rw', clobber=True)
+        names = list(self.candidates.columns)
+        cols = [
+            np.array(self.candidates[col].values, dtype=str)
+            if self.candidates[col].dtype == "object" else
+            self.candidates[col].values for col in self.candidates.columns
+        ]
+        results.write(cols, names=names, extname="CANDIDATES")
+        results.close()
+
+    def save_catalogue(self, filename, prob_cut):
+        """ Save the final catalogue as a fits file.
+
+        Only non-duplicated candidates with probability greater or equal
+        to prob_cut will be included in this catalogue.
+        String columns with length greater than 15 characters might be truncated
+
+        Arguments
+        ---------
+        filename : str or None
+        Name of the fits file the final catalogue is going to be saved to.
+        If it is None, then we will use self.candidates with '_catalogue'
+        appended to it before the extension.
+
+        prob_cut : float
+        Probability cut to be applied to the candidates. Only candidates
+        with greater probability will be saved
+        """
+        if filename is None:
+            filename = self.name.replace(".fits", "_catalogue.fits")
+
+        # filter data DataFrame
+        data_frame = self.candidates[(~self.candidates["DUPLICATED"]) &
+                                       (self.candidates["PROB"] >= prob_cut)]
+
+        results = fitsio.FITS(filename, 'rw', clobber=True)
+        names = list(data_frame.columns)
+        cols = [
+            np.array(data_frame[col].values, dtype=str)
+            if data_frame[col].dtype == "object" else data_frame[col].values
+            for col in data_frame.columns
+        ]
+        results.write(cols, names=names, extname="CANDIDATES")
+        results.close()
+
     def train_model(self, model_fits):
         """ Create a model instance and train it. Save the resulting model
 
@@ -862,41 +948,6 @@ class Candidates(object):
                              model_options=self.model_options)
         self.model.train(self.candidates)
         self.model.save_model()
-
-    def save_catalogue(self, filename, prob_cut):
-        """ Save the final catalogue as a fits file.
-
-        Only non-duplicated candidates with probability greater or equal
-        to prob_cut will be included in this catalogue.
-        String columns with length greater than 15 characters might be truncated
-
-        Arguments
-        ---------
-        filename : str or None
-        Name of the fits file the final catalogue is going to be saved to.
-        If it is None, then we will use self.candidates with '_catalogue'
-        appended to it before the extension.
-
-        prob_cut : float
-        Probability cut to be applied to the candidates. Only candidates
-        with greater probability will be saved
-        """
-        if filename is None:
-            filename = self.name.replace(".fits", "_catalogue.fits")
-
-        # filter data DataFrame
-        data_frame = self.candidates[(~self.candidates["DUPLICATED"]) &
-                                       (self.candidates["PROB"] >= prob_cut)]
-
-        results = fitsio.FITS(filename, 'rw', clobber=True)
-        names = list(data_frame.columns)
-        cols = [
-            np.array(data_frame[col].values, dtype=str)
-            if data_frame[col].dtype == "object" else data_frame[col].values
-            for col in data_frame.columns
-        ]
-        results.write(cols, names=names, extname="CANDIDATES")
-        results.close()
 
 
 if __name__ == '__main__':
