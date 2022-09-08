@@ -11,7 +11,7 @@ __version__ = "0.1"
 
 from math import sqrt
 import time
-import json
+import os
 
 import numpy as np
 from numba import prange, jit, vectorize
@@ -100,32 +100,35 @@ class Candidates(object):
         self.__initialize_main_settings()
 
         # model
-        model_config = self.config.get_section("model")
-        model_filename = model_config.get("filename")
-        if model_filename is None:
-            self.model = None
-        else:
-            self.userprint("Loading model")
-            t0 = time.time()
-            if model_filename.endswith(".json"):
-                self.model = Model.from_json(load_json(model_filename))
-            else:
-                self.model = Model.from_fits(model_filename)
-            t1 = time.time()
-            self.userprint(f"INFO: time elapsed to load model: {(t1-t0)/60.0} minutes")
-            self.__load_model_settings()
+        #model_config = self.config.get_section("model")
+        #model_filename = model_config.get("filename")
+        #if model_filename is None:
+        #    self.model = None
+        #else:
+        #    self.userprint("Loading model")
+        #    t0 = time.time()
+        #    if model_filename.endswith(".json"):
+        #        self.model = Model.from_json(load_json(model_filename))
+        #    else:
+        #        self.model = Model.from_fits(model_filename)
+        #    t1 = time.time()
+        #    self.userprint(f"INFO: time elapsed to load model: {(t1-t0)/60.0} minutes")
+        #    self.__load_model_settings()
 
         # model options
-        random_state = model_config.getint("random state")
-        random_forest_options = model_config.get("random forest options")
-        if random_forest_options is None:
-            self.model_options = ({}, random_state)
-        else:
-            self.model_options = (load_json(random_forest_options), random_state)
-        self.model_fits = model_config.getboolean("fits file")
+        #random_state = model_config.getint("random state")
+        #random_forest_options = model_config.get("random forest options")
+        #if random_forest_options is None:
+        #    self.model_options = ({}, random_state)
+        #else:
+        #    self.model_options = (load_json(random_forest_options), random_state)
+        #self.model_fits = model_config.getboolean("fits file")
 
         # initialize peak finder
         self.__initialize_peak_finder()
+
+        # model
+        self.__initialize_model()
 
         # initialize candidates list
         self.candidates_list = []
@@ -204,6 +207,75 @@ class Candidates(object):
         self.try_lines_dict = dict(
             zip(self.try_lines, self.try_lines_indexs))
         self.try_lines_dict["none"] = -1
+
+    def __initialize_model(self):
+        """Initialize the model"""
+        model_config = self.config.get_section("model")
+        model_filename = model_config.get("filename")
+
+        # create model from scratch
+        if self.mode == "training" or model_filename is None:
+            # update selected cols
+            selected_cols = []
+            selected_cols += [f"{line.upper()}_RATIO_SN" for line in self.lines.index]
+            selected_cols += [f"{line.upper()}_RATIO2" for line in self.lines.index]
+            selected_cols += [f"{line.upper()}_RATIO" for line in self.lines.index]
+            if self.pixels_as_metrics:
+                selected_cols += [f"FLUX_{index}" for index in range(-self.num_pixels, 0)]
+                selected_cols += [f"FLUX_{index}" for index in range(0, self.num_pixels)]
+            selected_cols += ["PEAK_SIGNIFICANCE"]
+            # add extra columns
+            pass_cols_to_random_forest = model_config.get("pass cols to random forest")
+            if pass_cols_to_random_forest is not None:
+                selected_cols += [item.upper()
+                                  for item in pass_cols_to_random_forest.split()]
+            # add columns to compute the class in training
+            selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
+
+            # load model options
+            random_state = model_config.getint("random state")
+            random_forest_options = model_config.get("random forest options")
+            if random_forest_options is None:
+                self.model_options = ({}, random_state)
+            else:
+                self.model_options = (load_json(random_forest_options), random_state)
+
+            model_fits = model_config.getboolean("fits file")
+            if self.name.endswith(".fits"):
+                if model_fits:
+                    model_name = self.name.replace(".fits", "_model.fits.gz")
+                else:
+                    model_name = self.name.replace(".fits", "_model.json")
+            elif self.name.endswith(".fits.gz"):
+                if model_fits:
+                    model_name = self.name.replace(".fits.gz", "_model.fits.gz")
+                else:
+                    model_name = self.name.replace(".fits.gz", "_model.json")
+            else:
+                raise Error("Invalid model name")
+
+            #self.config.set_option("model", "selected cols", " ".join(selected_cols))
+            self.model = Model(model_name,
+                              selected_cols,
+                              self.__get_settings(),
+                              model_options=self.model_options)
+        # read trained model from file
+        else:
+            self.userprint("Loading model")
+            if not os.path.exists(model_filename):
+                message = f"Could not read model file {os.path.exists(model_filename)}"
+                raise Error(message)
+            t0 = time.time()
+            #if model_filename.endswith(".json"):
+            #    model_config_file = model_filename.replace(".json", ".ini")
+            #else:
+            #    model_config_file = model_filename.replace(".fits.gz", ".ini")
+            #model_config = Config(model_config_file)
+            #self.model = Model.from_file(model_config, model_filename)
+            self.model = Model.from_file(model_filename)
+            t1 = time.time()
+            self.userprint(f"INFO: time elapsed to load model: {(t1-t0)/60.0} minutes")
+            #self.config.update_from_model(self.model.config)
 
     def __initialize_peak_finder(self):
         """Initialize the peak finder"""
@@ -955,57 +1027,57 @@ class Candidates(object):
 
         t0 = time.time()
 
-        selected_cols = [
-            col.upper()
-            for col in self.candidates.columns
-            if col.endswith("RATIO_SN")
-        ]
-        selected_cols += [
-            col.upper()
-            for col in self.candidates.columns
-            if col.endswith("RATIO2")
-        ]
-        selected_cols += [
-            col.upper()
-            for col in self.candidates.columns
-            if col.endswith("RATIO")
-        ]
-        selected_cols += [
-            col.upper()
-            for col in self.candidates.columns
-            if col.startswith("FLUX_")
-        ]
-        selected_cols += [
-            col.upper()
-            for col in self.candidates.columns
-            if col.startswith("IVAR_")
-        ]
-        selected_cols += ["PEAK_SIGNIFICANCE"]
+        #selected_cols = [
+        #    col.upper()
+        #    for col in self.candidates.columns
+        #    if col.endswith("RATIO_SN")
+        #]
+        #selected_cols += [
+        #    col.upper()
+        #    for col in self.candidates.columns
+        #    if col.endswith("RATIO2")
+        #]
+        #selected_cols += [
+        #    col.upper()
+        #    for col in self.candidates.columns
+        #    if col.endswith("RATIO")
+        #]
+        #selected_cols += [
+        #    col.upper()
+        #    for col in self.candidates.columns
+        #    if col.startswith("FLUX_")
+        #]
+        #selected_cols += [
+        #    col.upper()
+        #    for col in self.candidates.columns
+        #    if col.startswith("IVAR_")
+        #]
+        #selected_cols += ["PEAK_SIGNIFICANCE"]
 
         # add extra columns
-        if len(self.model_options
-              ) == 3 and self.model_options[2] is not None:
-            selected_cols += [item.upper() for item in self.model_options[2]]
+        #if len(self.model_options
+        #      ) == 3 and self.model_options[2] is not None:
+        #    selected_cols += [item.upper() for item in self.model_options[2]]
 
         # add columns to compute the class in training
-        selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
+        #selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
 
-        if self.name.endswith(".fits"):
-            if self.model_fits:
-                model_name = self.name.replace(".fits", "_model.fits.gz")
-            else:
-                model_name = self.name.replace(".fits", "_model.json")
-        elif self.name.endswith(".fits.gz"):
-            if self.model_fits:
-                model_name = self.name.replace(".fits.gz", "_model.fits.gz")
-            else:
-                model_name = self.name.replace(".fits.gz", "_model.json")
-        else:
-            raise Error("Invalid model name")
-        self.model = Model(model_name,
-                             selected_cols,
-                             self.__get_settings(),
-                             model_options=self.model_options)
+        #if self.name.endswith(".fits"):
+        #    if self.model_fits:
+        #        model_name = self.name.replace(".fits", "_model.fits.gz")
+        #    else:
+        #        model_name = self.name.replace(".fits", "_model.json")
+        #elif self.name.endswith(".fits.gz"):
+        #    if self.model_fits:
+        #        model_name = self.name.replace(".fits.gz", "_model.fits.gz")
+        #    else:
+        #        model_name = self.name.replace(".fits.gz", "_model.json")
+        #else:
+        #    raise Error("Invalid model name")
+        #self.model = Model(model_name,
+        #                     selected_cols,
+        #                     self.__get_settings(),
+        #                     model_options=self.model_options)
         self.model.train(self.candidates)
         self.model.save_model()
 

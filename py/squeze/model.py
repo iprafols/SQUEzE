@@ -15,7 +15,7 @@ import fitsio
 from squeze.defaults import RANDOM_STATE
 from squeze.defaults import RANDOM_FOREST_OPTIONS
 from squeze.random_forest_classifier import RandomForestClassifier
-from squeze.utils import save_json, deserialize
+from squeze.utils import save_json, deserialize, load_json
 
 
 def find_prob(row, columns):
@@ -434,6 +434,33 @@ class Model(object):
                                           axis=1,
                                           args=(True,))
             self.__clf.fit(data_vector, data_class)
+
+    @classmethod
+    def from_file(cls, filename):
+    #def from_file(cls, config, filename):
+        """ Construct model from file
+
+        Arguments
+        ---------
+        config: Config
+        A configuration instance
+
+        filename: str
+        The name of the json file containing the model. The corresponding
+        configuration file (ending with ini extension) must also exist
+
+        Return
+        ------
+        cls_instance: Model
+        The loaded instance
+        """
+        if filename.endswith(".json"):
+            #cls_instance = cls.from_json(config, filename)
+            cls_instance = cls.from_json(load_json(filename))
+        else:
+            #cls_instance = cls.from_fits(config, filename)
+            cls_instance = cls.from_fits(filename)
+        return cls_instance
 
     @classmethod
     def from_json(cls, data):

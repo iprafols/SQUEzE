@@ -47,10 +47,6 @@ default_config = {
         # used as metrics. Ignored if 'pixels as metrics is false'
         "num pixels": "30",
 
-        # This variable contains a list of columns to be passed to the random forest
-        # classifier(s). None for no columns. Columns must be in the input catalogue.
-        #"pass cols to random forest": "col1 col2",
-
         # If this variable is True, pixels close to the peak will be passed to
         # the random forest
         "pixels as metrics": "False",
@@ -77,6 +73,14 @@ default_config = {
         "name": "PeakFinder",
     },
     "model": {
+        # Filename of the trained model to load
+        #"filename" = "trained_model.json"
+        #"filename" = "trained_model.fits.gz"
+
+        # This variable contains a list of columns to be passed to the random forest
+        # classifier(s). None for no columns. Columns must be in the input catalogue.
+        #"pass cols to random forest": "col1 col2",
+
         # This variable sets the options to be passed to the random forest classifier
         "random forest options": "$SQUEZE/data/default_random_forest_options.json",
         # This variable sets the random states of the random forest instances
