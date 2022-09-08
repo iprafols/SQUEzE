@@ -12,9 +12,16 @@ import os
 import re
 import json
 from configparser import ConfigParser
+import numpy as np
 
 from squeze.error import Error
 from squeze.utils import class_from_string, function_from_string
+
+CHECK_PROBS = " ".join([str(item) for item in np.arange(0.9, 0.0, -0.05)])
+
+QSO_COLS = (
+    "ra dec thing_id plate mjd fiberid z_vi class_person z_conf_person "
+    "boss_target1 ancillary_target1 ancillary_target2 eboss_target0")
 
 default_config = {
     "general": {
@@ -77,7 +84,38 @@ default_config = {
         # This variable specifies if model is saved in json (False) or
         # fits (True) file format
         "fits file": "False",
-    }
+    },
+    "stats": {
+        # List of probability cuts to check
+        "check probs": CHECK_PROBS,
+        # This variable controls the check of statistiscs on the candidates
+        "run stats": "True",
+    },
+    "quasar catalogue": {
+        # White-spaced list of the data arrays (of the quasar catalogue) to
+        # be loaded.
+        "columns": QSO_COLS,
+
+        # Name of the fits file containig the quasar catalogue. Must be present
+        # if "qso dataframe" is not passed
+        #"filename": "qso_cat.fits",
+
+        # Name of the csv file containing the quasar catalogue formatted into
+        # pandas dataframe. Must only contain information of quasars that will
+        # be loaded. Must be present if "filename" is not.
+        #"qso dataframe": "qso_dataframe.json",
+
+        # Number of the Header Data Unit in "filename" where the catalogue is stored.
+        "hdu": "1",
+
+        # Name of the column that will be used as specid. Must be included
+        # in "columns".
+        "specid column ": "THINGID",
+
+        # Name of the column that will be used as z_true. Must be included
+        # in "columns".
+        "ztrue column": "Z_VI",
+    },
 }
 
 

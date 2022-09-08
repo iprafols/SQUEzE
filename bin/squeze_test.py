@@ -44,18 +44,19 @@ def main(cmdargs):
 
     t0 = time.time()
     # load quasar catalogue (only if --check-statistics is passed)
+    config.set_option("stats", "run stats", str(args.check_statistics))
     if args.check_statistics:
-        userprint("Loading quasar catalogue")
         if args.qso_dataframe is not None:
-            quasar_catalogue = deserialize(load_json(args.qso_dataframe))
-            quasar_catalogue["LOADED"] = True
+            config.set_option("stats", "qso dataframe", args.qso_dataframe)
         else:
-            quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
-                                               args.qso_specid, args.qso_ztrue,
-                                               args.qso_hdu).quasar_catalogue()
-            quasar_catalogue["LOADED"] = False
-        t1 = time.time()
-        userprint(f"INFO: time elapsed to load quasar catalogue: {(t1-t0)/60.0} minutes")
+            config.set_option("stats", "filename", args.qso_cat)
+            config.set_option("stats", "columns", " ".join(args.qso_cols))
+            config.set_option("stats", "specid column", args.qso_specid)
+            config.set_option("stats", "ztrue column", args.qso_ztrue)
+            config.set_option("stats", "hdu", str(args.qso_hdu))
+        if args.check_probs is not None:
+            check_probs_str_list = [str(item) for item in args.check_probs]
+            config.set_option("stats", "check probs", " ".join(check_probs_str_list))
 
     # load model
     if args.model is not None:
@@ -89,21 +90,7 @@ def main(cmdargs):
     candidates.classify_candidates()
 
     # check completeness
-    if args.check_statistics:
-        probs = args.check_probs if args.check_probs is not None else np.arange(0.9, 0.0, -0.05)
-        userprint("Check statistics")
-        data_frame = candidates.candidates
-        userprint("\n---------------")
-        userprint("step 1")
-        candidates.find_completeness_purity(quasar_catalogue.reset_index(), data_frame)
-        for prob in probs:
-            userprint("\n---------------")
-            userprint("proba > {}".format(prob))
-            candidates.find_completeness_purity(quasar_catalogue.reset_index(),
-                                                data_frame[(data_frame["PROB"] > prob) &
-                                                           ~(data_frame["DUPLICATED"]) &
-                                                           (data_frame["Z_CONF_PERSON"] == 3)],
-                                                )
+    candidates.check_statistics()
 
     # save the catalogue as a fits file
     candidates.save_catalogue()

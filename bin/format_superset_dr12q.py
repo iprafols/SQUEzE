@@ -24,6 +24,7 @@ import sys
 
 from os import listdir
 from os.path import isfile, join
+from configparser import ConfigParser
 
 import numpy as np
 
@@ -138,9 +139,17 @@ def main(cmdargs):
                          "required if --qso-dataframe is not passed. Found: "
                          f"--qso-cat {args.qso_cat} --qso-specid {args.qso_specid} "
                          f"--qso-ztrue {args.qso_ztrue}")
-        quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
-                                           args.qso_specid, args.qso_ztrue,
-                                           args.qso_hdu).quasar_catalogue()
+        config = ConfigParser()
+        config.read_dict({
+            "quasar catalogue": {
+                "filename": args.qso_cat,
+                "columns": " ".join(args.qso_cols),
+                "specid column": args.qso_specid,
+                "ztrue column": args.qso_ztrue,
+                "hdu": str(args.qso_hdu),
+            }
+        })
+        quasar_catalogue = QuasarCatalogue(config["quasar catalogue"]).quasar_catalogue
         quasar_catalogue["LOADED"] = False
 
     # make sure that quasar catalogue contains a column called class_person

@@ -23,6 +23,7 @@ from squeze.candidates_utils import (
     compute_is_correct_redshift, compute_is_line, load_df)
 from squeze.error import Error
 from squeze.model import Model
+from squeze.quasar_catalogue import QuasarCatalogue
 from squeze.spectra import Spectra
 from squeze.utils import (
     verboseprint, deserialize, load_json)
@@ -402,6 +403,55 @@ class Candidates(object):
             self.userprint("Saving candidates")
             self.save_candidates()
             self.userprint("Done")
+
+    def check_statistics(self):
+        """ Check the statistics on the candidates classification """
+        if self.mode != "test":
+            raise Error("The function check_statistics is available in the "
+                        f"test mode only. Detected mode is {self.mode}")
+        stats_settings = self.config.get_section("stats")
+        run_stats = stats_settings.getboolean("run stats")
+        if run_stats is None:
+            message = "In section [stats], variable 'run stats' is required"
+            raise Error(message)
+        if not run_stats:
+            return
+        # load truth table
+        t0 = time.time()
+        self.userprint("Loading quasar catalogue")
+        qso_dataframe = stats_settings.get("qso dataframe")
+        if qso_dataframe is not None:
+            quasar_catalogue = deserialize(load_json(qso_dataframe))
+            quasar_catalogue["LOADED"] = True
+        else:
+            quasar_catalogue_settings = self.config.get_section("quasar catalogue")
+            quasar_catalogue = QuasarCatalogue(quasar_catalogue_settings).quasar_catalogue
+            quasar_catalogue["LOADED"] = False
+        t1 = time.time()
+        self.userprint(f"INFO: time elapsed to load quasar catalogue: {(t1-t0)/60.0} minutes")
+
+        # do the actual check
+        t0 = time.time()
+        self.userprint("Check statistics")
+        probs_str = stats_settings.get("check probs")
+        if probs_str is None:
+            message = "In section [stats], variable 'check probs' is required"
+            raise Error(message)
+        probs = [float(item) for item in probs_str.split()]
+        df = self.candidates
+        self.userprint("\n---------------")
+        self.userprint("step 1")
+        self.find_completeness_purity(quasar_catalogue.reset_index(), df)
+        for prob in probs:
+            self.userprint("\n---------------")
+            self.userprint("proba > {}".format(prob))
+            self.find_completeness_purity(
+                quasar_catalogue.reset_index(),
+                df[(df["PROB"] > prob) & ~(df["DUPLICATED"]) &
+                   (df["Z_CONF_PERSON"] == 3)],
+            )
+        t1 = time.time()
+        self.userprint(f"INFO: time elapsed to check statistics: {(t1-t0)/60.0} minutes")
 
     def classify_candidates(self, save=True):
         """ Create a model instance and train it. Save the resulting model
