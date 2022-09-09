@@ -6,7 +6,6 @@
     run-time options of SQUEzE
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
-__version__ = "0.1"
 
 import os
 import re

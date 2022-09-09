@@ -6,7 +6,6 @@
     oriented to load spectra from BOSS
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
-__version__ = "0.1"
 
 import numpy as np
 from numpy.random import randn

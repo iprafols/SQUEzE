@@ -4,6 +4,7 @@
 
     This file provides a peak finder to be used by SQUEzE
     """
+__author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
 import numpy as np
 

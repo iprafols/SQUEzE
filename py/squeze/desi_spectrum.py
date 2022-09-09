@@ -6,7 +6,6 @@
     oriented to load spectra from DESI
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
-__version__ = "0.1"
 
 import numpy as np
 

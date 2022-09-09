@@ -7,7 +7,6 @@
     the sample.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
-__version__ = "0.1"
 
 import os
 from math import sqrt

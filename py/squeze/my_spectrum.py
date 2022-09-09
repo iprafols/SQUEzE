@@ -6,7 +6,6 @@
     example of a class inheriting from Spectrum defined in squeze_spectrum.py.
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
-__version__ = "0.1"
 # "fill the blanks" example ... pylint: disable=fixme
 
 from squeze.error import Error

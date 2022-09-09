@@ -6,7 +6,6 @@
     spectrum to be usable by SQUEzE in training mode
     """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
-__version__ = "0.1"
 
 from squeze.spectrum import Spectrum
 from squeze.utils import deserialize
