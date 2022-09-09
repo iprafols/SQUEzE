@@ -8,7 +8,7 @@ scripts = glob.glob('bin/*')
 
 description = "Spectroscopic QUasar Extractor and redshift (z) Estimator"
 
-exec(open('py/picca/_version.py').read())
+exec(open('py/squeze/_version.py').read())
 version = __version__
 setup(name="squeze",
     version=version,
