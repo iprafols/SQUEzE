@@ -119,53 +119,52 @@ def search_nodes(X, children_left, children_right, features, thresholds,
 
 class RandomForestClassifier(object):
     """ The purpose of this class is to create a RandomForestClassifier
-        with persistancy. It intends to solve the problem of training
-        with sklearn in one environment and not being able to load
-        the trained model into another environment.
-        It ensures SQUEzE will be able to keep operation even in case of
-        updates to sklearn that are not backwards compatible.
-        The current
+    with persistancy. It intends to solve the problem of training
+    with sklearn in one environment and not being able to load
+    the trained model into another environment.
+    It ensures SQUEzE will be able to keep operation even in case of
+    updates to sklearn that are not backwards compatible.
 
-        CLASS: RandomForestClassifier
-        PURPOSE: Create a persistent RandomForestClassifier
-        """
+    CLASS: RandomForestClassifier
+    PURPOSE: Create a persistent RandomForestClassifier
+    """
 
     def __init__(self, **kwargs):
         """ Initialize class instance.
 
-            Parameters
-            ----------
-            args : dict -  Default: {}}
-            Options to be passed to the RandomForestClassifier
-            """
-        self.__args = kwargs
+        Arguments
+        ---------
+        kwargs: dict
+        Options to be passed to the RandomForestClassifier
+        """
+        self.args = kwargs
 
         # initialize variables
-        self.__num_trees = 0
-        self.__trees = []
-        self.__num_categories = 0
-        self.classes_ = []
+        self.num_trees = 0
+        self.trees = []
+        self.num_categories = 0
+        self.classes = []
 
     def fit(self, X, y):
         """ Create and train models
 
-            Parameters
-            ----------
-            Refer to sklearn.ensemble.RandomForestClassifier.fit
-            """
+        Arguments
+        ---------
+        Refer to sklearn.ensemble.RandomForestClassifier.fit
+        """
         if SKLEARN_ERROR is not None:
             raise SKLEARN_ERROR
 
         # create a RandomForestClassifier
-        random_forest = rf_sklearn(**self.__args)
+        random_forest = rf_sklearn(**self.args)
 
         # train model
         random_forest.fit(X, y)
 
         # add persistence
-        self.__num_trees = len(random_forest.estimators_)
-        self.__num_categories = np.unique(y).size
-        self.classes_ = random_forest.classes_
+        self.num_trees = len(random_forest.estimators_)
+        self.num_categories = np.unique(y).size
+        self.classes = random_forest.classes_
         for decision_tree in random_forest.estimators_:
             tree_sklearn = decision_tree.tree_
 
@@ -179,7 +178,7 @@ class RandomForestClassifier(object):
                 proba[index] = prob / prob.sum()
             tree["proba"] = proba
 
-            self.__trees.append(tree)
+            self.trees.append(tree)
 
         # discard the sklearn model
         del random_forest
@@ -187,50 +186,49 @@ class RandomForestClassifier(object):
     @classmethod
     def from_json(cls, data):
         """ This function deserializes a json string to correclty build the class.
-            It uses the deserialization function of class SimpleSpectrum to reconstruct
-            the instances of Spectrum. For this function to work, data should have been
-            serialized using the serialization method specified in `save_json` function
-            present on `utils.py` """
+        It uses the deserialization function of class SimpleSpectrum to reconstruct
+        the instances of Spectrum. For this function to work, data should have been
+        serialized using the serialization method specified in `save_json` function
+        present on `utils.py`
+        """
 
         # create instance using the constructor
-        cls_instance = cls(**data.get("_RandomForestClassifier__args"))
+        cls_instance = cls(**data.get("args"))
 
         # now update the instance to the current values
-        cls_instance.set_num_trees(
-            data.get("_RandomForestClassifier__num_trees"))
-        cls_instance.set_num_categories(
-            data.get("_RandomForestClassifier__num_categories"))
-        cls_instance.classes_ = deserialize(data.get("classes_"))
+        cls_instance.num_trees = data.get("num_trees")
+        cls_instance.num_categories = data.get("num_categories")
+        cls_instance.classes = deserialize(data.get("classes"))
 
-        trees = data.get("_RandomForestClassifier__trees")
+        trees = data.get("trees")
         for tree in trees:
             for key, value in tree.items():
                 tree[key] = deserialize(value)
-        cls_instance.set_trees(trees)
+        cls_instance.trees = trees
 
         return cls_instance
 
     @classmethod
     def from_fits_hdul(cls, hdul, name_prefix, info_name, args=None):
         """ This function parses the RandomForestClassifier from the data
-            contained in a fits HDUList. Each HDU in HDUL has to be according
-            to the format specified in method to_fits_hdu
+        contained in a fits HDUList. Each HDU in HDUL has to be according
+        to the format specified in method to_fits_hdu
 
-            Parameters
-            ----------
-            hdul : fitsio.fitslib.FITS
-            The Header Data Unit List containing the trained classifier
+        Arguments
+        ---------
+        hdul : fitsio.fitslib.FITS
+        The Header Data Unit List containing the trained classifier
 
-            name_prefix : string
-            Prefix of the HDU names (high, low, or all)
+        name_prefix : string
+        Prefix of the HDU names (high, low, or all)
 
-            name_prefix : string
-            Name of the info HDU (HIGHINFO, LOWINFO, or ALLINFO)
+        name_prefix : string
+        Name of the info HDU (HIGHINFO, LOWINFO, or ALLINFO)
 
-            args : dict -  Default: {}}
-            Options to be passed to the RandomForestClassifier
+        args : dict -  Default: {}}
+        Options to be passed to the RandomForestClassifier
 
-            """
+        """
         if args is None:
             args = {}
 
@@ -239,9 +237,9 @@ class RandomForestClassifier(object):
 
         # now update the instance to the current values
         header = hdul[info_name].read_header()
-        cls_instance.set_num_trees(header["N_TREES"])
-        cls_instance.set_num_categories(header["N_CAT"])
-        cls_instance.classes_ = hdul[info_name]["CLASSES"][:].astype(np.float64)
+        cls_instance.num_trees = header["N_TREES"]
+        cls_instance.num_categories = header["N_CAT"]
+        cls_instance.classes = hdul[info_name]["CLASSES"][:].astype(np.float64)
 
         hdus = [
             hdul[f"{name_prefix}{index}"] for index in range(header["N_TREES"])
@@ -253,26 +251,25 @@ class RandomForestClassifier(object):
             "threshold": hdu["threshold"][:].astype(np.float64),
             "proba": hdu["proba"][:].astype(np.float64),
         } for hdu in hdus]
-        cls_instance.set_trees(trees)
+        cls_instance.trees = trees
         return cls_instance
 
     def predict_proba(self, X):
         """ Predict class probabilities for X
 
-            Parameters
-            ----------
-            Refer to sklearn.ensemble.RandomForestClassifier.predic_proba
-            """
+        Arguments
+        ---------
+        Refer to sklearn.ensemble.RandomForestClassifier.predic_proba
+        """
+        output = np.zeros((len(X), self.num_categories))
 
-        output = np.zeros((len(X), self.__num_categories))
-
-        for tree_index in np.arange(self.__num_trees):
-            proba = np.zeros((len(X), self.__num_categories))
-            children_left = self.__trees[tree_index]["children_left"]
-            children_right = self.__trees[tree_index]["children_right"]
-            features = self.__trees[tree_index]["feature"]
-            thresholds = self.__trees[tree_index]["threshold"]
-            tree_proba = self.__trees[tree_index]["proba"]
+        for tree_index in np.arange(self.num_trees):
+            proba = np.zeros((len(X), self.num_categories))
+            children_left = self.trees[tree_index]["children_left"]
+            children_right = self.trees[tree_index]["children_right"]
+            features = self.trees[tree_index]["feature"]
+            thresholds = self.trees[tree_index]["threshold"]
+            tree_proba = self.trees[tree_index]["proba"]
             indexs = np.arange(X.shape[0], dtype=int)
             if len(children_left) > sys.getrecursionlimit():
                 sys.setrecursionlimit(int(len(children_left) * 1.2))
@@ -280,52 +277,31 @@ class RandomForestClassifier(object):
                          tree_proba, proba, indexs, 0)
             output += proba
 
-        output /= self.__num_trees
+        output /= self.num_trees
 
         return output
-
-    def set_num_trees(self, num_trees):
-        """ Set the variable __num_trees. Should only be called from the method from_json"""
-        self.__num_trees = num_trees
-
-    def set_num_categories(self, num_categories):
-        """ Set the variable __num_categories. Should only be called from the method from_json"""
-        self.__num_categories = num_categories
-
-    def set_trees(self, trees):
-        """ Set the variable __trees. Should only be called from the method from_json"""
-        self.__trees = trees
-
-    def num_trees(self):
-        """ Access the number of trees """
-        return self.__num_trees
-
-    def num_categories(self):
-        """ Access the number of categories """
-        return self.__num_categories
 
     def to_fits_hdu(self, index):
         """ Formats tree as a fits Header Data Unit
 
-            Parameters
-            ----------
-            index : int
-            Index of the tree to format
+        Arguments
+        ---------
+        index : int
+        Index of the tree to format
 
-            Returns
-            -------
-            names: list of str
-            Names of the different variables
+        Return
+        ------
+        names: list of str
+        Names of the different variables
 
-            cols: list of arrays
-            Data of the different variables
-            """
-
+        cols: list of arrays
+        Data of the different variables
+        """
         # create HDU columns
         names = [
             "children_left", "children_right", "feature", "threshold", "proba"
         ]
-        cols = [self.__trees[index].get(name) for name in names]
+        cols = [self.trees[index].get(name) for name in names]
 
         # create HDU and return
         return names, cols

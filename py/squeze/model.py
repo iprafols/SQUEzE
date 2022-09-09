@@ -161,9 +161,9 @@ class Model(object):
             data_class = -1
             aux_prob = 0.0
             if self.highlow_split:
-                class_labels = self.clf_high.classes_
+                class_labels = self.clf_high.classes
             else:
-                class_labels = self.clf.classes_
+                class_labels = self.clf.classes
             for class_label in class_labels:
                 if row[f"PROB_CLASS{int(class_label):d}"] > aux_prob:
                     aux_prob = row[f"PROB_CLASS{int(class_label):d}"]
@@ -222,17 +222,17 @@ class Model(object):
                               "all redshift quasars")
                 }]
 
-            num_trees = classifier.num_trees()
+            num_trees = classifier.num_trees
             header += [{
                 "name": "N_TREES",
                 "value": num_trees,
             }, {
                 "name": "N_CAT",
-                "value": classifier.num_categories(),
+                "value": classifier.num_categories,
             }]
 
             names = ["CLASSES"]
-            cols = [classifier.classes_]
+            cols = [classifier.classes]
 
             # create HDU
             results.write(cols,
@@ -280,7 +280,7 @@ class Model(object):
                 data_class_probs = self.clf_high.predict_proba(data_vector)
 
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.clf_high.classes_):
+                for index, class_label in enumerate(self.clf_high.classes):
                     data_frame_high[
                         f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
                                                                               index]
@@ -294,7 +294,7 @@ class Model(object):
                 data_class_probs = self.clf_low.predict_proba(data_vector)
 
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.clf_low.classes_):
+                for index, class_label in enumerate(self.clf_low.classes):
                     data_frame_low[
                         f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
                                                                               index]
@@ -303,7 +303,7 @@ class Model(object):
             data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if data_frame_nonpeaks.shape[0] > 0:
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.clf_low.classes_):
+                for index, class_label in enumerate(self.clf_low.classes):
                     data_frame_nonpeaks[
                         f"PROB_CLASS{int(class_label):d}"] = np.nan
 
@@ -327,7 +327,7 @@ class Model(object):
                 data_class_probs = self.clf.predict_proba(data_vector)
 
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.clf.classes_):
+                for index, class_label in enumerate(self.clf.classes):
                     data_frame_peaks[
                         f"PROB_CLASS{int(class_label):d}"] = data_class_probs[:,
                                                                               index]
@@ -336,7 +336,7 @@ class Model(object):
             data_frame_nonpeaks = data_frame[data_frame["Z_TRY"].isna()].copy()
             if not data_frame_nonpeaks.shape[0] == 0:
                 # save the probability for each of the classes
-                for index, class_label in enumerate(self.clf.classes_):
+                for index, class_label in enumerate(self.clf.classes):
                     data_frame_nonpeaks[
                         f"PROB_CLASS{int(class_label):d}"] = np.nan
 
