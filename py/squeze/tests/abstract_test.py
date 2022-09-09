@@ -21,7 +21,9 @@ from squeze.utils import verboseprint as userprint
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 os.environ["THIS_DIR"] = THIS_DIR
-SQUEZE_BIN = THIS_DIR.split("py/squeze")[0]+"bin/"
+SQUEZE = THIS_DIR.split("py/squeze")[0]
+os.environ["SQUEZE"] = SQUEZE
+SQUEZE_BIN = SQUEZE+"bin/"
 if SQUEZE_BIN not in sys.path:
     sys.path.append(SQUEZE_BIN)
 
