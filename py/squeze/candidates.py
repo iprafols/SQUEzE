@@ -256,7 +256,9 @@ class Candidates:
             self.userprint(
                 f"INFO: time elapsed to load model: {(time_end-time_start)/60.0} minutes"
             )
+            # update configuration
             self.config.update_from_model(self.model.config)
+            self.__initialize_main_settings()
 
     def __initialize_peak_finder(self):
         """Initialize the peak finder"""

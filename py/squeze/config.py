@@ -130,23 +130,30 @@ class Config:
     PURPOSE: Manage run-time options for SQUEzE
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename="", config_dict=None):
         """ Initialize class instance.
 
         Parameters
         ----------
         filename : str
         The configuration file
+
+        config: dict or None - Default None
+        If not None, ignore the passed file and read configuration from this
+        dictionary instead
         """
         self.config = ConfigParser()
         # load default configuration
         self.config.read_dict(default_config)
         # now read the configuration file
-        if os.path.exists(os.path.expandvars(filename)):
-            self.config.read(os.path.expandvars(filename))
+        if config_dict is None:
+            if os.path.exists(os.path.expandvars(filename)):
+                self.config.read(os.path.expandvars(filename))
+            else:
+                message = f"Config file not found: {filename}; using default config"
+                raise Error(message)
         else:
-            message = f"Config file not found: {filename}; using default config"
-            raise Error(message)
+            self.config.read_dict(config_dict)
 
         # load the printing function
         self.load_print_function()

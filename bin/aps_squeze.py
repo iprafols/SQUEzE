@@ -10,6 +10,7 @@
      1.1 Modified By Alireza Molaeinezhad (APS, DEC 2020) -  APS compability
      1.2 Modified By Alireza Molaeinezhad (APS, Feb 2022)
      1.3 Modified By Alireza Molaeinezhad (APS, Feb 2022)
+     1.4 Modified By Ignasi Perez-Rafols (ICCUB, Sep 2022)
 
 
 ########### BAISC APS PARAM ###########################################################################################################
@@ -81,6 +82,7 @@ History:
 20 Feb 2022: A.M: prior fits file in the latest version of redrock (> 0.15) needs another column called Function with 3 options; Gaussian, Lorentzian and tophat
 topcat is the preferable function for QSO but the redrock code right now cannot handle it properly. So I added Gaussian as the default function.
 29 Apr 2022: I.P: Fixed PROV names in primary HDU
+9 Sep 2022: I.P: SQUEzE is now running with configuration files. Adapted changes here
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.2"
@@ -138,12 +140,7 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
     # load model
     userprint("================================================")
     userprint("")
-    userprint("Loading model")
-    if model.endswith(".json"):
-        model = Model.from_json(load_json(model))
-    else:
-        model = Model.from_fits(model)
-
+    
     # load spectra
     userprint("Loading spectra")
     weave_formatted_spectra = APSOB(infiles, aps_ids=aps_ids,
@@ -162,10 +159,17 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
 
     # initialize candidates object
     userprint("Initialize candidates object")
-    if save_file is None:
-        candidates = Candidates(mode="operation", model=model)
-    else:
-        candidates = Candidates(mode="operation", model=model, name=save_file)
+    config_dict = {
+        "general": {
+            "mode": "operation",
+        },
+        "model": {
+            "filename": model,
+        },
+    })
+    if save_file is not None:
+        config["general"]["output"] = save_file
+    candidates = Candidates(config_dict=config_dict)
 
     # look for candidates
     userprint("Looking for candidates")
@@ -189,7 +193,7 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
     userprint("================================================")
     userprint("")
     # return the candidates and the chosen probability threshold
-    return candidates.candidates(), model.get_settings().get("Z_PRECISION")
+    return candidates.candidates, candidates.z_precision
 
 def write_results(zbest, candidates_df, args):
     """ Format results according to the specifications of the CS
