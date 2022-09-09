@@ -34,12 +34,11 @@ import pandas as pd
 
 import astropy.io.fits as fits
 
-from squeze.common_functions import save_json
-from squeze.common_functions import verboseprint, quietprint
 from squeze.quasar_catalogue import QuasarCatalogue
-from squeze.weave_spectrum import WeaveSpectrum
-from squeze.spectra import Spectra
 from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
+from squeze.spectra import Spectra
+from squeze.utils import save_json, verboseprint, quietprint
+from squeze.weave_spectrum import WeaveSpectrum
 
 def main(cmdargs):
     """ Load WEAVE spectra using the WeaveSpectrum Class defined in

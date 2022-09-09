@@ -4,69 +4,78 @@
 
     This file provides a peak finder to be used by SQUEzE
     """
+__author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
 import numpy as np
 
+accepted_options = ["min significance", "width"]
 
-class PeakFinder(object):
+defaults = {
+    # This variable sets the width (in pixels) of the typical peak to be detected.
+    # This parameter will be passed to the peak finding function. Check the
+    # documentation on the module squeze_peak_finder for more details
+    "width": 70,
+    # This variable sets the minimum signal-to-noise ratio of a peak.
+    # This parameter will be passed to the peak finding function. Check the
+    # documentationon the module squeze_peak_finder for more details
+    "min significance": 6,
+}
+
+
+class PeakFinder:
     """ Create and manage the peak finder used by SQUEzE
 
-        CLASS: PeakFinder
-        PURPOSE: Create and manage the peak finder used by SQUEzE. This
-        peak finder looks for peaks in a smoothed spectrum by looking for
-        points with values higher than their surroundings. It also computes
-        the significance of the peaks and filters the results according to
-        their significances.
-        """
+    CLASS: PeakFinder
+    PURPOSE: Create and manage the peak finder used by SQUEzE. This
+    peak finder looks for peaks in a smoothed spectrum by looking for
+    points with values higher than their surroundings. It also computes
+    the significance of the peaks and filters the results according to
+    their significances.
+    """
 
-    def __init__(self, width, min_significance):
+    def __init__(self, config):
         """ Initialize class instance
 
-            Parameters
-            ----------
-            width : float
-            Width of the Gaussian used as a kernel for the convolution (see
-            method 'smooth' from module 'squeze_spectrum' for details)
-
-            min_significance : float
-            Minimum significance of the peak for it to be considered a valid peak
-            """
-        self.__width = width
-        if self.__width > 0:
-            self.__fwhm = int(2.355 * width)
+        Arguments
+        ---------
+        config: configparser.SectionProxy
+        Parsed options to initialize class
+        """
+        self.width = config.getfloat("width")
+        if self.width > 0:
+            self.fwhm = int(2.355 * self.width)
         else:
-            self.__fwhm = 2
-        self.__half_fwhm = int(self.__fwhm / 2)
-        self.__min_significance = min_significance
+            self.fwhm = 2
+        self.half_fwhm = int(self.fwhm / 2)
+        self.min_significance = config.getfloat("min significance")
 
     def __find_peak_significance(self, spectrum, index):
-        """ Find the significance of the peak. The significance is computed by
-            measuring the signal to noise of the difference between the peak and
-            the continuum. The peak is measured using a window of size FWHM
-            centered at the position of the specified index, where FWHM is the
-            full width half maximum of the Gaussian used in the smoothing.
-            The continuum is measured using two windows of size FWHM/2 at each
-            side of the peak.
+        """ Find the significance of the peak.
 
-            Parameters
-            ----------
-            spectrum : Spectrum
-            The spectrum where peaks are looked for
-            """
-        flux = spectrum.flux()
-        ivar = spectrum.ivar()
+        The significance is computed by measuring the signal to noise of
+        the difference between the peak and the continuum. The peak is
+        measured using a window of size FWHM centered at the position of
+        the specified index, where FWHM is the full width half maximum of the
+        Gaussian used in the smoothing. The continuum is measured using two
+        windows of size FWHM/2 at each side of the peak.
 
-        if index < self.__fwhm or index + self.__fwhm > flux.size:
+        Arguments
+        ---------
+        spectrum : Spectrum
+        The spectrum where peaks are looked for
+        """
+        flux = spectrum.flux
+        ivar = spectrum.ivar
+
+        if index < self.fwhm or index + self.fwhm > flux.size:
             significance = np.nan
         else:
-            peak = np.average(flux[index - self.__half_fwhm:index +
-                                   self.__half_fwhm])
-            cont = np.average(flux[index - self.__fwhm:index -
-                                   self.__half_fwhm])
-            cont += np.average(flux[index + self.__half_fwhm:index +
-                                    self.__fwhm])
+            peak = np.average(flux[index - self.half_fwhm:index +
+                                   self.half_fwhm])
+            cont = np.average(flux[index - self.fwhm:index - self.half_fwhm])
+            cont += np.average(flux[index + self.half_fwhm:index + self.fwhm])
             cont = cont / 2.0
-            ivar_diff = np.sum(ivar[index - self.__fwhm:index + self.__fwhm])
+            ivar_diff = np.sum(ivar[index - self.fwhm:index + self.fwhm])
             if ivar_diff != 0.0:
                 error = 1.0 / np.sqrt(ivar_diff)
                 significance = (peak - cont) / error
@@ -78,17 +87,17 @@ class PeakFinder(object):
     def find_peaks(self, spectrum):
         """ Find significant peaks in a given spectrum.
 
-            Parameters
-            ----------
-            spectrum : Spectrum
-            The spectrum where peaks are looked for
+        Arguments
+        ---------
+        spectrum : Spectrum
+        The spectrum where peaks are looked for
 
-            Returns
-            -------
-            An array with the position of the peaks
-            """
+        Return
+        ------
+        An array with the position of the peaks
+        """
         # smooth the spectrum
-        smoothed_data = spectrum.smooth(self.__width)
+        smoothed_data = spectrum.smooth(self.width)
 
         # find peaks
         peak_indexs = []
@@ -101,7 +110,7 @@ class PeakFinder(object):
                 significance = self.__find_peak_significance(spectrum, index)
 
                 # add the peak to the list if the significance is large enough
-                if significance >= self.__min_significance:
+                if significance >= self.min_significance:
                     peak_indexs.append(index)
                     significances.append(significance)
 

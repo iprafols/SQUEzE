@@ -6,11 +6,89 @@
     avoid duplicate code
     """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
-__version__ = "0.1"
 
+import importlib
+import os
 import json
 import pandas as pd
 import numpy as np
+
+
+def class_from_string(class_name, module_name):
+    """Return a class from a string. The class must be saved in a module
+    under squeze with the same name as the class but
+    lowercase and with and underscore. For example class 'MyClass' should
+    be in module squeze.my_class
+
+    Arguments
+    ---------
+    class_name: str
+    Name of the class to load
+
+    module_name: str
+    Name of the module containing the class
+
+    Return
+    ------
+    class_object: Class
+    The loaded class
+
+    deafult_args: dict
+    A dictionary with the default options (empty for no default options)
+
+    accepted_options: list
+    A list with the names of the accepted options
+
+    Raise
+    -----
+    ImportError if module cannot be loaded
+    AttributeError if class cannot be found
+    """
+    # load module
+    module_object = importlib.import_module(module_name)
+    # get the class
+    class_object = getattr(module_object, class_name)
+    # get the dictionary with the default arguments
+    try:
+        default_args = getattr(module_object, "defaults")
+    except AttributeError:
+        default_args = {}
+    # get the list with the valid options
+    try:
+        accepted_options = getattr(module_object, "accepted_options")
+    except AttributeError:
+        accepted_options = []
+    return class_object, default_args, accepted_options
+
+
+def function_from_string(function_name, module_name):
+    """Return a function from a string. The class must be saved in a module
+    under squeze. For example squeze.utils
+
+    Arguments
+    ---------
+    function_name: str
+    Name of the function to load
+
+    module_name: str
+    Full name of the module containing the class. E.g. squeze.utils
+
+    Return
+    ------
+    function_object: function
+    The loaded function
+
+    Raise
+    -----
+    ImportError if module cannot be loaded
+    AttributeError if class cannot be found
+    """
+    # load module
+    module_object = importlib.import_module(module_name)
+    # get the class
+    function_name = getattr(module_object, function_name)
+
+    return function_name
 
 
 def serialize(obj):
@@ -118,7 +196,7 @@ def deserialize(json_dict):
 def save_json(filename, user_object):
     """ Saves object into filename. Encoding file as a json object.
         Complex object are saved using their __dict__ property"""
-    with open(filename, 'w', encoding="UTF-8") as outfile:
+    with open(os.path.expandvars(filename), 'w', encoding="UTF-8") as outfile:
         json.dump(user_object, outfile, indent=0, default=serialize)
 
 
@@ -129,7 +207,7 @@ def load_json(filename):
         -------
         The loaded object
         """
-    with open(filename, encoding="UTF-8") as json_file:
+    with open(os.path.expandvars(filename), encoding="UTF-8") as json_file:
         user_object = json.load(json_file)
     return user_object
 

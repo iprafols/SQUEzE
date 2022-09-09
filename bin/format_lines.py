@@ -10,7 +10,7 @@ __version__ = "0.1"
 
 import pandas as pd
 
-from squeze.common_functions import save_json
+from squeze.utils import save_json
 
 def main():
     """

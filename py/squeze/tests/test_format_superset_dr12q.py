@@ -9,8 +9,8 @@ import os
 import importlib
 
 from squeze.tests.abstract_test import AbstractTest, SQUEZE_BIN
-from squeze.common_functions import verboseprint as userprint
-from squeze.common_functions import deserialize, load_json
+from squeze.utils import deserialize, load_json
+from squeze.utils import verboseprint as userprint
 
 import format_superset_dr12q
 
@@ -41,8 +41,8 @@ class TestFormatSupersetDr12Q(AbstractTest):
                    "--plate-list", f"{THIS_DIR}/data/platelist_7102.fits",
                    "--sky-mask", f"{THIS_DIR}/data/dr12-sky-mask.txt",
                    ]
-
-        self.run_command(command, format_superset_dr12q)
+        userprint("Running command: ", " ".join(command))
+        format_superset_dr12q.main(command[2:])
         self.assertTrue(os.path.isfile(out_file))
         self.compare_json_spectra(test_file, out_file)
 
@@ -67,7 +67,8 @@ class TestFormatSupersetDr12Q(AbstractTest):
                    ]
 
 
-        self.run_command(command, format_superset_dr12q)
+        userprint("Running command: ", " ".join(command))
+        format_superset_dr12q.main(command[2:])
         self.assertTrue(os.path.isfile(out_file))
         self.compare_json_spectra(test_file, out_file)
 

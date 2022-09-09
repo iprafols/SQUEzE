@@ -8,7 +8,8 @@ scripts = glob.glob('bin/*')
 
 description = "Spectroscopic QUasar Extractor and redshift (z) Estimator"
 
-version="1.0"
+exec(open('py/squeze/_version.py').read())
+version = __version__
 setup(name="squeze",
     version=version,
     description=description,
@@ -19,7 +20,7 @@ setup(name="squeze",
     package_dir = {'': 'py'},
     package_data = {},
     test_suite ="squeze.tests",
-    install_requires=['numpy','pandas','argparse','astropy', 'numba'],
+    install_requires=['numpy', 'pandas', 'argparse', 'astropy', 'numba'],
     extras_require={
         'train': ['sklearn'],
         'plot': ['matplotlib'],

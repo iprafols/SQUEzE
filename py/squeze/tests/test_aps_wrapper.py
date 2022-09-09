@@ -8,8 +8,8 @@ import unittest
 import os
 
 from squeze.tests.abstract_test import AbstractTest
-from squeze.common_functions import verboseprint as userprint
-from squeze.common_functions import deserialize, load_json
+from squeze.utils import deserialize, load_json
+from squeze.utils import verboseprint as userprint
 
 try:
     import redrock

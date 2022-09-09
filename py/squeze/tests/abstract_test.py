@@ -11,17 +11,23 @@ import sys
 import numpy as np
 import astropy.io.fits as fits
 
-from squeze.candidates import Candidates
-from squeze.common_functions import verboseprint as userprint
-from squeze.common_functions import deserialize, load_json
+from squeze.candidates_utils import load_df
+
+from squeze.config import Config
 from squeze.spectra import Spectra
+from squeze.utils import deserialize, load_json
+from squeze.utils import verboseprint as userprint
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-SQUEZE_BIN = THIS_DIR.split("py/squeze")[0]+"bin/"
+os.environ["THIS_DIR"] = THIS_DIR
+SQUEZE = THIS_DIR.split("py/squeze")[0]
+os.environ["SQUEZE"] = SQUEZE
+SQUEZE_BIN = SQUEZE+"bin/"
 if SQUEZE_BIN not in sys.path:
     sys.path.append(SQUEZE_BIN)
 
+import run_squeze
 
 class AbstractTest(unittest.TestCase):
     """Test the training mode
@@ -35,40 +41,45 @@ class AbstractTest(unittest.TestCase):
         if not os.path.exists("{}/results/".format(THIS_DIR)):
             os.makedirs("{}/results/".format(THIS_DIR))
 
-    def run_command(self, command, module):
-        """ Run a specified command and check it is completed properly
+    def run_squeze(self, filename, out_file, test_file, json_model=False,
+                   fits_model=False):
+        """ Run a squeze with the specified configuration and check the results
 
-        Parameters
-        ----------
-        command : list
-        A list of items with the script to run and its options
+        Arguments
+        ---------
+        filename : string
+        The config file
 
-        module : package
-        A module with a function main that accepts a list of arguments
+        out_file: string
+        Name of the output file
 
-        Examples
-        --------
-        Assuming test is an instance inheriting from AbstractTest:
-        `test.run_command(["python"
-                           f"{SQUEZE_BIN}/squeze_training.py",
-                           "--output-candidates",
-                           out_file,
-                           "--input-spectra",
-                           in_file,
-                           ], squeze_training)`
+        test_file: string
+        Name of the test file
+
+        json_model: boolean - Default: True
+        If True, check for the existance of a json model
+
+        json_model: boolean - Default: True
+        If True, check for the existance of a fits model
         """
+        command = ["python", f"{SQUEZE_BIN}/run_squeze.py", filename]
         userprint("Running command: ", " ".join(command))
-        module.main(command[2:])
+        run_squeze.main(command[2:])
+
+        self.assertTrue(os.path.isfile(out_file))
+        if json_model:
+            self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
+                                                            "_model.json")))
+        if fits_model:
+            self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
+                                                            "_model.fits.gz")))
+        self.compare_data_frames(test_file, out_file)
 
     def compare_data_frames(self, orig_file, new_file):
         """ Compares two dataframes to check that they are equal """
         # load dataframes
-        orig_candidates = Candidates()
-        orig_candidates.load_candidates(orig_file)
-        orig_df = orig_candidates.candidates()
-        new_candidates = Candidates()
-        new_candidates.load_candidates(new_file)
-        new_df = new_candidates.candidates()
+        orig_df = load_df(orig_file)
+        new_df = load_df(new_file)
 
         # compare them
         equal_df = orig_df.equals(new_df)
@@ -129,18 +140,18 @@ class AbstractTest(unittest.TestCase):
     def compare_json_spectra(self, orig_file, new_file):
         """Compares two sets of spectra saved in a json file"""
         orig_spectra = Spectra.from_json(load_json(orig_file))
-        orig_spectra_list = orig_spectra.spectra_list()
+        orig_spectra_list = orig_spectra.spectra_list
         new_spectra = Spectra.from_json(load_json(new_file))
-        new_spectra_list = new_spectra.spectra_list()
+        new_spectra_list = new_spectra.spectra_list
 
         self.assertTrue(orig_spectra.size(), new_spectra.size())
         for index in range(orig_spectra.size()):
-            self.assertTrue(np.allclose(orig_spectra_list[index].wave(),
-                                        new_spectra_list[index].wave()))
-            self.assertTrue(np.allclose(orig_spectra_list[index].flux(),
-                                        new_spectra_list[index].flux()))
-            self.assertTrue(np.allclose(orig_spectra_list[index].ivar(),
-                                        new_spectra_list[index].ivar()))
+            self.assertTrue(np.allclose(orig_spectra_list[index].wave,
+                                        new_spectra_list[index].wave))
+            self.assertTrue(np.allclose(orig_spectra_list[index].flux,
+                                        new_spectra_list[index].flux))
+            self.assertTrue(np.allclose(orig_spectra_list[index].ivar,
+                                        new_spectra_list[index].ivar))
 
 
 if __name__ == '__main__':
