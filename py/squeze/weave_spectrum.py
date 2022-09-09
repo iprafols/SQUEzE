@@ -21,6 +21,7 @@ class WeaveSpectrum(Spectrum):
     PURPOSE: Load and format a WEAVE spectrum to be digested by
     SQUEzE
     """
+
     def __init__(self, spectrum_dict, wave, metadata):
         """ Initialize class instance
 
@@ -69,6 +70,7 @@ def get_spectra(spectrum_dict, wave):
     ------
     A tupple with the flux, inverse_variance, and wavelength
     """
+
     # nested function to drop leading and trailing zeros
     def drop_leading_trailing_zeros(data_frame):
         """ Drop leading and trailing zeros

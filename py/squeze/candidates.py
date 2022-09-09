@@ -9,26 +9,23 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
-from math import sqrt
 import time
 import os
 
 import numpy as np
-from numba import prange, jit, vectorize
 import pandas as pd
 import fitsio
 
-from squeze.candidates_utils import (
-    compute_line_ratios, compute_pixel_metrics, compute_is_correct,
-    compute_is_correct_redshift, compute_is_line, load_df)
+from squeze.candidates_utils import (compute_line_ratios, compute_pixel_metrics,
+                                     compute_is_correct,
+                                     compute_is_correct_redshift,
+                                     compute_is_line, load_df)
 from squeze.config import Config
 from squeze.error import Error
 from squeze.model import Model
 from squeze.quasar_catalogue import QuasarCatalogue
 from squeze.spectra import Spectra
-from squeze.utils import (
-    verboseprint, deserialize, load_json)
-
+from squeze.utils import deserialize, load_json
 
 # extra imports for plotting function
 PLOTTING_ERROR = None
@@ -43,7 +40,8 @@ MODES = ["training", "test", "operation", "candidates", "merge"]
 # conversion to dataframe is executed
 MAX_CANDIDATES_TO_CONVERT = 100000000
 
-class Candidates(object):
+
+class Candidates:
     """ Create and manage the candidates catalogue
 
     CLASS: Candidates
@@ -53,6 +51,7 @@ class Candidates(object):
     training or appliying the model to clean the candidates list, and
     creating a final catalogue.
     """
+
     def __init__(self, config):
         """ Initialize class instance.
 
@@ -77,8 +76,7 @@ class Candidates(object):
 
         # output info
         self.name = general_config.get("output")
-        if not (self.name.endswith(".fits.gz") or
-                self.name.endswith(".fits")):
+        if not (self.name.endswith(".fits.gz") or self.name.endswith(".fits")):
             message = (
                 "Candidates name should have .fits or .fits.gz extensions."
                 f"Given name was {self.name}")
@@ -148,7 +146,8 @@ class Candidates(object):
         self.save_catalogue_flag = settings.getboolean("save catalogue")
         if self.save_catalogue is None:
             message = (
-                "In section [candidates], variable 'save catalogue' is required")
+                "In section [candidates], variable 'save catalogue' is required"
+            )
             raise Error(message)
 
         # try lines
@@ -174,11 +173,9 @@ class Candidates(object):
 
         # compute convert try_lines strings to indexs in self.lines array
         self.try_lines_indexs = np.array([
-            np.where(self.lines.index == item)[0][0]
-            for item in self.try_lines
+            np.where(self.lines.index == item)[0][0] for item in self.try_lines
         ])
-        self.try_lines_dict = dict(
-            zip(self.try_lines, self.try_lines_indexs))
+        self.try_lines_dict = dict(zip(self.try_lines, self.try_lines_indexs))
         self.try_lines_dict["none"] = -1
 
     def __initialize_model(self):
@@ -190,21 +187,34 @@ class Candidates(object):
         if self.mode == "training" or model_filename is None:
             # update selected cols
             selected_cols = []
-            selected_cols += [f"{line.upper()}_RATIO_SN" for line in self.lines.index]
-            selected_cols += [f"{line.upper()}_RATIO2" for line in self.lines.index]
-            selected_cols += [f"{line.upper()}_RATIO" for line in self.lines.index]
+            selected_cols += [
+                f"{line.upper()}_RATIO_SN" for line in self.lines.index
+            ]
+            selected_cols += [
+                f"{line.upper()}_RATIO2" for line in self.lines.index
+            ]
+            selected_cols += [
+                f"{line.upper()}_RATIO" for line in self.lines.index
+            ]
             if self.pixels_as_metrics:
-                selected_cols += [f"FLUX_{index}" for index in range(-self.num_pixels, 0)]
-                selected_cols += [f"FLUX_{index}" for index in range(0, self.num_pixels)]
+                selected_cols += [
+                    f"FLUX_-{index}" for index in range(self.num_pixels, 0, -1)
+                ]
+                selected_cols += [
+                    f"FLUX_{index}" for index in range(0, self.num_pixels)
+                ]
             selected_cols += ["PEAK_SIGNIFICANCE"]
             # add extra columns
-            pass_cols_to_random_forest = model_config.get("pass cols to random forest")
+            pass_cols_to_random_forest = model_config.get(
+                "pass cols to random forest")
             if pass_cols_to_random_forest is not None:
-                selected_cols += [item.upper()
-                                  for item in pass_cols_to_random_forest.split()]
+                selected_cols += [
+                    item.upper() for item in pass_cols_to_random_forest.split()
+                ]
             # add columns to compute the class in training
             selected_cols += ['CLASS_PERSON', 'CORRECT_REDSHIFT']
-            self.config.set_option("model", "selected cols", " ".join(selected_cols))
+            self.config.set_option("model", "selected cols",
+                                   " ".join(selected_cols))
 
             model_fits = model_config.getboolean("fits file")
             if self.name.endswith(".fits"):
@@ -231,7 +241,7 @@ class Candidates(object):
                     f"{os.path.expandvars(model_filename)} in original form "
                     f"{model_filename}")
                 raise Error(message)
-            t0 = time.time()
+            time_start = time.time()
             if model_filename.endswith(".json"):
                 model_config_file = model_filename.replace(".json", ".ini")
             else:
@@ -243,14 +253,16 @@ class Candidates(object):
             print("#######################")
             model_config = Config(model_config_file)
             self.model = Model.from_file(model_config, model_filename)
-            t1 = time.time()
-            self.userprint(f"INFO: time elapsed to load model: {(t1-t0)/60.0} minutes")
+            time_end = time.time()
+            self.userprint(
+                f"INFO: time elapsed to load model: {(time_end-time_start)/60.0} minutes"
+            )
             self.config.update_from_model(self.model.config)
 
     def __initialize_peak_finder(self):
         """Initialize the peak finder"""
         # figure out which Peak Finder to load
-        PeakFinder, arguments = self.config.get_peak_finder()
+        PeakFinder, arguments = self.config.peak_finder
 
         # initialize peak finder
         self.peak_finder = PeakFinder(arguments)
@@ -303,7 +315,7 @@ class Candidates(object):
             candidate_info.append(significance)
             candidate_info.append(try_line)
             if self.pixels_as_metrics:
-                for _ in range(-self.num_pixels, 0):
+                for _ in range(self.num_pixels, 0, -1):
                     candidate_info.append(np.nan)
                 for _ in range(0, self.num_pixels):
                     candidate_info.append(np.nan)
@@ -339,17 +351,6 @@ class Candidates(object):
 
             self.candidates_list += new_candidates
 
-    def __load_model_settings(self):
-        """ Overload the settings with those stored in self.model """
-        settings = self.model.settings
-        self.lines = settings.get("LINES")
-        self.try_lines = settings.get("TRY_LINES")
-        self.z_precision = settings.get("Z_PRECISION")
-        self.peakfind_width = settings.get("PEAKFIND_WIDTH")
-        self.peakfind_sig = settings.get("PEAKFIND_SIG")
-        self.pixels_as_metrics = settings.get("PIXELS_AS_METRICS")
-        self.num_pixels = settings.get("NUM_PIXELS")
-
     def candidates_list_to_dataframe(self, columns_candidates, save=True):
         """ Format existing candidates list into a dataframe
 
@@ -376,8 +377,8 @@ class Candidates(object):
             columns_candidates.append("PEAK_SIGNIFICANCE")
             columns_candidates.append("ASSUMED_LINE")
             if self.pixels_as_metrics:
-                for index in range(-self.num_pixels, 0):
-                    columns_candidates.append(f"FLUX_{index}")
+                for index in range(self.num_pixels, 0, -1):
+                    columns_candidates.append(f"FLUX_-{index}")
                     columns_candidates.append(f"IVAR_{index}")
                 for index in range(0, self.num_pixels):
                     columns_candidates.append(f"FLUX_{index}")
@@ -424,7 +425,7 @@ class Candidates(object):
             self.userprint(
                 "Concatenating dataframe with previouly exisiting candidates")
             self.candidates = pd.concat([self.candidates, aux],
-                                          ignore_index=True)
+                                        ignore_index=True)
             self.userprint("Done")
         self.candidates_list = []
 
@@ -447,7 +448,7 @@ class Candidates(object):
         if not run_stats:
             return
         # load truth table
-        t0 = time.time()
+        time_start = time.time()
         self.userprint("Loading quasar catalogue")
         quasar_catalogue_settings = self.config.get_section("quasar catalogue")
         qso_filename = quasar_catalogue_settings.get("filename")
@@ -455,13 +456,16 @@ class Candidates(object):
             quasar_catalogue = deserialize(load_json(qso_filename))
             quasar_catalogue["LOADED"] = True
         else:
-            quasar_catalogue = QuasarCatalogue(quasar_catalogue_settings).quasar_catalogue
+            quasar_catalogue = QuasarCatalogue(
+                quasar_catalogue_settings).quasar_catalogue
             quasar_catalogue["LOADED"] = False
-        t1 = time.time()
-        self.userprint(f"INFO: time elapsed to load quasar catalogue: {(t1-t0)/60.0} minutes")
+        time_end = time.time()
+        self.userprint(
+            f"INFO: time elapsed to load quasar catalogue: {(time_end-time_start)/60.0} minutes"
+        )
 
         # do the actual check
-        t0 = time.time()
+        time_start = time.time()
         self.userprint("Check statistics")
         probs_str = stats_settings.get("check probs")
         if probs_str is None:
@@ -474,14 +478,16 @@ class Candidates(object):
         self.find_completeness_purity(quasar_catalogue.reset_index(), df)
         for prob in probs:
             self.userprint("\n---------------")
-            self.userprint("proba > {}".format(prob))
+            self.userprint(f"proba > {prob}")
             self.find_completeness_purity(
                 quasar_catalogue.reset_index(),
                 df[(df["PROB"] > prob) & ~(df["DUPLICATED"]) &
                    (df["Z_CONF_PERSON"] == 3)],
             )
-        t1 = time.time()
-        self.userprint(f"INFO: time elapsed to check statistics: {(t1-t0)/60.0} minutes")
+        time_end = time.time()
+        self.userprint(
+            f"INFO: time elapsed to check statistics: {(time_end-time_start)/60.0} minutes"
+        )
 
     def classify_candidates(self, save=True):
         """ Create a model instance and train it. Save the resulting model
@@ -500,14 +506,16 @@ class Candidates(object):
             raise Error("Attempting to run the function classify_candidates " +
                         "but no candidates were found/loaded. Check your " +
                         "formatter")
-        t0 = time.time()
+        time_start = time.time()
         self.userprint("Computing probabilities")
         self.candidates = self.model.compute_probability(self.candidates)
         if save:
             self.save_candidates()
 
-        t1 = time.time()
-        self.userprint(f"INFO: time elapsed to classify candidates: {(t1-t0)/60.0} minutes")
+        time_end = time.time()
+        self.userprint(
+            f"INFO: time elapsed to classify candidates: {(time_end-time_start)/60.0} minutes"
+        )
 
     def find_candidates(self, spectra, columns_candidates):
         """ Find candidates for a given set of spectra
@@ -527,8 +535,7 @@ class Candidates(object):
             raise Error("Mode is set to 'training', but spectra do not " +
                         "have the property 'Z_TRUE'.")
 
-        if self.mode == "test" and "Z_TRUE" not in spectra[0].metadata_names(
-        ):
+        if self.mode == "test" and "Z_TRUE" not in spectra[0].metadata_names():
             raise Error("Mode is set to 'test', but spectra do not " +
                         "have the property 'Z_TRUE'.")
 
@@ -666,25 +673,17 @@ class Candidates(object):
 
         return purity, completeness, found_quasars
 
-    def load_candidates(self, filename=None):
-        """ Load the candidates DataFrame
-
-        Parameter
-        ---------
-        filename : str - Default: None
-        Name of the file from where to load existing candidates.
-        If None, then load from self.name
-        """
+    def load_candidates(self):
+        """ Load the candidates DataFrame """
         settings = self.config.get_section("candidates")
         load_candidates = settings.getboolean("load candidates")
         if load_candidates is None:
-            message = (
-                "In section [candidates], variable 'load candidates' "
-                "is required")
+            message = ("In section [candidates], variable 'load candidates' "
+                       "is required")
             raise Error(message)
         if load_candidates:
             self.userprint("Loading existing candidates")
-            t0 = time.time()
+            time_start = time.time()
             input_candidates = settings.get("input candidates")
             if input_candidates is None:
                 input_candidates = self.name
@@ -697,26 +696,28 @@ class Candidates(object):
             if len(input_candidates_list) > 1:
                 self.userprint("Merging with the other candidate objects")
                 self.merge(input_candidates_list[1:])
-            t1 = time.time()
-            self.userprint(f"INFO: time elapsed to load candidates: {(t1-t0)/60.0} minutes")
+            time_end = time.time()
+            self.userprint(
+                f"INFO: time elapsed to load candidates: {(time_end-time_start)/60.0} minutes"
+            )
 
     def load_spectra(self):
         """ Load spectra and find candidates out of them"""
         if self.input_spectra is None:
-            self.userprint(
-                f"There are no files with spectra to be loaded")
+            self.userprint("There are no files with spectra to be loaded")
             return
         self.userprint("Loading spectra")
-        t0 = time.time()
+        time_start = time.time()
         columns_candidates = []
         self.userprint(
-            f"There are {len(self.input_spectra)} files with spectra to be loaded")
+            f"There are {len(self.input_spectra)} files with spectra to be loaded"
+        )
         for index, spectra_filename in enumerate(self.input_spectra):
-            self.userprint(
-                f"Loading spectra from {spectra_filename} "
-                f"({index}/{len(self.input_spectra)})")
-            t10 = time.time()
-            spectra = Spectra.from_json(load_json(os.path.expandvars(spectra_filename)))
+            self.userprint(f"Loading spectra from {spectra_filename} "
+                           f"({index}/{len(self.input_spectra)})")
+            time_start2 = time.time()
+            spectra = Spectra.from_json(
+                load_json(os.path.expandvars(spectra_filename)))
             if not isinstance(spectra, Spectra):
                 raise Error("Invalid list of spectra")
 
@@ -726,23 +727,23 @@ class Candidates(object):
             # look for candidates
             self.userprint("Looking for candidates")
             self.find_candidates(spectra.spectra_list, columns_candidates)
-            t11 = time.time()
+            time_end2 = time.time()
             self.userprint(
                 f"INFO: time elapsed to find candidates from {spectra_filename}:"
-                f" {(t11-t10)/60.0} minutes")
+                f" {(time_end2-time_start2)/60.0} minutes")
 
-        t1 = time.time()
+        time_end = time.time()
         self.userprint(
-            f"INFO: time elapsed to find candidates: {(t1-t0)/60.0} minutes")
+            f"INFO: time elapsed to find candidates: {(time_end-time_start)/60.0} minutes"
+        )
 
         # convert to dataframe
         self.userprint("Converting candidates to dataframe")
-        t0 = time.time()
+        time_start = time.time()
         self.candidates_list_to_dataframe(columns_candidates)
-        t1 = time.time()
-        self.userprint(
-            "INFO: time elapsed to convert candidates to dataframe: "
-            f"{(t1-t0)/60.0} minutes")
+        time_end = time.time()
+        self.userprint("INFO: time elapsed to convert candidates to dataframe: "
+                       f"{(time_end-time_start)/60.0} minutes")
 
     def merge(self, others_list, save=True):
         """ Merge self.candidates with another candidates object
@@ -768,7 +769,7 @@ class Candidates(object):
 
                 # append to candidates list
                 self.candidates = self.candidates.append(other,
-                                                             ignore_index=True)
+                                                         ignore_index=True)
 
             except TypeError:
                 self.userprint(
@@ -809,8 +810,7 @@ class Candidates(object):
 
         # distinguish from contaminants and non-contaminants i necessary
         if self.mode == "training":
-            contaminants_df = self.candidates[~self.
-                                                __candidates["IS_CORRECT"]]
+            contaminants_df = self.candidates[~self.candidates["IS_CORRECT"]]
             correct_df = self.candidates[self.candidates["IS_CORRECT"]]
 
         # plot the histograms
@@ -835,12 +835,12 @@ class Candidates(object):
 
         # plot the entire sample
         self.candidates[plot_col].hist(ax=fig_ax,
-                                         bins=100,
-                                         range=(-1, 4),
-                                         grid=False,
-                                         histtype='step',
-                                         color='k',
-                                         normed=normed)
+                                       bins=100,
+                                       range=(-1, 4),
+                                       grid=False,
+                                       histtype='step',
+                                       color='k',
+                                       normed=normed)
         # set axis labels
         fig_ax.set_xlabel(plot_col, fontsize=fontsize)
         if normed:
@@ -891,8 +891,7 @@ class Candidates(object):
 
         # distinguish from contaminants and non-contaminants i necessary
         if self.mode == "training":
-            contaminants_df = self.candidates[~self.
-                                                __candidates["IS_CORRECT"]]
+            contaminants_df = self.candidates[~self.candidates["IS_CORRECT"]]
             correct_df = self.candidates[self.candidates["IS_CORRECT"]]
 
         # plot the histograms
@@ -917,12 +916,12 @@ class Candidates(object):
 
             # plot the entire sample
             self.candidates[plot_col].hist(ax=axes[index],
-                                             bins=100,
-                                             range=(-1, 4),
-                                             grid=False,
-                                             histtype='step',
-                                             color='k',
-                                             normed=normed)
+                                           bins=100,
+                                           range=(-1, 4),
+                                           grid=False,
+                                           histtype='step',
+                                           color='k',
+                                           normed=normed)
             # set axis labels
             axes[index].set_xlabel(plot_col, fontsize=fontsize)
             axes[index].set_ylabel("counts", fontsize=fontsize)
@@ -964,7 +963,7 @@ class Candidates(object):
 
         # filter data DataFrame
         data_frame = self.candidates[(~self.candidates["DUPLICATED"]) &
-                                       (self.candidates["PROB"] >= self.prob_cut)]
+                                     (self.candidates["PROB"] >= self.prob_cut)]
 
         results = fitsio.FITS(filename, 'rw', clobber=True)
         names = list(data_frame.columns)
@@ -983,11 +982,13 @@ class Candidates(object):
             raise Error("The function train_model is available in the " +
                         f"training mode only. Detected mode is {self.mode}")
 
-        t0 = time.time()
+        time_start = time.time()
         self.model.train(self.candidates)
         self.model.save_model()
-        t1 = time.time()
-        self.userprint(f"INFO: time elapsed to train model: {(t1-t0)/60.0} minutes")
+        time_end = time.time()
+        self.userprint(
+            f"INFO: time elapsed to train model: {(time_end-time_start)/60.0} minutes"
+        )
 
 
 if __name__ == '__main__':

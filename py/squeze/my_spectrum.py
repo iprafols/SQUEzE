@@ -20,6 +20,7 @@ class MySpectrum(Spectrum):
     PURPOSE: Format spectrum following the required SQUEzE
     constraints
     """
+
     # TODO: add arguments as required
     def __init__(self, flux, ivar, wave, metadata):
         """ Initialize class instance.

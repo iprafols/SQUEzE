@@ -10,7 +10,6 @@ __version__ = "0.1"
 
 import os
 import re
-import json
 from configparser import ConfigParser
 import numpy as np
 
@@ -19,9 +18,8 @@ from squeze.utils import class_from_string, function_from_string
 
 CHECK_PROBS = " ".join([str(item) for item in np.arange(0.9, 0.0, -0.05)])
 
-QSO_COLS = (
-    "ra dec thing_id plate mjd fiberid z_vi class_person z_conf_person "
-    "boss_target1 ancillary_target1 ancillary_target2 eboss_target0")
+QSO_COLS = ("ra dec thing_id plate mjd fiberid z_vi class_person z_conf_person "
+            "boss_target1 ancillary_target1 ancillary_target2 eboss_target0")
 
 default_config = {
     "general": {
@@ -82,12 +80,15 @@ default_config = {
         #"pass cols to random forest": "col1 col2",
 
         # This variable sets the options to be passed to the random forest classifier
-        "random forest options": "$SQUEZE/data/default_random_forest_options.json",
+        "random forest options":
+            "$SQUEZE/data/default_random_forest_options.json",
         # This variable sets the random states of the random forest instances
-        "random state": "2081487193",
+        "random state":
+            "2081487193",
         # This variable specifies if model is saved in json (False) or
         # fits (True) file format
-        "fits file": "False",
+        "fits file":
+            "False",
     },
     "stats": {
         # List of probability cuts to check
@@ -123,7 +124,7 @@ default_config = {
 }
 
 
-class Config(object):
+class Config:
     """ Manage run-time options for SQUEzE
 
     CLASS: Config
@@ -152,7 +153,7 @@ class Config(object):
         self.load_print_function()
 
         # parse the peak finder section
-        self.__peak_finder = None
+        self.peak_finder = None
         self.__format_peak_finder_section()
 
     def __format_peak_finder_section(self):
@@ -168,23 +169,21 @@ class Config(object):
         module_name = f"squeze.{module_name.lower()}"
         try:
             (PeakFinderType, default_args,
-             accepted_options) = class_from_string(peak_finder_name, module_name)
+             accepted_options) = class_from_string(peak_finder_name,
+                                                   module_name)
         except ImportError as error:
-            raise Error(
-                f"Error loading class {peak_finder_name}, "
-                f"module {module_name} could not be loaded") from error
+            raise Error(f"Error loading class {peak_finder_name}, "
+                        f"module {module_name} could not be loaded") from error
         except AttributeError as error:
-            raise Error(
-                f"Error loading class {peak_finder_name}, "
-                f"module {module_name} did not contain requested class"
-            ) from error
+            raise Error(f"Error loading class {peak_finder_name}, "
+                        f"module {module_name} did not contain requested class"
+                       ) from error
 
         for key in section:
             if key != "name" and key not in accepted_options:
-                message = (
-                    "Unrecognised option in section [peak finder]. "
-                    f"Found: '{key}'. Accepted options are "
-                    f"{accepted_options}")
+                message = ("Unrecognised option in section [peak finder]. "
+                           f"Found: '{key}'. Accepted options are "
+                           f"{accepted_options}")
                 raise Error(message)
 
         for key, value in default_args.items():
@@ -192,10 +191,6 @@ class Config(object):
                 section[key] = str(value)
 
         self.peak_finder = (PeakFinderType, section)
-
-    def get_peak_finder(self):
-        """Get the peak finder type and options"""
-        return self.peak_finder
 
     def get_section(self, section):
         """Get the required section of the configuration
@@ -223,13 +218,12 @@ class Config(object):
         try:
             self.userprint = function_from_string(userprint, "squeze.utils")
         except ImportError as error:
-            raise Error(
-                f"Error loading class {peak_finder_name}, "
-                f"module {module_name} could not be loaded") from error
+            raise Error(f"Error loading function {userprint}, "
+                        f"module squeze.utils could not be loaded") from error
         except AttributeError as error:
             raise Error(
-                f"Error loading class {peak_finder_name}, "
-                f"module {module_name} did not contain requested class"
+                f"Error loading function {userprint}, "
+                f"module squeze.utils did not contain requested function"
             ) from error
 
     def set_option(self, section_name, key, value):

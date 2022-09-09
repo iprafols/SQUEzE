@@ -117,7 +117,7 @@ def search_nodes(X, children_left, children_right, features, thresholds,
     return proba
 
 
-class RandomForestClassifier(object):
+class RandomForestClassifier:
     """ The purpose of this class is to create a RandomForestClassifier
     with persistancy. It intends to solve the problem of training
     with sklearn in one environment and not being able to load

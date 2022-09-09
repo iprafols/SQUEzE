@@ -15,6 +15,7 @@ from numba import prange, jit, vectorize
 import numpy as np
 from astropy.table import Table
 
+
 @jit(nopython=True)
 def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
                         lines):
@@ -380,6 +381,7 @@ def compute_is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
                     (z_try_line - z_true[index1] >= -z_precision)):
                     is_line[index1] = True
     return is_line
+
 
 def load_df(filename):
     """Read a candidates dataframe from file

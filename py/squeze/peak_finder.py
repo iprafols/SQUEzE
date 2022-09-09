@@ -20,7 +20,8 @@ defaults = {
     "min significance": 6,
 }
 
-class PeakFinder(object):
+
+class PeakFinder:
     """ Create and manage the peak finder used by SQUEzE
 
     CLASS: PeakFinder
@@ -70,10 +71,8 @@ class PeakFinder(object):
         else:
             peak = np.average(flux[index - self.half_fwhm:index +
                                    self.half_fwhm])
-            cont = np.average(flux[index - self.fwhm:index -
-                                   self.half_fwhm])
-            cont += np.average(flux[index + self.half_fwhm:index +
-                                    self.fwhm])
+            cont = np.average(flux[index - self.fwhm:index - self.half_fwhm])
+            cont += np.average(flux[index + self.half_fwhm:index + self.fwhm])
             cont = cont / 2.0
             ivar_diff = np.sum(ivar[index - self.fwhm:index + self.fwhm])
             if ivar_diff != 0.0:

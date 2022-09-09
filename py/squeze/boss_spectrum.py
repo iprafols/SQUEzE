@@ -23,6 +23,7 @@ class BossSpectrum(Spectrum):
     PURPOSE: Load and format a BOSS spectrum to be digested by
     SQUEzE
     """
+
     def __init__(self,
                  spectrum_file,
                  metadata,
@@ -153,7 +154,7 @@ class BossSpectrum(Spectrum):
             """
         for item in forbidden_wavelenghts:
             self.skymask[np.where((self.wave >= item[0]) &
-                                    (self.wave <= item[1]))] = True
+                                  (self.wave <= item[1]))] = True
 
 
 if __name__ == "__main__":

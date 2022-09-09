@@ -9,7 +9,6 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.1"
 
 import os
-from configparser import ConfigParser
 
 import numpy as np
 import pandas as pd
@@ -17,7 +16,7 @@ import fitsio
 
 from squeze.error import Error
 from squeze.random_forest_classifier import RandomForestClassifier
-from squeze.utils import save_json, deserialize, load_json
+from squeze.utils import save_json, load_json
 
 
 def find_prob(row, columns):
@@ -61,13 +60,15 @@ def find_prob(row, columns):
         prob = np.nan
     return prob
 
-class Model(object):
+
+class Model:
     """ Create, train and/or execute the quasar model to find quasars
 
     CLASS: Model
     PURPOSE: Create, train and/or execute the quasar model to find
     quasars
     """
+
     def __init__(self, config):
         """ Initialize class instance.
 
@@ -98,19 +99,20 @@ class Model(object):
         clf_options = model_config.get("random forest options")
         if selected_cols is None:
             message = (
-                "In section [model], variable 'random forest options' is required")
+                "In section [model], variable 'random forest options' is required"
+            )
             raise Error(message)
         self.clf_options = load_json(os.path.expandvars(clf_options))
 
         # initialize random forest classifier(s)
-        if "high" in self.clf_options.keys() and "low" in self.clf_options.keys():
+        if "high" in self.clf_options.keys() and "low" in self.clf_options.keys(
+        ):
             self.highlow_split = True
             self.clf_options.get("high")["random_state"] = random_state
             self.clf_options.get("low")["random_state"] = random_state
             self.clf_high = RandomForestClassifier(
                 **self.clf_options.get("high"))
-            self.clf_low = RandomForestClassifier(
-                **self.clf_options.get("low"))
+            self.clf_low = RandomForestClassifier(**self.clf_options.get("low"))
         else:
             self.highlow_split = False
             self.clf_options = {"all": self.clf_options}
@@ -322,8 +324,8 @@ class Model(object):
             # compute probabilities for each of the classes
             data_frame_peaks = data_frame[data_frame["Z_TRY"] >= 0.0].copy()
             if data_frame_peaks.shape[0] > 0:
-                data_vector = data_frame_peaks[
-                    self.selected_cols[:-2]].fillna(-9999.99).values
+                data_vector = data_frame_peaks[self.selected_cols[:-2]].fillna(
+                    -9999.99).values
                 data_class_probs = self.clf.predict_proba(data_vector)
 
                 # save the probability for each of the classes
@@ -393,8 +395,8 @@ class Model(object):
             self.clf_low.fit(data_vector, data_class)
 
         else:
-            data_frame = data_frame[(data_frame["Z_TRY"] >= 0.0
-                                    )][self.selected_cols].fillna(-9999.99)
+            data_frame = data_frame[(data_frame["Z_TRY"] >=
+                                     0.0)][self.selected_cols].fillna(-9999.99)
             data_vector = data_frame[self.selected_cols[:-2]].values
             data_class = data_frame.apply(self.__find_class,
                                           axis=1,
@@ -458,8 +460,7 @@ class Model(object):
             cls_instance.clf_low = RandomForestClassifier.from_json(
                 data.get("clf_low"))
         else:
-            cls_instance.clf = RandomForestClassifier.from_json(
-                data.get("clf"))
+            cls_instance.clf = RandomForestClassifier.from_json(data.get("clf"))
 
         return cls_instance
 
@@ -490,16 +491,22 @@ class Model(object):
         hdul = fitsio.FITS(os.path.expandvars(filename))
         if cls_instance.highlow_split:
             cls_instance.clf_high = RandomForestClassifier.from_fits_hdul(
-                hdul, "high", "HIGHINFO",
+                hdul,
+                "high",
+                "HIGHINFO",
                 args=cls_instance.clf_options.get("high"))
             cls_instance.clf_low = RandomForestClassifier.from_fits_hdul(
-                hdul, "low", "LOWINFO", args=cls_instance.clf_options.get("low"))
+                hdul,
+                "low",
+                "LOWINFO",
+                args=cls_instance.clf_options.get("low"))
         else:
             cls_instance.clf = RandomForestClassifier.from_fits_hdul(
                 hdul, "all", "ALLINFO", args=cls_instance.clf_options)
 
         hdul.close()
         return cls_instance
+
 
 if __name__ == '__main__':
     pass

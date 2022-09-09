@@ -14,6 +14,7 @@ import json
 import pandas as pd
 import numpy as np
 
+
 def class_from_string(class_name, module_name):
     """Return a class from a string. The class must be saved in a module
     under squeze with the same name as the class but
@@ -60,6 +61,7 @@ def class_from_string(class_name, module_name):
         accepted_options = []
     return class_object, default_args, accepted_options
 
+
 def function_from_string(function_name, module_name):
     """Return a function from a string. The class must be saved in a module
     under squeze. For example squeze.utils
@@ -88,6 +90,7 @@ def function_from_string(function_name, module_name):
     function_name = getattr(module_object, function_name)
 
     return function_name
+
 
 def serialize(obj):
     """ Serializes complex objects. If the object type is not considered

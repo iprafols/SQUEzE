@@ -134,6 +134,7 @@ class DesiSpectrum(Spectrum):
     PURPOSE: Load and format a DESI spectrum to be digested by
     SQUEzE
     """
+
     def __init__(self,
                  flux_dict,
                  wave_dict,

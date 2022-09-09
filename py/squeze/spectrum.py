@@ -19,7 +19,7 @@ import numpy as np
 from astropy.convolution import convolve, Gaussian1DKernel
 
 
-class Spectrum(object):
+class Spectrum:
     """ Manage the spectrum data
 
     CLASS: Spectrum
@@ -33,6 +33,7 @@ class Spectrum(object):
     Otherwise, the methods flux, ivar, wave, metadata, metadata_by_key,
     and metadata_names, must be overwritten
     """
+
     def __init__(self, flux, ivar, wave, metadata):
         """ Initialize class instance
 

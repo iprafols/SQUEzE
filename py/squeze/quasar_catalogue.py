@@ -14,7 +14,8 @@ import pandas as pd
 
 from squeze.error import Error
 
-class QuasarCatalogue(object):
+
+class QuasarCatalogue:
     """ Manage the quasar catalogue.
 
     CLASS: QuasarCatalogue
@@ -38,8 +39,7 @@ class QuasarCatalogue(object):
         colnames = [col.upper() for col in self.columns]
         colnames.append("SPECID")
         colnames.append("Z_TRUE")
-        self.quasar_catalogue = pd.DataFrame(list(zip(*data)),
-                                             columns=colnames)
+        self.quasar_catalogue = pd.DataFrame(list(zip(*data)), columns=colnames)
         catalogue_hdul.close()
 
     def parse_config(self, config):

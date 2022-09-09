@@ -16,12 +16,13 @@ from squeze.simple_spectrum import SimpleSpectrum
 from squeze.utils import quietprint
 
 
-class Spectra(object):
+class Spectra:
     """ Manage the spectra list
 
     CLASS: Spectra
     PURPOSE: Manage the spectra list
     """
+
     def __init__(self, spectra_list=None):
         """ Initialize class instance
 
