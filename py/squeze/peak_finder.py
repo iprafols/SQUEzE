@@ -62,8 +62,8 @@ class PeakFinder(object):
         spectrum : Spectrum
         The spectrum where peaks are looked for
         """
-        flux = spectrum.flux()
-        ivar = spectrum.ivar()
+        flux = spectrum.flux
+        ivar = spectrum.ivar
 
         if index < self.fwhm or index + self.fwhm > flux.size:
             significance = np.nan

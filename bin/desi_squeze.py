@@ -117,8 +117,8 @@ def main(cmdargs):
 
     # look for candidates
     userprint('Looking for candidates')
-    candidates.find_candidates(squeze_spectra.spectra_list())
-    columns_candidates = squeze_spectra.spectra_list()[0].metadata_names()
+    candidates.find_candidates(squeze_spectra.spectra_list
+    columns_candidates = squeze_spectra.spectra_list[0].metadata_names()
     candidates.candidates_list_to_dataframe(columns_candidates, save=False)
 
     # compute probabilities

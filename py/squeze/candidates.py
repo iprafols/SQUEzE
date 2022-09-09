@@ -99,7 +99,7 @@ class Candidates(object):
 
         # model
         self.__initialize_model()
-        
+
         # initialize peak finder
         self.__initialize_peak_finder()
 
@@ -288,7 +288,7 @@ class Candidates(object):
         # assumed_line='none', significance is set to np.nan
         # and all the metrics set to np.nan
         if peak_indexs.size == 0:
-            candidate_info = spectrum.metadata()
+            candidate_info = spectrum.metadata_values()
             z_try = np.nan
             significance = np.nan
             try_line = 'none'
@@ -310,10 +310,10 @@ class Candidates(object):
             self.candidates_list.append(candidate_info)
         # if there are peaks, compute the metrics and keep the info
         else:
-            wave = spectrum.wave()
-            flux = spectrum.flux()
-            ivar = spectrum.ivar()
-            metadata = spectrum.metadata()
+            wave = spectrum.wave
+            flux = spectrum.flux
+            ivar = spectrum.ivar
+            metadata = spectrum.metadata_values()
 
             new_candidates = compute_line_ratios(wave, flux, ivar, peak_indexs,
                                                  significances,
@@ -721,11 +721,11 @@ class Candidates(object):
                 raise Error("Invalid list of spectra")
 
             if index == 0:
-                columns_candidates += spectra.spectra_list()[0].metadata_names()
+                columns_candidates += spectra.spectra_list[0].metadata_names()
 
             # look for candidates
             self.userprint("Looking for candidates")
-            self.find_candidates(spectra.spectra_list(), columns_candidates)
+            self.find_candidates(spectra.spectra_list, columns_candidates)
             t11 = time.time()
             self.userprint(
                 f"INFO: time elapsed to find candidates from {spectra_filename}:"

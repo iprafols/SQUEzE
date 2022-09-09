@@ -170,9 +170,9 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
     # look for candidates
     userprint("Looking for candidates")
 
-    columns_candidates = spectra.spectra_list()[0].metadata_names()
+    columns_candidates = spectra.spectra_list[0].metadata_names()
 
-    candidates.find_candidates(spectra.spectra_list(),columns_candidates)
+    candidates.find_candidates(spectra.spectra_list,columns_candidates)
 
     if save_file is None:
         candidates.candidates_list_to_dataframe(columns_candidates, save=False)

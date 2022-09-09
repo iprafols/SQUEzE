@@ -17,42 +17,36 @@ from squeze.utils import quietprint
 
 
 class Spectra(object):
+    """ Manage the spectra list
+
+    CLASS: Spectra
+    PURPOSE: Manage the spectra list
     """
-        Manage the spectra list
-
-        CLASS: Spectra
-        PURPOSE: Manage the spectra list
-        """
-
     def __init__(self, spectra_list=None):
         """ Initialize class instance
 
-            Parameters
-            ----------
-            spectra_list : list of Spectrum
-            List of spectra
-            """
+        Arguments
+        ---------
+        spectra_list : list of Spectrum
+        List of spectra
+        """
         if spectra_list is None:
             spectra_list = []
-        self.__spectra_list = spectra_list
+        self.spectra_list = spectra_list
 
     def append(self, spectrum):
         """ Add a spectrum to the list """
         if not isinstance(spectrum, Spectrum):
             raise Error("""Invalid spectrum""")
-        self.__spectra_list.append(spectrum)
+        self.spectra_list.append(spectrum)
 
     def size(self):
         """ Return the number of spectra """
-        return len(self.__spectra_list)
-
-    def spectra_list(self):
-        """ Returns the list of spectra. """
-        return self.__spectra_list
+        return len(self.spectra_list)
 
     def spectrum(self, index):
         """ Return the nth spectrum of the list of spectra. """
-        return self.__spectra_list[index]
+        return self.spectra_list[index]
 
     @classmethod
     def from_json(cls, data):
@@ -62,7 +56,7 @@ class Spectra(object):
             serialized using the serialization method specified in `save_json` function
             present on `utils.py` """
         spectra_list = list(
-            map(SimpleSpectrum.from_json, data.get("_Spectra__spectra_list")))
+            map(SimpleSpectrum.from_json, data.get("spectra_list")))
         return cls(spectra_list)
 
     @classmethod
@@ -70,14 +64,14 @@ class Spectra(object):
         """ This function builds a Spectra instance containing instances of SimpleSpectrum
             from a WEAVE OB
 
-            Parameters
-            ----------
-            ob_data : aps.utils.APSOB
-            OB data loaded using the APS utils APSOB class
+        Arguments
+        ---------
+        ob_data : aps.utils.APSOB
+        OB data loaded using the APS utils APSOB class
 
-            userprint : function - default: quietprint
-            Function to manage the printing with the correct level of verbosity
-            """
+        userprint : function - default: quietprint
+        Function to manage the printing with the correct level of verbosity
+        """
 
         spectra_list = []
         for targs in ob_data.data():

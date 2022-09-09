@@ -23,8 +23,8 @@ except ImportError as error:
 def combine_bands(flux_dict, wave_dict, ivar_dict):
     """ Combine the different bands together
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     flux_dict : dict
     A dictionary with the flux arrays of the different reobserbations.
     Each key will contain an array with the fluxes in a given band.
@@ -37,8 +37,8 @@ def combine_bands(flux_dict, wave_dict, ivar_dict):
     A dictionary with the ivar arrays of the different reobservations.
     Each key will contain an array with the ivars in a given band
 
-    Returns
-    -------
+    Return
+    ------
     flux : np.array
     Array containing the flux
 
@@ -68,16 +68,16 @@ def combine_bands(flux_dict, wave_dict, ivar_dict):
 def combine_reobservations(flux_dict, ivar_dict):
     """ Combine the different reobservations into a single one
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     flux_dict: dict
     Dictionary containing the fluxes for all reobserbations
 
     ivar_dict: dict
     Dictionary containing the inverse variances for all reobserbations
 
-    Returns
-    -------
+    Return
+    ------
     flux_dict: dict
     Dictionary containing the flux with combined reobserbations
 
@@ -104,21 +104,21 @@ def combine_reobservations(flux_dict, ivar_dict):
 def select_first_reobservation(flux_dict, ivar_dict):
     """ Discard all reobservations except for the first one
 
-        Parameters
-        ----------
-        flux_dict: dict
-        Dictionary containing the fluxes for all reobserbations
+    Arguments
+    ---------
+    flux_dict: dict
+    Dictionary containing the fluxes for all reobserbations
 
-        ivar_dict: dict
-        Dictionary containing the inverse variances for all reobserbations
+    ivar_dict: dict
+    Dictionary containing the inverse variances for all reobserbations
 
-        Returns
-        -------
-        flux_dict: dict
-        Dictionary containing the flux for the first reobserbations
+    Return
+    ------
+    flux_dict: dict
+    Dictionary containing the flux for the first reobserbations
 
-        ivar_dict: dict
-        Dictionary containing the inverse variance for the first reobserbations
+    ivar_dict: dict
+    Dictionary containing the inverse variance for the first reobserbations
     """
     # loop over bands
     for band in flux_dict:
@@ -128,14 +128,12 @@ def select_first_reobservation(flux_dict, ivar_dict):
 
 
 class DesiSpectrum(Spectrum):
+    """ Load and format a DESI  spectrum to be digested by SQUEzE
+
+    CLASS: DesiSpectrum
+    PURPOSE: Load and format a DESI spectrum to be digested by
+    SQUEzE
     """
-        Load and format a DESI  spectrum to be digested by SQUEzE
-
-        CLASS: DesiSpectrum
-        PURPOSE: Load and format a DESI spectrum to be digested by
-        SQUEzE
-        """
-
     def __init__(self,
                  flux_dict,
                  wave_dict,
@@ -145,31 +143,31 @@ class DesiSpectrum(Spectrum):
                  single_exp=False):
         """ Initialize class instance
 
-            Parameters
-            ----------
-            flux_dict : dict
-            A dictionary with the flux arrays of the different reobserbations.
-            Each key will contain an array with the fluxes in a given band.
+        Arguments
+        ---------
+        flux_dict : dict
+        A dictionary with the flux arrays of the different reobserbations.
+        Each key will contain an array with the fluxes in a given band.
 
-            wave_dict : dict
-            A dictionary with the wavalegth array.
-            Each key will contain an array with the fluxes in a given band.
+        wave_dict : dict
+        A dictionary with the wavalegth array.
+        Each key will contain an array with the fluxes in a given band.
 
-            ivar_dict : dict
-            A dictionary with the ivar arrays of the different reobservations.
-            Each key will contain an array with the ivars in a given band
+        ivar_dict : dict
+        A dictionary with the ivar arrays of the different reobservations.
+        Each key will contain an array with the ivars in a given band
 
-            mask_dict : dict
-            A dictionary with the mask arrays of the different reobservations.
-            Each key will contain an array with the mask in a given band.
+        mask_dict : dict
+        A dictionary with the mask arrays of the different reobservations.
+        Each key will contain an array with the mask in a given band.
 
-            metadata : dict
-            A dictionary with the spectral properties to be added in the
-            catalogue. Must contain the key "specid".
+        metadata : dict
+        A dictionary with the spectral properties to be added in the
+        catalogue. Must contain the key "specid".
 
-            single_exp : bool
-            If True, loads only the first reobservation. Otherwise combine them.
-            """
+        single_exp : bool
+        If True, loads only the first reobservation. Otherwise combine them.
+        """
         # mask inverse variance arrays
         for key in ivar_dict:
             ivar_dict[key][mask_dict.get(key)] = 0.0

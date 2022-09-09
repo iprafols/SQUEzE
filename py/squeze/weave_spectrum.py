@@ -15,31 +15,29 @@ from squeze.spectrum import Spectrum
 
 
 class WeaveSpectrum(Spectrum):
+    """ Load and format a WEAVE spectrum to be digested by SQUEzE
+
+    CLASS: WeaveSpectrum
+    PURPOSE: Load and format a WEAVE spectrum to be digested by
+    SQUEzE
     """
-        Load and format a WEAVE spectrum to be digested by SQUEzE
-
-        CLASS: WeaveSpectrum
-        PURPOSE: Load and format a WEAVE spectrum to be digested by
-        SQUEzE
-        """
-
     def __init__(self, spectrum_dict, wave, metadata):
         """ Initialize class instance
 
-            Parameters
-            ----------
-            spectrum_dict : dict
-            A dictionary with the flux, inverse variance, and wavelengths for the red CCD.
-            Keys are "red_flux" and "red_ivar", and  with the flux, inverse variance, and
-            wavelengths for the blue CCD. Keys are "blue_flux" and "blue_ivar".
+        Arguments
+        ---------
+        spectrum_dict : dict
+        A dictionary with the flux, inverse variance, and wavelengths for the red CCD.
+        Keys are "red_flux" and "red_ivar", and  with the flux, inverse variance, and
+        wavelengths for the blue CCD. Keys are "blue_flux" and "blue_ivar".
 
-            wave : dict
-            Dictionary with the wavelength information. Must contain the arrays "red_wave"
-            and "blue_wave", and the floats "red_delta_wave" and "blue_deltas_wave".
+        wave : dict
+        Dictionary with the wavelength information. Must contain the arrays "red_wave"
+        and "blue_wave", and the floats "red_delta_wave" and "blue_deltas_wave".
 
-            metadata : dict
-            A dictionary with the metadata. Keys should be strings
-            """
+        metadata : dict
+        A dictionary with the metadata. Keys should be strings
+        """
         # check that "specid" is present in metadata
         if "SPECID" not in metadata.keys():
             raise Error("""The property "SPECID" must be present in metadata""")
@@ -50,42 +48,41 @@ class WeaveSpectrum(Spectrum):
 
 def get_spectra(spectrum_dict, wave):
     """ Given the fluxes, inverse variances and wavelengths for the red and blue CCDs,
-        return create a combined spectrum.
-        Fill the flux in the inter-CCD gaps using a linear interpolation of the neighbouring
-        pixels. This will not affect the computation of the ratios: they are weigthed using
-        the inverse variance, which is zero in this section; and will stabilize the peak
-        finding algorithm.
+    return create a combined spectrum.
+    Fill the flux in the inter-CCD gaps using a linear interpolation of the neighbouring
+    pixels. This will not affect the computation of the ratios: they are weigthed using
+    the inverse variance, which is zero in this section; and will stabilize the peak
+    finding algorithm.
 
-        Parameters
-        ----------
-        spectrum_dict : dict
-        A dictionary with the flux, inverse variance, and wavelengths for the red CCD.
-        Keys are "red_flux" and "red_ivar", and  with the flux, inverse variance, and
-        wavelengths for the blue CCD. Keys are "blue_flux" and "blue_ivar".
+    Arguments
+    ---------
+    spectrum_dict : dict
+    A dictionary with the flux, inverse variance, and wavelengths for the red CCD.
+    Keys are "red_flux" and "red_ivar", and  with the flux, inverse variance, and
+    wavelengths for the blue CCD. Keys are "blue_flux" and "blue_ivar".
 
-        wave : dict
-        Dictionary with the wavelength information. Must contain the arrays "red_wave"
-        and "blue_wave", and the floats "red_delta_wave" and "blue_deltas_wave".
+    wave : dict
+    Dictionary with the wavelength information. Must contain the arrays "red_wave"
+    and "blue_wave", and the floats "red_delta_wave" and "blue_deltas_wave".
 
-        Returns
-        -------
-        A tupple with the flux, inverse_variance, and wavelength
-        """
-
+    Return
+    ------
+    A tupple with the flux, inverse_variance, and wavelength
+    """
     # nested function to drop leading and trailing zeros
     def drop_leading_trailing_zeros(data_frame):
         """ Drop leading and trailing zeros
 
-            Parameters
-            ----------
-            data_frame : pd.DataFrame
-            A dataframe with the flux and the inverse variance. Index of the DataFrame
-            is the wavelength.
+        Arguments
+        ---------
+        data_frame : pd.DataFrame
+        A dataframe with the flux and the inverse variance. Index of the DataFrame
+        is the wavelength.
 
-            Returns
-            -------
-            The modified DataFrame
-            """
+        Return
+        ------
+        The modified DataFrame
+        """
         non_zeros = data_frame[(data_frame["flux"] != 0.0) &
                                (data_frame["ivar"] != 0.0)]
         data_frame = data_frame[(data_frame.index >= non_zeros.iloc[1].name) &
@@ -96,19 +93,19 @@ def get_spectra(spectrum_dict, wave):
     def fill_gap(data_frame, gap):
         """ Fill the gap by linearly interpolating between the edges
 
-            Parameters
-            ----------
-            data_frame : pd.DataFrame
-            A dataframe with the flux and the inverse variance. Index of the DataFrame
-            is the wavelength.
+        Arguments
+        ---------
+        data_frame : pd.DataFrame
+        A dataframe with the flux and the inverse variance. Index of the DataFrame
+        is the wavelength.
 
-            gap : tuple
-            A tuple with the initial and ending wavelengths for the gap
+        gap : tuple
+        A tuple with the initial and ending wavelengths for the gap
 
-            Returns
-            -------
-            The modified DataFrame
-            """
+        Return
+        ------
+        The modified DataFrame
+        """
         gap_slope = (data_frame[data_frame.index == gap[0]]["flux"].values - \
             data_frame[data_frame.index == gap[1]]["flux"].values)/(gap[0]-gap[1])
         gap_startflux = data_frame[data_frame.index == gap[0]]["flux"]
@@ -127,19 +124,19 @@ def get_spectra(spectrum_dict, wave):
     def find_gap(data_frame, delta_wave):
         """ Find the gap in the spectrum
 
-            Parameters
-            ----------
-            data_frame : pd.DataFrame
-            A dataframe with the flux and the inverse variance. Index of the DataFrame
-            is the wavelength.
+        Arguments
+        ---------
+        data_frame : pd.DataFrame
+        A dataframe with the flux and the inverse variance. Index of the DataFrame
+        is the wavelength.
 
-            delta_wave : float
-            Wavelength step for the wavelength array in the DataFrame
+        delta_wave : float
+        Wavelength step for the wavelength array in the DataFrame
 
-            Returns
-            -------
-            A tuple with the start and end of the gap
-            """
+        Return
+        ------
+        A tuple with the start and end of the gap
+        """
         zeros = data_frame[(data_frame["flux"] == 0.0) &
                            (data_frame["ivar"] == 0.0)]
         gap_start = zeros.iloc[0].name - 4.0 * delta_wave

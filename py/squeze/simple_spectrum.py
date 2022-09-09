@@ -13,16 +13,15 @@ from squeze.utils import deserialize
 
 
 class SimpleSpectrum(Spectrum):
-    """
-        Manage the spectrum data
+    """ Manage the spectrum data
 
-        CLASS: SimpleSpectrum
-        PURPOSE: The purpose of this class is twofold.
-        First it serves as tool to create instances of class Spectrum loaded from
-        JSON files. Second, it provides an example of the minimum requirements a
-        derived Spectrum class should have in order for them to run on SQUEzE
-        (for this second purpose, ignore the from_json method)
-        """
+    CLASS: SimpleSpectrum
+    PURPOSE: The purpose of this class is twofold.
+    First it serves as tool to create instances of class Spectrum loaded from
+    JSON files. Second, it provides an example of the minimum requirements a
+    derived Spectrum class should have in order for them to run on SQUEzE
+    (for this second purpose, ignore the from_json method)
+    """
 
     @classmethod
     def from_json(cls, data):
@@ -32,11 +31,11 @@ class SimpleSpectrum(Spectrum):
             `utils.py`. The current deserialisation includes the
             possibility to interpret the flux, ivar, and wave arrays as either
             normal (np.array) or masked (np.ma.array) arrays."""
-        flux = deserialize(data.get("_flux"))
-        ivar = deserialize(data.get("_ivar"))
-        wave = deserialize(data.get("_wave"))
+        flux = deserialize(data.get("flux"))
+        ivar = deserialize(data.get("ivar"))
+        wave = deserialize(data.get("wave"))
         metadata = {
-            key.upper(): value for key, value in data.get("_metadata").items()
+            key.upper(): value for key, value in data.get("metadata").items()
         }
 
         return cls(flux, ivar, wave, metadata)

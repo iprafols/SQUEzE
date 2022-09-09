@@ -15,8 +15,6 @@ import numpy as np
 import pandas as pd
 import fitsio
 
-#from squeze.defaults import RANDOM_STATE
-#from squeze.defaults import RANDOM_FOREST_OPTIONS
 from squeze.error import Error
 from squeze.random_forest_classifier import RandomForestClassifier
 from squeze.utils import save_json, deserialize, load_json
