@@ -263,8 +263,11 @@ class Config:
         for key, value in section_other.items():
             if key not in ["input spectra", "input candidates"]:
                 section[key] = value
-        # other sections
+        # peak finder section
         self.config["peak finder"] = other.get_section("peak finder")
+        self.__format_peak_finder_section()
+        
+        # model section
         self.config["model"] = other.get_section("model")
 
     def write(self, config_file):
