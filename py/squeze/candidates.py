@@ -69,7 +69,7 @@ class Candidates:
         self.mode = general_config.get("mode")
         if self.mode not in MODES:
             message = (
-                f"Invalid mode. Expected one of {', '.join(MODES)}. Found"
+                f"Invalid mode. Expected one of {', '.join(MODES)}. Found "
                 f"{self.mode}")
             raise Error(message)
 
@@ -229,7 +229,6 @@ class Candidates:
             else:
                 raise Error("Invalid model name")
             self.config.set_option("model", "filename", model_name)
-
             self.model = Model(self.config)
         # read trained model from file
         else:
@@ -245,11 +244,6 @@ class Candidates:
                 model_config_file = model_filename.replace(".json", ".ini")
             else:
                 model_config_file = model_filename.replace(".fits.gz", ".ini")
-            print("#######################")
-            print(model_config_file)
-            print(os.path.expandvars(model_config_file))
-            print(os.path.exists(os.path.expandvars(model_config_file)))
-            print("#######################")
             model_config = Config(model_config_file)
             self.model = Model.from_file(model_config, model_filename)
             time_end = time.time()
@@ -674,8 +668,14 @@ class Candidates:
 
         return purity, completeness, found_quasars
 
-    def load_candidates(self):
-        """ Load the candidates DataFrame """
+    def load_candidates(self, save=True):
+        """ Load the candidates DataFrame
+
+        Arguments
+        ---------
+        save : bool - Defaut: True
+        If True, save candidates before exiting
+        """
         settings = self.config.get_section("candidates")
         load_candidates = settings.getboolean("load candidates")
         if load_candidates is None:
@@ -697,6 +697,10 @@ class Candidates:
             if len(input_candidates_list) > 1:
                 self.userprint("Merging with the other candidate objects")
                 self.merge(input_candidates_list[1:])
+
+            if save:
+                self.save_candidates()
+
             time_end = time.time()
             self.userprint(
                 f"INFO: time elapsed to load candidates: {(time_end-time_start)/60.0} minutes"
@@ -746,16 +750,13 @@ class Candidates:
         self.userprint("INFO: time elapsed to convert candidates to dataframe: "
                        f"{(time_end-time_start)/60.0} minutes")
 
-    def merge(self, others_list, save=True):
+    def merge(self, others_list):
         """ Merge self.candidates with another candidates object
 
         Parameter
         ---------
         others_list : pd.DataFrame
         The other candidates object to merge
-
-        save : bool - Defaut: True
-        If True, save candidates before exiting
         """
         if self.mode != "merge":
             raise Error("The function merge is available in the " +
@@ -776,9 +777,6 @@ class Candidates:
                 self.userprint(
                     f"Error occured when loading file {candidates_filename}.")
                 self.userprint("Ignoring file")
-
-        if save:
-            self.save_candidates()
 
     def plot_histograms(self, plot_col, normed=True):
         """ Plot the histogram of the specified column
@@ -983,6 +981,7 @@ class Candidates:
             raise Error("The function train_model is available in the " +
                         f"training mode only. Detected mode is {self.mode}")
 
+        self.userprint("Training model")
         time_start = time.time()
         self.model.train(self.candidates)
         self.model.save_model()
