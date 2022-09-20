@@ -266,7 +266,7 @@ class Config:
         # peak finder section
         self.config["peak finder"] = other.get_section("peak finder")
         self.__format_peak_finder_section()
-        
+
         # model section
         self.config["model"] = other.get_section("model")
 
