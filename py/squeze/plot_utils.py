@@ -8,6 +8,9 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
+import numpy as np
+import pandas as pd
+import re
 
 COLOR_LIST = [
     '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2']
@@ -54,7 +57,7 @@ def compare_performances_plot(stats_dict, names, labels, control_name, plot_f1=F
         names = [names]
         labels = [labels]
 
-    if len(names) > len(color_list):
+    if len(names) > len(COLOR_LIST):
         print("Too many items to plot. Either add more colors to the list or else remove some items to plot")
         return
 
@@ -94,43 +97,43 @@ def compare_performances_plot(stats_dict, names, labels, control_name, plot_f1=F
             lns_lowz_f1 += ax_lowz_f1.plot(
                 stats_dict.get(name).get("mag_cuts"),
                 stats_dict.get(name).get("f1_score_vs_mag")[:, 0],
-                label=label, color=color_list[index], linestyle="solid")
+                label=label, color=COLOR_LIST[index], linestyle="solid")
             lns_highz_f1 += ax_highz_f1.plot(
                 stats_dict.get(name).get("mag_cuts"),
                 stats_dict.get(name).get("f1_score_vs_mag")[:, 1],
-                label=label, color=color_list[index], linestyle="solid")
+                label=label, color=COLOR_LIST[index], linestyle="solid")
         control = stats_dict.get(control_name).get("f1_score_vs_mag")
-        ax_lowz_diff += ax_lowz_diff.plot(
+        lns_lowz_diff += ax_lowz_diff.plot(
             stats_dict.get(name).get("mag_cuts"),
             stats_dict.get(name).get("f1_score_vs_mag")[:, 0] - control[:, 0],
-            label="fiducial", color=color_list[index], linestyle="solid")
+            label=label, color=COLOR_LIST[index], linestyle="solid")
         lns_highz_diff += ax_highz_diff.plot(
             stats_dict.get(name).get("mag_cuts"),
             stats_dict.get(name).get("f1_score_vs_mag")[:, 1] - control[:, 1],
-            label="fiducial", color=color_list[index], linestyle="solid")
+            label=label, color=COLOR_LIST[index], linestyle="solid")
 
         if add_purity:
             if plot_f1:
                 ax_lowz_f1.plot(
                     stats_dict.get(name).get("mag_cuts"),
                     stats_dict.get(name).get("purity_vs_mag")[:, 0],
-                    label=label, color=color_list[index], linestyle="dashed",
+                    label=label, color=COLOR_LIST[index], linestyle="dashed",
                     alpha=0.5)
                 ax_highz_f1.plot(
                     stats_dict.get(name).get("mag_cuts"),
                     stats_dict.get(name).get("purity_vs_mag")[:, 1],
-                    label=label, color=color_list[index], linestyle="dashed",
+                    label=label, color=COLOR_LIST[index], linestyle="dashed",
                     alpha=0.5)
             control = stats_dict.get(control_name).get("purity_vs_mag")
             ax_lowz_diff.plot(
                 stats_dict.get(name).get("mag_cuts"),
                 stats_dict.get(name).get("purity_vs_mag")[:, 0] - control[:, 0],
-                label="fiducial", color=color_list[index],
+                label=label, color=COLOR_LIST[index],
                 linestyle="dashed")
             ax_highz_diff.plot(
                 stats_dict.get(name).get("mag_cuts"),
                 stats_dict.get(name).get("purity_vs_mag")[:, 1] - control[:, 1],
-                label="fiducial", color=color_list[index],
+                label=label, color=COLOR_LIST[index],
                 linestyle="dashed", alpha=0.5)
 
         if add_completeness:
@@ -138,30 +141,30 @@ def compare_performances_plot(stats_dict, names, labels, control_name, plot_f1=F
                 ax_lowz_f1.plot(
                     stats_dict.get(name).get("mag_cuts"),
                     stats_dict.get(name).get("completeness_vs_mag")[:, 0],
-                    label=label, color=color_list[index], linestyle="dotted",
+                    label=label, color=COLOR_LIST[index], linestyle="dotted",
                     alpha=0.5)
                 ax_highz_f1.plot(
                     stats_dict.get(name).get("mag_cuts"),
                     stats_dict.get(name).get("completeness_vs_mag")[:, 1],
-                    label=label, color=color_list[index], linestyle="dotted",
+                    label=label, color=COLOR_LIST[index], linestyle="dotted",
                     alpha=0.5)
             control = stats_dict.get(control_name).get("completeness_vs_mag")
             ax_lowz_diff.plot(
                 stats_dict.get(name).get("mag_cuts"),
                 stats_dict.get(name).get("completeness_vs_mag")[:, 0] - control[:, 0],
-                label="fiducial", color=color_list[index],
+                label=label, color=COLOR_LIST[index],
                 linestyle="dotted", alpha=0.5)
             ax_highz_diff.plot(
                 stats_dict.get(name).get("mag_cuts"),
                 stats_dict.get(name).get("completeness_vs_mag")[:, 1] - control[:, 1],
-                label="fiducial", color=color_list[index],
+                label=label, color=COLOR_LIST[index],
                 linestyle="dotted", alpha=0.5)
 
     # axis settings, labels
     xlim = (min(stats_dict.get(name).get("mag_cuts")),
             max(stats_dict.get(name).get("mag_cuts")))
     if plot_f1:
-        ax_lowz_f1.set_title(case[0], fontsize=fontsize)
+        ax_lowz_f1.set_title(r"$z < 2.1$", fontsize=fontsize)
         ax_lowz_f1.set_ylabel(r"$f_{1}$", fontsize=fontsize)
         ax_lowz_f1.yaxis.set_major_locator(MultipleLocator(0.05))
         ax_lowz_f1.tick_params(
@@ -169,7 +172,7 @@ def compare_performances_plot(stats_dict, names, labels, control_name, plot_f1=F
             left=True, right=False, labelleft=True, labelright=False)
         ax_lowz_f1.set_xlim(xlim)
 
-        ax_highz_f1.set_title(case[1], fontsize=fontsize)
+        ax_highz_f1.set_title(r"$z \geq 2.1$", fontsize=fontsize)
         ax_highz_f1.yaxis.set_major_locator(MultipleLocator(0.05))
         ax_highz_f1.tick_params(
             labelsize=labelsize, size=ticksize, width=tickwidth,

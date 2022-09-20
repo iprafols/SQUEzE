@@ -6,7 +6,13 @@
     """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
-def compute_statistics(df_candidates, df_truth):
+import tqdm.notebook as tqdm
+import numpy as np
+import pandas as pd
+
+from squeze.utils import quietprint, verboseprint
+
+def compute_stats(df_candidates, df_truth):
     """ Compute summary statistics.
     Two sets of summary statistics are computed. The primary one (without the *)
     requiring the redshift to be correct in correct classifications. The
@@ -142,7 +148,7 @@ def compute_statistics(df_candidates, df_truth):
 
     return stats
 
-def compute_stats_vs_mag(mag_cuts):
+def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
     """ Compute the statistics as a function of magnitude.
     Include all the objects up to the cut magnitude. Discard fainter objects.
 
@@ -151,21 +157,28 @@ def compute_stats_vs_mag(mag_cuts):
     mag_cuts: list of float
     The list of magnitude cuts to explore
 
+    df_candidates: pd.DataFrame
+    A dataframe with the predictions
+
+    df_truth: pd.DataFrame
+    A dataframe with the truth
+
     Return
     ------
-    stats_vs_mag: pd.DataFrame
+    stats_vs_mag: dict
     The statistics as a function of magnitude
     """
     # Compute statistics vs mag
-    mag_cuts = np.arange(19.6, 24.3, 0.1)
     prob_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
     purity_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
     completeness_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
     f1_score_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
+
+    print("Compute stats as a function of magnitude: loop iterations: ", mag_cuts.size)
     for index, mag_cut in enumerate(tqdm.tqdm(mag_cuts)):
-        stats = compute_statistics(
-            df_validation_aux[~(df_validation_aux["DUPLICATED"]) &
-                              (df_validation_aux["R_MAG"] <= mag_cut)],
+        stats = compute_stats(
+            df_candidates[~(df_candidates["DUPLICATED"]) &
+                          (df_candidates["R_MAG"] <= mag_cut)],
             df_truth[df_truth["R_MAG"] <= mag_cut])
 
         opt_prob = find_prob(stats, do_print=False, opt_f1score=False)
@@ -174,12 +187,19 @@ def compute_stats_vs_mag(mag_cuts):
         completeness_vs_mag[index] = opt_prob["completeness"].values
         f1_score_vs_mag[index] = opt_prob["f1_score"].values
 
-    stats_vs_mag = pd.DataFrame({
-        "prob": prob_vs_mag,
-        "purity": purity_vs_mag,
-        "completeness": completeness_vs_mag,
-        "f1_score": f1_score_vs_mag,
-    })
+    print("Compute stats for the entire sample")
+    stats = compute_stats(
+        df_candidates[~(df_candidates["DUPLICATED"])], df_truth)
+    print("Done")
+
+    stats_vs_mag = {
+        "stats all": stats,
+        "mag_cuts": mag_cuts,
+        "prob_vs_mag": prob_vs_mag,
+        "purity_vs_mag": purity_vs_mag,
+        "completeness_vs_mag": completeness_vs_mag,
+        "f1_score_vs_mag": completeness_vs_mag,
+    }
 
     return stats_vs_mag
 
