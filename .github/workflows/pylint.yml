@@ -18,6 +18,8 @@ jobs:
         sudo apt-get -y install libbz2-dev
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements-extras.txt ]; then pip install -r requirements-extras.txt; fi
+        if [ -f requirements-train.txt ]; then pip install -r requirements-train.txt; fi
         pip install pylint
     - name: Install SQUEzE
       run: pip install -e .

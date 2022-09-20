@@ -114,7 +114,7 @@ default_config = {
 
         # Name of the column that will be used as specid. Must be included
         # in "columns".
-        "specid column ": "THINGID",
+        "specid column": "THINGID",
 
         # Name of the column that will be used as z_true. Must be included
         # in "columns".
@@ -257,8 +257,17 @@ class Config:
         other: Config
         A configuration instance
         """
-        self.config["candidates"] = other.get_section("candidates")
+        # candidates section
+        section = self.config["candidates"]
+        section_other = other.get_section("candidates")
+        for key, value in section_other.items():
+            if key not in ["input spectra", "input candidates"]:
+                section[key] = value
+        # peak finder section
         self.config["peak finder"] = other.get_section("peak finder")
+        self.__format_peak_finder_section()
+
+        # model section
         self.config["model"] = other.get_section("model")
 
     def write(self, config_file):
