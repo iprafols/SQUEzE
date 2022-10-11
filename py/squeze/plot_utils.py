@@ -7,15 +7,26 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
 import re
+import os
 
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import numpy as np
 import pandas as pd
 
+from squeze.utils import deserialize, load_json
+
 COLOR_LIST = [
     '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2'
 ]
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+os.environ["THIS_DIR"] = THIS_DIR
+SQUEZE = THIS_DIR.split("py/squeze")[0]
+os.environ["SQUEZE"] = SQUEZE
+LINES = deserialize(load_json(os.path.expandvars("$SQUEZE/data/default_lines.json")))
+
+
 
 
 def compare_performances_plot(stats_dict,
@@ -257,6 +268,132 @@ def compare_performances_plot(stats_dict,
     ax_legend.legend(lns_highz_diff, labels, ncol=3, loc=9, fontsize=fontsize)
     ax_legend.axis('off')
 
+def plot_peaks(spectra, peak_finders, labels, markers, offset=1.0, plot_lines=True):
+    """ Plot the peaks found by one or more peak finder instances
+    All peak finders accepted by SQUEzE can be passed
+
+    Arguments
+    ---------
+    spectra: Spectra
+    An instance of Spectra with the spectra to plot
+
+    peak_finder: list
+    A list of valid peak finder instances.
+
+    labels: list of str
+    Labels of the different peak finders. Must have same length as peak_finder
+
+    markers: list of str
+    Matplotlib marker strings for the different peak finders
+
+    offset: float or list of float - Default: 1.0
+    Offset of the peak markers. Offset is computed by multiplying the flux
+    by the value in offset. If a float, use the same value for all peak
+    finders. If a list, must have same length as peak_finder. The peaks of each
+    peak finder will be offset using the respective offset
+
+    plot_lines: bool - Default: True
+    If True, overplot the position of the emision lines in the spectra of
+    quasars and galaxies
+    """
+    if len(peak_finders) > len(COLOR_LIST):
+        print(
+            "Too many items to plot. Either add more colors to the list or "
+            "else remove some items to plot"
+        )
+        return
+    assert len(peak_finders) == len(labels)
+    assert len(peak_finders) == len(markers)
+    assert isinstance(offset, float) or len(peak_finders) == len(offset)
+    if isinstance(offset, float):
+        offset = [offset]*len(peak_finders)
+
+    num_spectra = spectra.size()
+
+    # plot options
+    fontsize = 14
+    labelsize = 12
+    ticksize = 8
+    tickwidth = 2
+    pad = 6
+    ncols = 2
+    nrows = num_spectra//2
+    if num_spectra % 2 > 0:
+        nrows += 1
+    figsize = (13, 5*nrows)
+    fig = plt.figure(figsize=figsize)
+    gs = fig.add_gridspec(nrows=nrows+1, ncols=ncols)
+    gs.update(wspace=0.25,
+              hspace=0.4,
+              bottom=0.15,
+              left=0.1,
+              right=0.95,
+              top=0.9)
+    axes = [fig.add_subplot(gs[index_row, index_col])
+            for index_row in range(nrows)
+            for index_col in range(ncols)]
+    ax_legend = fig.add_subplot(gs[-1, :])
+
+    lines = []
+    for index, (ax, spectrum) in enumerate(zip(axes, spectra.spectra_list)):
+        specid = spectrum.metadata_by_key("SPECID")
+        rmag = spectrum.metadata_by_key("R_MAG")
+        z_true = spectrum.metadata_by_key("Z_TRUE")
+        class_person = spectrum.metadata_by_key("CLASS_PERSON")
+
+        if index == 0:
+            lines += ax.plot(spectrum.wave, spectrum.flux, "k-", label="spectrum")
+        else:
+            ax.plot(spectrum.wave, spectrum.flux, "k-")
+        ax.set_title(f"SPECID: {specid}, R_MAG: {rmag}, Z_TRUE: {z_true:.2f}",
+                     fontsize=labelsize)
+
+        for index_pf, peak_finder in enumerate(peak_finders):
+            peaks, _ = peak_finder.find_peaks(spectrum)
+            if index == 0:
+                lines += ax.plot(
+                    spectrum.wave[peaks],
+                    spectrum.flux[peaks] * offset[index_pf],
+                    color=COLOR_LIST[index_pf],
+                    linestyle='',
+                    marker=markers[index_pf],
+                    label=f"{labels[index_pf]} peaks")
+            else:
+                ax.plot(
+                    spectrum.wave[peaks],
+                    spectrum.flux[peaks]  * offset[index_pf],
+                    color=COLOR_LIST[index_pf],
+                    linestyle='',
+                    marker=markers[index_pf])
+
+        if plot_lines and class_person in [3, 4]:
+            ylim = ax.get_ylim()
+            xlim = ax.get_xlim()
+            emission_lines = LINES["WAVE"].values*(1+z_true)
+            w = np.where((xlim[0] < emission_lines) & (emission_lines < xlim[1]))
+            ax.vlines(emission_lines[w], ylim[0], ylim[1], colors="k", linestyle='--', alpha=0.5)
+            ax.set_ylim(ylim)
+
+
+    # axis settings, labels
+    for ax in axes:
+        ax.set_ylabel(r"flux", fontsize=fontsize)
+        ax.set_xlabel(r"wavelength", fontsize=fontsize)
+        ax.tick_params(
+            labelsize=labelsize,
+            size=ticksize,
+            width=tickwidth,
+            pad=pad,
+            left=True,
+            right=False,
+            labelleft=True,
+            labelright=False)
+
+
+    # legend
+    labels = [lns.get_label() for lns in lines]
+    ax_legend.legend(lines, labels, ncol=3, loc=9, fontsize=fontsize)
+    ax_legend.axis('off')
 
 def redshift_precision_histogram(df, mag_bins, title=None):
     """ Plot the redshift precision histogram. Also print a table summarising

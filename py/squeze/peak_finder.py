@@ -12,12 +12,8 @@ accepted_options = ["min significance", "width"]
 
 defaults = {
     # This variable sets the width (in pixels) of the typical peak to be detected.
-    # This parameter will be passed to the peak finding function. Check the
-    # documentation on the module squeze_peak_finder for more details
     "width": 70,
     # This variable sets the minimum signal-to-noise ratio of a peak.
-    # This parameter will be passed to the peak finding function. Check the
-    # documentationon the module squeze_peak_finder for more details
     "min significance": 6,
 }
 
