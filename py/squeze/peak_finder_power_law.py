@@ -18,7 +18,7 @@ accepted_options = ["min significance"]
 
 defaults = {
     # This variable sets the minimum sigmas of an outlier.
-    "min significance": 3.0,
+    "min significance": 2.0,
 }
 
 
@@ -59,7 +59,7 @@ class PeakFinderPowerLaw:
         ivar = spectrum.ivar
         outliers_mask = np.ones_like(flux, dtype=bool)
         significances = np.zeros_like(flux)
-        best_fit = (0.0, 0.0)
+        best_fit = np.array((0.0, 0.0))
 
         userprint=quietprint
         do_fit = True
@@ -97,8 +97,6 @@ class PeakFinderPowerLaw:
         # select only peaks
         peaks = select_peaks(
             wavelength, flux, outliers_mask, best_fit)
-        #print(peaks)
-        #print(significances)
 
         # compress neighbouring pixels into a single pixel
         peak_indexs, peak_significances = compress(peaks, significances)
