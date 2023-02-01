@@ -241,7 +241,7 @@ def main(cmdargs):
                 #print "missing file {}".format(spectrum_file)
 
         # save spectra in the current plate
-        if spectra.size > 0:
+        if spectra.size() > 0:
             save_json("{}_plate{:04d}.json".format(args.out, plate), spectra)
 
     if len(missing_files) > 0:
