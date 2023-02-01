@@ -12,6 +12,107 @@ import pandas as pd
 
 from squeze.utils import quietprint, verboseprint
 
+def compute_peak_finder_completeness(df_candidates, df_truth,
+                                  significance_cut=np.arange(0, 10, 0.1)):
+    """Compute completeness after the peak finder step
+
+    Arguments
+    ---------
+    df_candidates: pd.DataFrame
+    The candidates DataFrame
+
+    df_truth: pd.DataFrame
+    The quasar catalogue
+
+    significance_cut: array of float - default: np.arange(0, 10, 0.1)
+    Completeness will be computed with these significance cuts
+
+    Return
+    ------
+    num_spectra: int
+    Number of spectra in the dataframe
+
+    significance_cut: array of float
+    The significance cuts used to compute the completeness
+
+    num_entries: array of float
+    The number of entries in the dataframe that meet the significance cut
+
+    num_correct_entries: array of float
+    The number of entries in the dataframe that meet the significance cut
+    and corresponds to quasars with the correct redshift
+
+    completeness: array of float
+    Completeness considering the entries that meet the significance cut
+    """
+    num_spectra = np.unique(df_truth["SPECID"]).size
+    num_entries = np.zeros_like(significance_cut)
+    num_correct_entries = np.zeros_like(significance_cut)
+    completeness = np.zeros_like(significance_cut)
+
+    for index in range(significance_cut.size):
+        aux = df_candidates[(df_candidates["PEAK_SIGNIFICANCE"] >= significance_cut[index])]
+        num_entries[index] = aux.shape[0]
+        aux2 = aux[(aux["IS_LINE"])]
+        num_correct_entries[index] = aux2.shape[0]
+        completeness[index] = np.unique(aux2["SPECID"]).size/num_spectra
+
+    return num_spectra, significance_cut, num_entries, num_correct_entries, completeness
+
+def compute_peak_finder_completeness_vs_mag(mag_cuts, df_candidates, df_truth, significance_cut=np.arange(0, 10, 0.1)):
+    """Compute completeness after the peak finder step as a function of magnitude
+
+    Arguments
+    ---------
+    mag_cuts: list of float
+    The list of magnitude cuts to explore
+
+    df_candidates: pd.DataFrame
+    The candidates DataFrame
+
+    truth: pd.DataFrame
+    The quasar catalogue
+
+    significance_cut: array of float - default: np.arange(0, 10, 0.1)
+    Completeness will be computed with these significance cuts
+
+    Return
+    ------
+    mag_cuts: list of float
+    The used magnitude cuts
+
+    significance_cut: 1d array of float
+    The significance cuts used to compute the completeness for each magnitude cut
+
+    completeness_vs_mag: 2d array of float
+    Completeness considering the entries that meet the each significance and magnitude cuts
+
+    num_spectra_vs_mag: 1d array of int
+    Number of spectra as for each magnitude cut
+
+    num_entries_vs_mag: 2d array of float
+    The number of entries in the dataframe that meet the significance and magnitude cuts
+
+    num_correct_entries_vs_mag: 2d array of float
+    The number of entries in the dataframe that meet the significance and magnitude cuts
+    and corresponds to quasars with the correct redshift
+    """
+    significance_cut_vs_mag = np.zeros((mag_cuts.size, significance_cut.size), dtype=float)
+    completeness_vs_mag = np.zeros((mag_cuts.size, significance_cut.size), dtype=float)
+    num_spectra_vs_mag = np.zeros((mag_cuts.size, significance_cut.size), dtype=int)
+    num_entries_vs_mag = np.zeros((mag_cuts.size, significance_cut.size), dtype=int)
+    num_correct_entries_vs_mag = np.zeros((mag_cuts.size, significance_cut.size), dtype=int)
+
+    for index, mag_cut in tqdm.tqdm(enumerate(mag_cuts), total=len(mag_cuts)):
+        (num_spectra_vs_mag[index], significance_cut_vs_mag[index],
+         num_entries_vs_mag[index], num_correct_entries_vs_mag[index],
+         completeness_vs_mag[index]) = compute_peak_finder_completeness(
+            df_candidates[df_candidates["R_MAG"] <= mag_cut],
+            df_truth[df_truth["R_MAG"] <= mag_cut],
+            significance_cut=significance_cut)
+
+    return (mag_cuts, significance_cut_vs_mag, completeness_vs_mag, num_spectra_vs_mag,
+            num_entries_vs_mag, num_correct_entries_vs_mag)
 
 def compute_stats(df_candidates, df_truth):
     """ Compute summary statistics.
@@ -171,7 +272,6 @@ def compute_stats(df_candidates, df_truth):
 
     return stats
 
-
 def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
     """ Compute the statistics as a function of magnitude.
     Include all the objects up to the cut magnitude. Discard fainter objects.
@@ -197,6 +297,10 @@ def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
     purity_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
     completeness_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
     f1_score_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
+    prob_alt_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
+    purity_alt_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
+    completeness_alt_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
+    f1_score_alt_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
 
     print("Compute stats as a function of magnitude: loop iterations: ",
           mag_cuts.size)
@@ -211,6 +315,10 @@ def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
         purity_vs_mag[index] = opt_prob["purity"].values
         completeness_vs_mag[index] = opt_prob["completeness"].values
         f1_score_vs_mag[index] = opt_prob["f1_score"].values
+        prob_alt_vs_mag[index] = opt_prob["prob_alt"].values
+        purity_alt_vs_mag[index] = opt_prob["purity_alt"].values
+        completeness_alt_vs_mag[index] = opt_prob["completeness_alt"].values
+        f1_score_alt_vs_mag[index] = opt_prob["f1_score_alt"].values
 
     print("Compute stats for the entire sample")
     stats = compute_stats(df_candidates[~(df_candidates["DUPLICATED"])],
@@ -223,11 +331,14 @@ def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
         "prob_vs_mag": prob_vs_mag,
         "purity_vs_mag": purity_vs_mag,
         "completeness_vs_mag": completeness_vs_mag,
-        "f1_score_vs_mag": completeness_vs_mag,
+        "f1_score_vs_mag": f1_score_vs_mag,
+        "prob_alt_vs_mag": prob_alt_vs_mag,
+        "purity_alt_vs_mag": purity_alt_vs_mag,
+        "completeness_alt_vs_mag": completeness_alt_vs_mag,
+        "f1_score_alt_vs_mag": f1_score_alt_vs_mag,
     }
 
     return stats_vs_mag
-
 
 def find_prob(stats, do_print=True, opt_f1score=True):
     """ Find the optimal probability choice.
