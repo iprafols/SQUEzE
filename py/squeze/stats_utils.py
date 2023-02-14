@@ -12,8 +12,10 @@ import pandas as pd
 
 from squeze.utils import quietprint, verboseprint
 
-def compute_peak_finder_completeness(df_candidates, df_truth,
-                                  significance_cut=np.arange(0, 10, 0.1)):
+
+def compute_peak_finder_completeness(df_candidates,
+                                     df_truth,
+                                     significance_cut=np.arange(0, 10, 0.1)):
     """Compute completeness after the peak finder step
 
     Arguments
@@ -51,15 +53,21 @@ def compute_peak_finder_completeness(df_candidates, df_truth,
     completeness = np.zeros_like(significance_cut)
 
     for index in range(significance_cut.size):
-        aux = df_candidates[(df_candidates["PEAK_SIGNIFICANCE"] >= significance_cut[index])]
+        aux = df_candidates[(df_candidates["PEAK_SIGNIFICANCE"] >=
+                             significance_cut[index])]
         num_entries[index] = aux.shape[0]
         aux2 = aux[(aux["IS_LINE"])]
         num_correct_entries[index] = aux2.shape[0]
-        completeness[index] = np.unique(aux2["SPECID"]).size/num_spectra
+        completeness[index] = np.unique(aux2["SPECID"]).size / num_spectra
 
     return num_spectra, significance_cut, num_entries, num_correct_entries, completeness
 
-def compute_peak_finder_completeness_vs_mag(mag_cuts, df_candidates, df_truth, significance_cut=np.arange(0, 10, 0.1)):
+
+def compute_peak_finder_completeness_vs_mag(mag_cuts,
+                                            df_candidates,
+                                            df_truth,
+                                            significance_cut=np.arange(
+                                                0, 10, 0.1)):
     """Compute completeness after the peak finder step as a function of magnitude
 
     Arguments
@@ -97,22 +105,28 @@ def compute_peak_finder_completeness_vs_mag(mag_cuts, df_candidates, df_truth, s
     The number of entries in the dataframe that meet the significance and magnitude cuts
     and corresponds to quasars with the correct redshift
     """
-    significance_cut_vs_mag = np.zeros((mag_cuts.size, significance_cut.size), dtype=float)
-    completeness_vs_mag = np.zeros((mag_cuts.size, significance_cut.size), dtype=float)
-    num_spectra_vs_mag = np.zeros((mag_cuts.size, significance_cut.size), dtype=int)
-    num_entries_vs_mag = np.zeros((mag_cuts.size, significance_cut.size), dtype=int)
-    num_correct_entries_vs_mag = np.zeros((mag_cuts.size, significance_cut.size), dtype=int)
+    significance_cut_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
+                                       dtype=float)
+    completeness_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
+                                   dtype=float)
+    num_spectra_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
+                                  dtype=int)
+    num_entries_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
+                                  dtype=int)
+    num_correct_entries_vs_mag = np.zeros(
+        (mag_cuts.size, significance_cut.size), dtype=int)
 
     for index, mag_cut in tqdm.tqdm(enumerate(mag_cuts), total=len(mag_cuts)):
         (num_spectra_vs_mag[index], significance_cut_vs_mag[index],
          num_entries_vs_mag[index], num_correct_entries_vs_mag[index],
          completeness_vs_mag[index]) = compute_peak_finder_completeness(
-            df_candidates[df_candidates["R_MAG"] <= mag_cut],
-            df_truth[df_truth["R_MAG"] <= mag_cut],
-            significance_cut=significance_cut)
+             df_candidates[df_candidates["R_MAG"] <= mag_cut],
+             df_truth[df_truth["R_MAG"] <= mag_cut],
+             significance_cut=significance_cut)
 
-    return (mag_cuts, significance_cut_vs_mag, completeness_vs_mag, num_spectra_vs_mag,
-            num_entries_vs_mag, num_correct_entries_vs_mag)
+    return (mag_cuts, significance_cut_vs_mag, completeness_vs_mag,
+            num_spectra_vs_mag, num_entries_vs_mag, num_correct_entries_vs_mag)
+
 
 def compute_stats(df_candidates, df_truth):
     """ Compute summary statistics.
@@ -272,6 +286,7 @@ def compute_stats(df_candidates, df_truth):
 
     return stats
 
+
 def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
     """ Compute the statistics as a function of magnitude.
     Include all the objects up to the cut magnitude. Discard fainter objects.
@@ -328,15 +343,15 @@ def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
                           df_truth)
 
     print("test info:")
-    print("num objects last magnitude bin (data):",
-          df_candidates[~(df_candidates["DUPLICATED"]) &
-                        (df_candidates["R_MAG"] <= mag_cuts[-1])].shape[0])
+    print(
+        "num objects last magnitude bin (data):",
+        df_candidates[~(df_candidates["DUPLICATED"]) &
+                      (df_candidates["R_MAG"] <= mag_cuts[-1])].shape[0])
     print("num objects all (data):",
           df_candidates[~(df_candidates["DUPLICATED"])].shape[0])
     print("num objects last magnitude bin (truth):",
-          df_truth[df_truth["R_MAG"] <= mag_cut].shape[0])
-    print("num objects all (truth):",
-          df_truth.shape[0])
+          df_truth[df_truth["R_MAG"] <= mag_cuts[-1]].shape[0])
+    print("num objects all (truth):", df_truth.shape[0])
 
     print("Done")
 
@@ -356,6 +371,7 @@ def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
     }
 
     return stats_vs_mag
+
 
 def find_prob(stats, do_print=True, opt_f1score=True):
     """ Find the optimal probability choice.
@@ -408,8 +424,8 @@ def find_prob(stats, do_print=True, opt_f1score=True):
                            stats[f"completeness z{compare_sign}2.1"])
             pos = np.argmin(diff)
         prob.append(stats.iloc[pos]["prob"])
-        num_candidates.append(stats.iloc[pos][
-            f"num candidates z{compare_sign}2.1"])
+        num_candidates.append(
+            stats.iloc[pos][f"num candidates z{compare_sign}2.1"])
         purity.append(stats.iloc[pos][f"purity z{compare_sign}2.1"])
         completeness.append(stats.iloc[pos][f"completeness z{compare_sign}2.1"])
         f1_score.append(stats.iloc[pos][f"f1 score z{compare_sign}2.1"])
@@ -423,8 +439,8 @@ def find_prob(stats, do_print=True, opt_f1score=True):
 
         pos_alt = np.argmax(stats[f"f1 score* z{compare_sign}2.1"])
         prob_alt.append(stats.iloc[pos_alt]["prob"])
-        num_candidates_alt.append(stats.iloc[pos_alt][
-            f"num candidates z{compare_sign}2.1"])
+        num_candidates_alt.append(
+            stats.iloc[pos_alt][f"num candidates z{compare_sign}2.1"])
         purity_alt.append(stats.iloc[pos_alt][f"purity* z{compare_sign}2.1"])
         completeness_alt.append(
             stats.iloc[pos_alt][f"completeness* z{compare_sign}2.1"])
@@ -448,7 +464,7 @@ def find_prob(stats, do_print=True, opt_f1score=True):
         diff = np.fabs(stats["purity"] - stats["completeness"])
         pos = np.argmin(diff)
     prob.append(stats.iloc[pos]["prob"])
-    num_candidates.append(stats.iloc[pos][f"num candidates"])
+    num_candidates.append(stats.iloc[pos]["num candidates"])
     purity.append(stats.iloc[pos]["purity"])
     completeness.append(stats.iloc[pos]["completeness"])
     f1_score.append(stats.iloc[pos]["f1 score"])
@@ -462,7 +478,7 @@ def find_prob(stats, do_print=True, opt_f1score=True):
 
     pos_alt = np.argmax(stats["f1 score*"])
     prob_alt.append(stats.iloc[pos_alt]["prob"])
-    num_candidates_alt.append(stats.iloc[pos_alt][f"num candidates"])
+    num_candidates_alt.append(stats.iloc[pos_alt]["num candidates"])
     purity_alt.append(stats.iloc[pos_alt]["purity*"])
     completeness_alt.append(stats.iloc[pos_alt]["completeness*"])
     f1_score_alt.append(stats.iloc[pos_alt]["f1 score*"])

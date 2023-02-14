@@ -25,9 +25,8 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 os.environ["THIS_DIR"] = THIS_DIR
 SQUEZE = THIS_DIR.split("py/squeze")[0]
 os.environ["SQUEZE"] = SQUEZE
-LINES = deserialize(load_json(os.path.expandvars("$SQUEZE/data/default_lines.json")))
-
-
+LINES = deserialize(
+    load_json(os.path.expandvars("$SQUEZE/data/default_lines.json")))
 
 
 def compare_performances_plot(stats_dict,
@@ -78,10 +77,8 @@ def compare_performances_plot(stats_dict,
         labels = [labels]
 
     if len(names) > len(COLOR_LIST):
-        print(
-            "Too many items to plot. Either add more colors to the list or "
-            "else remove some items to plot"
-        )
+        print("Too many items to plot. Either add more colors to the list or "
+              "else remove some items to plot")
         return
 
     # plot options
@@ -269,8 +266,13 @@ def compare_performances_plot(stats_dict,
     ax_legend.legend(lns_highz_diff, labels, ncol=3, loc=9, fontsize=fontsize)
     ax_legend.axis('off')
 
-def confusion_line_plots(df, rmag_bins, prob_low=0.0, prob_high=0.0,
-                         lines=None, exclude_line_pairs=list()):
+
+def confusion_line_plots(df,
+                         rmag_bins,
+                         prob_low=0.0,
+                         prob_high=0.0,
+                         lines=None,
+                         exclude_line_pairs=None):
     """ Make a confusion line plot
 
     Plot only items with probability above a certain threshold.
@@ -295,28 +297,29 @@ def confusion_line_plots(df, rmag_bins, prob_low=0.0, prob_high=0.0,
     Dataframe with the confusion lines to plot. It must contain column "WAVE".
     Indexs should be the names of the lines. Ignored if None
 
-    exclude_line_pairs: list of (str, str)
+    exclude_line_pairs: list of (str, str) or None - Default: None
     List containing confusion lines that are not plotted.
     """
+    if exclude_line_pairs is None:
+        exclude_line_pairs = []
+
     ncols = 2
     if len(rmag_bins) % 2 == 0:
-        nrows = int((len(rmag_bins) - 1)//2) + 1
+        nrows = int((len(rmag_bins) - 1) // 2) + 1
     else:
-        nrows = int((len(rmag_bins) - 1)//2)
+        nrows = int((len(rmag_bins) - 1) // 2)
 
     # plot options
-    figsize = (8*nrows, 8*ncols)
+    figsize = (8 * nrows, 8 * ncols)
     fontsize = 16
-    labelsize= 14
+    labelsize = 14
     ticksize = 8
     tickwidth = 2
     markersize = 4
     markersize2 = 14
-    pad = 6
     fig = plt.figure(figsize=figsize)
     gs = fig.add_gridspec(nrows=nrows, ncols=ncols)
     gs.update(wspace=0., hspace=0.2, bottom=0.15, left=0.1, right=0.95, top=0.9)
-
 
     row_index = 0
     col_index = 0
@@ -328,67 +331,94 @@ def confusion_line_plots(df, rmag_bins, prob_low=0.0, prob_high=0.0,
 
         ax.scatter(aux[(aux["IS_CORRECT"])]["Z_TRUE"],
                    aux[aux["IS_CORRECT"]]["Z_TRY"],
-                   c='k', label="correct", zorder=4, s=markersize)
-        ax.scatter(aux[(aux["CLASS_PERSON"] == 3)  &
-                      (((aux["Z_TRY"] >= 2.1) & (aux["PROB"]>prob_high)) |
-                      ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRUE"],
-                   aux[(aux["CLASS_PERSON"] == 3)  &
-                      (((aux["Z_TRY"] >= 2.1) & (aux["PROB"]>prob_high)) |
-                      ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRY"],
-                   c='b', label="qso", zorder=1, s=markersize)
-        ax.scatter(aux[(aux["CLASS_PERSON"] == 4)  &
-                      (((aux["Z_TRY"] >= 2.1) & (aux["PROB"]>prob_high)) |
-                      ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRUE"],
-                   aux[(aux["CLASS_PERSON"] == 4)  &
-                      (((aux["Z_TRY"] >= 2.1) & (aux["PROB"]>prob_high)) |
-                      ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRY"],
-                   c='r', label="galaxy", zorder=2, s=markersize)
-        ax.scatter(aux[(aux["CLASS_PERSON"] == 1)  &
-                      (((aux["Z_TRY"] >= 2.1) & (aux["PROB"]>prob_high)) |
-                      ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRUE"],
-                   aux[(aux["CLASS_PERSON"] == 1)  &
-                      (((aux["Z_TRY"] >= 2.1) & (aux["PROB"]>prob_high)) |
-                      ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRY"],
-                   c='g', label="star", zorder=3, s=markersize2)
+                   c='k',
+                   label="correct",
+                   zorder=4,
+                   s=markersize)
+        ax.scatter(
+            aux[(aux["CLASS_PERSON"] == 3) &
+                (((aux["Z_TRY"] >= 2.1) & (aux["PROB"] > prob_high)) |
+                 ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRUE"],
+            aux[(aux["CLASS_PERSON"] == 3) &
+                (((aux["Z_TRY"] >= 2.1) & (aux["PROB"] > prob_high)) |
+                 ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRY"],
+            c='b',
+            label="qso",
+            zorder=1,
+            s=markersize)
+        ax.scatter(
+            aux[(aux["CLASS_PERSON"] == 4) &
+                (((aux["Z_TRY"] >= 2.1) & (aux["PROB"] > prob_high)) |
+                 ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRUE"],
+            aux[(aux["CLASS_PERSON"] == 4) &
+                (((aux["Z_TRY"] >= 2.1) & (aux["PROB"] > prob_high)) |
+                 ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRY"],
+            c='r',
+            label="galaxy",
+            zorder=2,
+            s=markersize)
+        ax.scatter(
+            aux[(aux["CLASS_PERSON"] == 1) &
+                (((aux["Z_TRY"] >= 2.1) & (aux["PROB"] > prob_high)) |
+                 ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRUE"],
+            aux[(aux["CLASS_PERSON"] == 1) &
+                (((aux["Z_TRY"] >= 2.1) & (aux["PROB"] > prob_high)) |
+                 ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRY"],
+            c='g',
+            label="star",
+            zorder=3,
+            s=markersize2)
 
         if lines is not None:
             z = np.arange(0, 5, 0.5)
             for line1 in lines.index:
                 for line2 in lines.index:
-                    if line1 == line2:
+                    if line1 == line2 or (line1, line2) in exclude_line_pairs:
                         continue
-                    plot_lines = True
-                    for (exclude1, exclude2) in exclude_line_pairs:
-                        if line1 == exclude1 and line2 == exclude2:
-                            plot_lines = False
-                            break
-                    if plot_lines:
-                        z_line1_as_line2 = (
-                            LINES["WAVE"][line1]/LINES["WAVE"][line2]*(1+z) - 1)
-                        ax.plot(z_line1_as_line2, z,
-                                label=f"real: {line1}; assumed: {line2}")
+                    z_line1_as_line2 = (
+                        LINES["WAVE"][line1] / LINES["WAVE"][line2] *
+                        (1 + z) - 1)
+                    ax.plot(z_line1_as_line2,
+                            z,
+                            label=f"real: {line1}; assumed: {line2}")
 
         ax.legend(numpoints=1, fontsize=labelsize, loc='lower right')
 
         xlim = np.array((0, 4))
-        ax.fill_between([0.0, 2.1], [0.0, 0.0], [2.1, 2.1], color="k", alpha=0.1, zorder=0)
-        ax.fill_between([2.1, xlim[1]], [2.1, 2.1], [xlim[1], xlim[1]], color="k", alpha=0.1, zorder=0)
+        ax.fill_between([0.0, 2.1], [0.0, 0.0], [2.1, 2.1],
+                        color="k",
+                        alpha=0.1,
+                        zorder=0)
+        ax.fill_between([2.1, xlim[1]], [2.1, 2.1], [xlim[1], xlim[1]],
+                        color="k",
+                        alpha=0.1,
+                        zorder=0)
         ax.plot(xlim, xlim, "r-")
-        ax.fill_between(xlim, xlim+0.15, xlim-0.15, color="r", alpha=0.2, zorder=0)
+        ax.fill_between(xlim,
+                        xlim + 0.15,
+                        xlim - 0.15,
+                        color="r",
+                        alpha=0.2,
+                        zorder=0)
         ax.set_xlim(xlim)
         ax.set_ylim(xlim)
         ax.set_xlabel(r"$z_{\rm true}$", fontsize=fontsize)
         ax.set_ylabel(r"$z_{\rm try}$", fontsize=fontsize)
-        ax.set_title(fr"${rmag_min:.1f} < r \leq {rmag_max:.1f}$", fontsize=fontsize)
+        ax.set_title(fr"${rmag_min:.1f} < r \leq {rmag_max:.1f}$",
+                     fontsize=fontsize)
         ax.tick_params(labelsize=labelsize, size=ticksize, width=tickwidth)
-
 
         col_index += 1
         if col_index == ncols:
             col_index = 0
             row_index += 1
 
-def multiline(x_coordinates, y_coordinates, color_coordinates, ax=None, **kwargs):
+
+def multiline(x_coordinates,
+              y_coordinates,
+              color_coordinates,
+              ax=None,
+              **kwargs):
     """Plot lines with different colorings
 
     Arguments
@@ -427,8 +457,8 @@ def multiline(x_coordinates, y_coordinates, color_coordinates, ax=None, **kwargs
 
     # create LineCollection
     segments = [
-        np.column_stack([x, y])
-        for x, y in zip(x_coordinates, y_coordinates)]
+        np.column_stack([x, y]) for x, y in zip(x_coordinates, y_coordinates)
+    ]
     line_collection = LineCollection(segments, **kwargs)
 
     # set coloring of line segments
@@ -441,7 +471,14 @@ def multiline(x_coordinates, y_coordinates, color_coordinates, ax=None, **kwargs
 
     return line_collection
 
-def plot_peaks(spectra, peak_finders, labels, markers, offset=1.0, ontop=True, plot_lines=True):
+
+def plot_peaks(spectra,
+               peak_finders,
+               labels,
+               markers,
+               offset=1.0,
+               ontop=True,
+               plot_lines=True):
     """ Plot the peaks found by one or more peak finder instances
     All peak finders accepted by SQUEzE can be passed
 
@@ -470,16 +507,14 @@ def plot_peaks(spectra, peak_finders, labels, markers, offset=1.0, ontop=True, p
     quasars and galaxies
     """
     if len(peak_finders) > len(COLOR_LIST):
-        print(
-            "Too many items to plot. Either add more colors to the list or "
-            "else remove some items to plot"
-        )
+        print("Too many items to plot. Either add more colors to the list or "
+              "else remove some items to plot")
         return
     assert len(peak_finders) == len(labels)
     assert len(peak_finders) == len(markers)
     assert isinstance(offset, float) or len(peak_finders) == len(offset)
     if isinstance(offset, float):
-        offset = [offset]*len(peak_finders)
+        offset = [offset] * len(peak_finders)
 
     num_spectra = spectra.size()
 
@@ -490,21 +525,23 @@ def plot_peaks(spectra, peak_finders, labels, markers, offset=1.0, ontop=True, p
     tickwidth = 2
     pad = 6
     ncols = 2
-    nrows = num_spectra//2
+    nrows = num_spectra // 2
     if num_spectra % 2 > 0:
         nrows += 1
-    figsize = (13, 5*nrows)
+    figsize = (13, 5 * nrows)
     fig = plt.figure(figsize=figsize)
-    gs = fig.add_gridspec(nrows=nrows+1, ncols=ncols)
+    gs = fig.add_gridspec(nrows=nrows + 1, ncols=ncols)
     gs.update(wspace=0.25,
               hspace=0.4,
               bottom=0.15,
               left=0.1,
               right=0.95,
               top=0.9)
-    axes = [fig.add_subplot(gs[index_row, index_col])
-            for index_row in range(nrows)
-            for index_col in range(ncols)]
+    axes = [
+        fig.add_subplot(gs[index_row, index_col])
+        for index_row in range(nrows)
+        for index_col in range(ncols)
+    ]
     ax_legend = fig.add_subplot(gs[-1, :])
 
     lines = []
@@ -515,7 +552,10 @@ def plot_peaks(spectra, peak_finders, labels, markers, offset=1.0, ontop=True, p
         class_person = spectrum.metadata_by_key("CLASS_PERSON")
 
         if index == 0:
-            lines += ax.plot(spectrum.wave, spectrum.flux, "k-", label="spectrum")
+            lines += ax.plot(spectrum.wave,
+                             spectrum.flux,
+                             "k-",
+                             label="spectrum")
         else:
             ax.plot(spectrum.wave, spectrum.flux, "k-")
         ax.set_title(f"SPECID: {specid}, R_MAG: {rmag}, Z_TRUE: {z_true:.2f}",
@@ -526,67 +566,68 @@ def plot_peaks(spectra, peak_finders, labels, markers, offset=1.0, ontop=True, p
             if index == 0:
                 if ontop:
                     ymax = np.max(spectrum.flux)
-                    lines += ax.plot(
-                        spectrum.wave[peaks],
-                        [ymax * offset[index_pf]]*spectrum.wave[peaks].size,
-                        color=COLOR_LIST[index_pf],
-                        linestyle='',
-                        marker=markers[index_pf],
-                        label=f"{labels[index_pf]} peaks")
+                    lines += ax.plot(spectrum.wave[peaks],
+                                     [ymax * offset[index_pf]] *
+                                     spectrum.wave[peaks].size,
+                                     color=COLOR_LIST[index_pf],
+                                     linestyle='',
+                                     marker=markers[index_pf],
+                                     label=f"{labels[index_pf]} peaks")
                 else:
-                    lines += ax.plot(
-                        spectrum.wave[peaks],
-                        spectrum.flux[peaks] * offset[index_pf],
-                        color=COLOR_LIST[index_pf],
-                        linestyle='',
-                        marker=markers[index_pf],
-                        label=f"{labels[index_pf]} peaks")
+                    lines += ax.plot(spectrum.wave[peaks],
+                                     spectrum.flux[peaks] * offset[index_pf],
+                                     color=COLOR_LIST[index_pf],
+                                     linestyle='',
+                                     marker=markers[index_pf],
+                                     label=f"{labels[index_pf]} peaks")
             else:
                 if ontop:
                     ymax = np.max(spectrum.flux)
-                    ax.plot(
-                        spectrum.wave[peaks],
-                        [ymax * offset[index_pf]]*spectrum.wave[peaks].size,
-                        color=COLOR_LIST[index_pf],
-                        linestyle='',
-                        marker=markers[index_pf],
-                        label=f"{labels[index_pf]} peaks")
+                    ax.plot(spectrum.wave[peaks], [ymax * offset[index_pf]] *
+                            spectrum.wave[peaks].size,
+                            color=COLOR_LIST[index_pf],
+                            linestyle='',
+                            marker=markers[index_pf],
+                            label=f"{labels[index_pf]} peaks")
                 else:
-                    ax.plot(
-                        spectrum.wave[peaks],
-                        spectrum.flux[peaks]  * offset[index_pf],
-                        color=COLOR_LIST[index_pf],
-                        linestyle='',
-                        marker=markers[index_pf])
+                    ax.plot(spectrum.wave[peaks],
+                            spectrum.flux[peaks] * offset[index_pf],
+                            color=COLOR_LIST[index_pf],
+                            linestyle='',
+                            marker=markers[index_pf])
 
         if plot_lines and class_person in [3, 4]:
             ylim = ax.get_ylim()
             xlim = ax.get_xlim()
-            emission_lines = LINES["WAVE"].values*(1+z_true)
-            w = np.where((xlim[0] < emission_lines) & (emission_lines < xlim[1]))
-            ax.vlines(emission_lines[w], ylim[0], ylim[1], colors="k", linestyle='--', alpha=0.5)
+            emission_lines = LINES["WAVE"].values * (1 + z_true)
+            w = np.where((xlim[0] < emission_lines) &
+                         (emission_lines < xlim[1]))
+            ax.vlines(emission_lines[w],
+                      ylim[0],
+                      ylim[1],
+                      colors="k",
+                      linestyle='--',
+                      alpha=0.5)
             ax.set_ylim(ylim)
-
 
     # axis settings, labels
     for ax in axes:
         ax.set_ylabel(r"flux", fontsize=fontsize)
         ax.set_xlabel(r"wavelength", fontsize=fontsize)
-        ax.tick_params(
-            labelsize=labelsize,
-            size=ticksize,
-            width=tickwidth,
-            pad=pad,
-            left=True,
-            right=False,
-            labelleft=True,
-            labelright=False)
-
+        ax.tick_params(labelsize=labelsize,
+                       size=ticksize,
+                       width=tickwidth,
+                       pad=pad,
+                       left=True,
+                       right=False,
+                       labelleft=True,
+                       labelright=False)
 
     # legend
     labels = [lns.get_label() for lns in lines]
     ax_legend.legend(lines, labels, ncol=3, loc=9, fontsize=fontsize)
     ax_legend.axis('off')
+
 
 def plot_peakfinder_stats_vs_magnitude(mag_cuts,
                                        significance_cut_vs_mag,
@@ -639,10 +680,9 @@ def plot_peakfinder_stats_vs_magnitude(mag_cuts,
     """
 
     fontsize = 18
-    labelsize= 14
+    labelsize = 14
     ticksize = 8
     tickwitdh = 2
-    pad = 14
     figsize = (12, 5)
     fig = plt.figure(figsize=figsize)
     gs = fig.add_gridspec(1, 3, hspace=0., wspace=0.5, width_ratios=[10, 10, 1])
@@ -651,12 +691,25 @@ def plot_peakfinder_stats_vs_magnitude(mag_cuts,
     ax2 = fig.add_subplot(gs[1])
     ax3 = fig.add_subplot(gs[2])
 
-    colors = plt.cm.jet(np.linspace(0,1,mag_cuts.size))
     cmap = "viridis"
 
-    line_collection = multiline(significance_cut_vs_mag, completeness_vs_mag, mag_cuts, ax=ax, cmap=cmap)
-    line_collection2 = multiline(significance_cut_vs_mag, num_entries_vs_mag/num_spectra_vs_mag, mag_cuts, ax=ax2, cmap=cmap)
-    line_collection3 = multiline(significance_cut_vs_mag, num_correct_entries_vs_mag/num_spectra_vs_mag, mag_cuts, ax=ax2, cmap=cmap, linestyle="dashed")
+    line_collection = multiline(significance_cut_vs_mag,
+                                completeness_vs_mag,
+                                mag_cuts,
+                                ax=ax,
+                                cmap=cmap)
+    multiline(significance_cut_vs_mag,
+              num_entries_vs_mag / num_spectra_vs_mag,
+              mag_cuts,
+              ax=ax2,
+              cmap=cmap)
+    multiline(significance_cut_vs_mag,
+              num_correct_entries_vs_mag /
+              num_spectra_vs_mag,
+              mag_cuts,
+              ax=ax2,
+              cmap=cmap,
+              linestyle="dashed")
 
     ax.tick_params(labelsize=labelsize, size=ticksize, width=tickwitdh)
     ax.set_xlabel("min. peak significance", fontsize=fontsize)
@@ -666,12 +719,16 @@ def plot_peakfinder_stats_vs_magnitude(mag_cuts,
     ax2.set_xlabel("min. peak significance", fontsize=fontsize)
     ax2.tick_params(labelsize=labelsize, size=ticksize, width=tickwitdh)
 
-
     fig.colorbar(line_collection, cax=ax3, shrink=0.8)
     ax3.yaxis.set_label_position('left')
     ax3.set_ylabel("magnitude cut", fontsize=fontsize)
-    ax3.tick_params(labelsize=labelsize, size=ticksize, width=tickwitdh,
-                    left=True, right=False, labelleft=True, labelright=False)
+    ax3.tick_params(labelsize=labelsize,
+                    size=ticksize,
+                    width=tickwitdh,
+                    left=True,
+                    right=False,
+                    labelleft=True,
+                    labelright=False)
 
     if completeness_lim is not None:
         ax.set_ylim(completeness_lim)
@@ -680,6 +737,7 @@ def plot_peakfinder_stats_vs_magnitude(mag_cuts,
         ax2.set_xlim(significance_cut_lim)
     if title is not None:
         fig.suptitle(title, fontsize=fontsize)
+
 
 def redshift_precision_histogram(df, mag_bins, title=None):
     """ Plot the redshift precision histogram. Also print a table summarising
