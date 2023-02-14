@@ -33,14 +33,15 @@ except ImportError as error:
 
 @jit(
     nopython=True,
-    locals=dict(X=numba.types.float64[:, :],
-                children_left=numba.types.int64[:],
-                children_right=numba.types.int64[:],
-                thresholds=numba.types.float64[:],
-                tree_proba=numba.types.float64[:, :, :],
-                proba=numba.types.float64[:, :],
-                indexs=numba.types.int64[:],
-                node_id=numba.types.int64),
+    locals={
+        "X": numba.types.float64[:, :],
+        "children_left": numba.types.int64[:],
+        "children_right": numba.types.int64[:],
+        "thresholds": numba.types.float64[:],
+        "tree_proba": numba.types.float64[:, :, :],
+        "proba": numba.types.float64[:, :],
+        "indexs": numba.types.int64[:],
+        "node_id": numba.types.int64},
 )
 def search_nodes(X, children_left, children_right, features, thresholds,
                  tree_proba, proba, indexs, node_id):
