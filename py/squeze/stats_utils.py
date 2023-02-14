@@ -294,16 +294,17 @@ def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
     """
     # Compute statistics vs mag
     prob_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
+    num_candidates_vs_mag = np.zeros((mag_cuts.size, 3), dtype=int)
     purity_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
     completeness_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
     f1_score_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
     prob_alt_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
+    num_candidates_alt_vs_mag = np.zeros((mag_cuts.size, 3), dtype=int)
     purity_alt_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
     completeness_alt_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
     f1_score_alt_vs_mag = np.zeros((mag_cuts.size, 3), dtype=float)
 
-    print("Compute stats as a function of magnitude: loop iterations: ",
-          mag_cuts.size)
+    print("Compute stats as a function of magnitude:")
     for index, mag_cut in enumerate(tqdm.tqdm(mag_cuts)):
         stats = compute_stats(
             df_candidates[~(df_candidates["DUPLICATED"]) &
@@ -312,10 +313,12 @@ def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
 
         opt_prob = find_prob(stats, do_print=False, opt_f1score=False)
         prob_vs_mag[index] = opt_prob["prob"].values
+        num_candidates_vs_mag[index] = opt_prob["num_candidates"].values
         purity_vs_mag[index] = opt_prob["purity"].values
         completeness_vs_mag[index] = opt_prob["completeness"].values
         f1_score_vs_mag[index] = opt_prob["f1_score"].values
         prob_alt_vs_mag[index] = opt_prob["prob_alt"].values
+        num_candidates_alt_vs_mag[index] = opt_prob["num_candidates_alt"].values
         purity_alt_vs_mag[index] = opt_prob["purity_alt"].values
         completeness_alt_vs_mag[index] = opt_prob["completeness_alt"].values
         f1_score_alt_vs_mag[index] = opt_prob["f1_score_alt"].values
@@ -323,16 +326,30 @@ def compute_stats_vs_mag(mag_cuts, df_candidates, df_truth):
     print("Compute stats for the entire sample")
     stats = compute_stats(df_candidates[~(df_candidates["DUPLICATED"])],
                           df_truth)
+
+    print("test info:")
+    print("num objects last magnitude bin (data):",
+          df_candidates[~(df_candidates["DUPLICATED"]) &
+                        (df_candidates["R_MAG"] <= mag_cuts[-1])].shape[0])
+    print("num objects all (data):",
+          df_candidates[~(df_candidates["DUPLICATED"])].shape[0])
+    print("num objects last magnitude bin (truth):",
+          df_truth[df_truth["R_MAG"] <= mag_cut].shape[0])
+    print("num objects all (truth):",
+          df_truth.shape[0])
+
     print("Done")
 
     stats_vs_mag = {
-        "stats all": stats,
+        "stats_all": stats,
         "mag_cuts": mag_cuts,
         "prob_vs_mag": prob_vs_mag,
+        "num_candidates_vs_mag": num_candidates_vs_mag,
         "purity_vs_mag": purity_vs_mag,
         "completeness_vs_mag": completeness_vs_mag,
         "f1_score_vs_mag": f1_score_vs_mag,
         "prob_alt_vs_mag": prob_alt_vs_mag,
+        "num_candidates_alt_vs_mag": num_candidates_alt_vs_mag,
         "purity_alt_vs_mag": purity_alt_vs_mag,
         "completeness_alt_vs_mag": completeness_alt_vs_mag,
         "f1_score_alt_vs_mag": f1_score_alt_vs_mag,
@@ -370,10 +387,12 @@ def find_prob(stats, do_print=True, opt_f1score=True):
 
     case = []
     prob = []
+    num_candidates = []
     completeness = []
     purity = []
     f1_score = []
     prob_alt = []
+    num_candidates_alt = []
     completeness_alt = []
     purity_alt = []
     f1_score_alt = []
@@ -389,6 +408,8 @@ def find_prob(stats, do_print=True, opt_f1score=True):
                            stats[f"completeness z{compare_sign}2.1"])
             pos = np.argmin(diff)
         prob.append(stats.iloc[pos]["prob"])
+        num_candidates.append(stats.iloc[pos][
+            f"num candidates z{compare_sign}2.1"])
         purity.append(stats.iloc[pos][f"purity z{compare_sign}2.1"])
         completeness.append(stats.iloc[pos][f"completeness z{compare_sign}2.1"])
         f1_score.append(stats.iloc[pos][f"f1 score z{compare_sign}2.1"])
@@ -402,6 +423,8 @@ def find_prob(stats, do_print=True, opt_f1score=True):
 
         pos_alt = np.argmax(stats[f"f1 score* z{compare_sign}2.1"])
         prob_alt.append(stats.iloc[pos_alt]["prob"])
+        num_candidates_alt.append(stats.iloc[pos_alt][
+            f"num candidates z{compare_sign}2.1"])
         purity_alt.append(stats.iloc[pos_alt][f"purity* z{compare_sign}2.1"])
         completeness_alt.append(
             stats.iloc[pos_alt][f"completeness* z{compare_sign}2.1"])
@@ -425,6 +448,7 @@ def find_prob(stats, do_print=True, opt_f1score=True):
         diff = np.fabs(stats["purity"] - stats["completeness"])
         pos = np.argmin(diff)
     prob.append(stats.iloc[pos]["prob"])
+    num_candidates.append(stats.iloc[pos][f"num candidates"])
     purity.append(stats.iloc[pos]["purity"])
     completeness.append(stats.iloc[pos]["completeness"])
     f1_score.append(stats.iloc[pos]["f1 score"])
@@ -438,6 +462,7 @@ def find_prob(stats, do_print=True, opt_f1score=True):
 
     pos_alt = np.argmax(stats["f1 score*"])
     prob_alt.append(stats.iloc[pos_alt]["prob"])
+    num_candidates_alt.append(stats.iloc[pos_alt][f"num candidates"])
     purity_alt.append(stats.iloc[pos_alt]["purity*"])
     completeness_alt.append(stats.iloc[pos_alt]["completeness*"])
     f1_score_alt.append(stats.iloc[pos_alt]["f1 score*"])
@@ -451,10 +476,12 @@ def find_prob(stats, do_print=True, opt_f1score=True):
     opt_prob = pd.DataFrame({
         "case": case,
         "prob": prob,
+        "num_candidates": num_candidates,
         "purity": purity,
         "completeness": completeness,
         "f1_score": f1_score,
         "prob_alt": prob_alt,
+        "num_candidates_alt": num_candidates_alt,
         "purity_alt": purity_alt,
         "completeness_alt": completeness_alt,
         "f1_score_alt": f1_score_alt
