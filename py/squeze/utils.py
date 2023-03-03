@@ -115,7 +115,7 @@ def serialize(obj):
     # also inherit from np.ndarray)
     if isinstance(obj, np.ma.core.MaskedArray):
         encodable_object = {
-            "np.ma.core.MakedArray": {
+            "np.ma.core.MaskedArray": {
                 "data": obj.data.tolist(),
                 "mask": obj.mask.tolist(),
                 "dtype": obj.dtype
@@ -185,6 +185,11 @@ def deserialize(json_dict):
     if "np.ndarray" in json_dict:
         aux = json_dict.get("np.ndarray")
         my_object = np.array(aux.get("data"), dtype=aux.get("dtype"))
+    if "np.ma.core.MaskedArray" in json_dict:
+        aux = json_dict.get("np.ma.core.MaskedArray")
+        my_object = np.ma.array(aux.get("data"), mask=aux.get("mask"))
+    # TODO: remove this, kept for now to reuse old files as there was a bug
+    # and the "s" was missing from MaskedArray
     if "np.ma.core.MakedArray" in json_dict:
         aux = json_dict.get("np.ma.core.MakedArray")
         my_object = np.ma.array(aux.get("data"), mask=aux.get("mask"))
