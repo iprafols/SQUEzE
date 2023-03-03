@@ -54,9 +54,14 @@ class PeakFinderPowerLaw:
         ------
         An array with the position of the peaks
         """
-        wavelength = spectrum.wave
-        flux = spectrum.flux
-        ivar = spectrum.ivar
+        if isinstance(spectrum.flux, np.ma.core.MaskedArray):
+            wavelength = spectrum.wave[~spectrum.flux.mask]
+            flux = spectrum.flux[~spectrum.ivar.mask]
+            ivar = spectrum.ivar[~spectrum.ivar.mask]
+        else:
+            wavelength = spectrum.wave
+            flux = spectrum.flux
+            ivar = spectrum.ivar
         outliers_mask = np.ones_like(flux, dtype=bool)
         significances = np.zeros_like(flux)
         best_fit = np.array((0.0, 0.0))
