@@ -315,7 +315,7 @@ def confusion_line_plots(df,
     labelsize = 14
     ticksize = 8
     tickwidth = 2
-    markersize = 4
+    markersize = 8
     markersize2 = 14
     fig = plt.figure(figsize=figsize)
     gs = fig.add_gridspec(nrows=nrows, ncols=ncols)
@@ -342,9 +342,9 @@ def confusion_line_plots(df,
             aux[(aux["CLASS_PERSON"] == 3) &
                 (((aux["Z_TRY"] >= 2.1) & (aux["PROB"] > prob_high)) |
                  ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRY"],
-            c='b',
             label="qso",
             zorder=1,
+            marker="v",
             s=markersize)
         ax.scatter(
             aux[(aux["CLASS_PERSON"] == 4) &
@@ -353,9 +353,9 @@ def confusion_line_plots(df,
             aux[(aux["CLASS_PERSON"] == 4) &
                 (((aux["Z_TRY"] >= 2.1) & (aux["PROB"] > prob_high)) |
                  ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRY"],
-            c='r',
             label="galaxy",
             zorder=2,
+            marker="^",
             s=markersize)
         ax.scatter(
             aux[(aux["CLASS_PERSON"] == 1) &
@@ -364,9 +364,9 @@ def confusion_line_plots(df,
             aux[(aux["CLASS_PERSON"] == 1) &
                 (((aux["Z_TRY"] >= 2.1) & (aux["PROB"] > prob_high)) |
                  ((aux["Z_TRY"] < 2.1) & (aux["PROB"] > prob_low)))]["Z_TRY"],
-            c='g',
             label="star",
             zorder=3,
+            marker="s",
             s=markersize2)
 
         if lines is not None:
@@ -769,7 +769,6 @@ def redshift_precision_histogram(df, mag_bins, title=None):
     gs.update(wspace=0., hspace=0.2, bottom=0.15, left=0.1, right=0.95, top=0.9)
     ax = fig.add_subplot(gs[0])
 
-    colors = ["k", "r", "b", "g"]
     bins = np.arange(-2e4, 2e4, 750)
     redsfhit_precision = {
         "mag bin": [],
@@ -780,7 +779,7 @@ def redshift_precision_histogram(df, mag_bins, title=None):
     if "DELTA_V" not in df.columns:
         df["DELTA_V"] = df["DELTA_Z"] / (1 + df["Z_TRUE"]) * 3e5
 
-    for rmag_min, rmag_max, color in zip(mag_bins[:-1], mag_bins[1:], colors):
+    for rmag_min, rmag_max in zip(mag_bins[:-1], mag_bins[1:]):
 
         aux = df[(df["R_MAG"] > rmag_min) & (df["R_MAG"] <= rmag_max) &
                  (df["IS_CORRECT"])]
@@ -790,7 +789,7 @@ def redshift_precision_histogram(df, mag_bins, title=None):
                 label=fr"${rmag_min:.1f} < r \leq {rmag_max:.1f}$",
                 histtype="step",
                 density=True,
-                color=color)
+        )
 
         redsfhit_precision["mag bin"].append(
             fr"${rmag_min:.1f} < r \leq {rmag_max:.1f}$")
