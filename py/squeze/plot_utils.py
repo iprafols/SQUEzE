@@ -272,7 +272,8 @@ def confusion_line_plots(df,
                          prob_low=0.0,
                          prob_high=0.0,
                          lines=None,
-                         exclude_line_pairs=None):
+                         exclude_line_pairs=None,
+                         delta_z=0.15):
     """ Make a confusion line plot
 
     Plot only items with probability above a certain threshold.
@@ -299,6 +300,9 @@ def confusion_line_plots(df,
 
     exclude_line_pairs: list of (str, str) or None - Default: None
     List containing confusion lines that are not plotted.
+
+    delta_z: float - Default: 0.15
+    Maximum redshift error for correctly classified objects
     """
     if exclude_line_pairs is None:
         exclude_line_pairs = []
@@ -395,8 +399,8 @@ def confusion_line_plots(df,
                         zorder=0)
         ax.plot(xlim, xlim, "r-")
         ax.fill_between(xlim,
-                        xlim + 0.15,
-                        xlim - 0.15,
+                        xlim + delta_z,
+                        xlim - delta_z,
                         color="r",
                         alpha=0.2,
                         zorder=0)
@@ -478,7 +482,8 @@ def plot_peaks(spectra,
                markers,
                offset=1.0,
                ontop=True,
-               plot_lines=True):
+               plot_lines=True,
+               emission_lines=LINES):
     """ Plot the peaks found by one or more peak finder instances
     All peak finders accepted by SQUEzE can be passed
 
@@ -505,6 +510,10 @@ def plot_peaks(spectra,
     plot_lines: bool - Default: True
     If True, overplot the position of the emision lines in the spectra of
     quasars and galaxies
+
+    emission_lines: pd.DataFrame - Default: LINES
+    Emission lines to plot. Format is a datframe with the field "WAVE" with
+    the rest-frame wavelength of the lines.
     """
     if len(peak_finders) > len(COLOR_LIST):
         print("Too many items to plot. Either add more colors to the list or "
@@ -552,12 +561,19 @@ def plot_peaks(spectra,
         class_person = spectrum.metadata_by_key("CLASS_PERSON")
 
         if index == 0:
-            lines += ax.plot(spectrum.wave,
-                             spectrum.flux,
-                             "k-",
-                             label="spectrum")
-        else:
-            ax.plot(spectrum.wave, spectrum.flux, "k-")
+            lines += ax.plot(
+                spectrum.wave,
+                spectrum.flux,
+                color="k",
+                linestyle="-",
+                label="spectrum"
+                )
+        ax.errorbar(
+            spectrum.wave,
+            spectrum.flux,
+            yerr=1/np.sqrt(spectrum.ivar),
+            color="k",
+            linestyle="-")
         ax.set_title(f"SPECID: {specid}, R_MAG: {rmag}, Z_TRUE: {z_true:.2f}",
                      fontsize=labelsize)
 
@@ -599,10 +615,11 @@ def plot_peaks(spectra,
         if plot_lines and class_person in [3, 4]:
             ylim = ax.get_ylim()
             xlim = ax.get_xlim()
-            emission_lines = LINES["WAVE"].values * (1 + z_true)
-            w = np.where((xlim[0] < emission_lines) &
-                         (emission_lines < xlim[1]))
-            ax.vlines(emission_lines[w],
+            emission_lines_observed_frame = emission_lines["WAVE"].values * (
+                1 + z_true)
+            w = np.where((xlim[0] < emission_lines_observed_frame) &
+                         (emission_lines_observed_frame < xlim[1]))
+            ax.vlines(emission_lines_observed_frame[w],
                       ylim[0],
                       ylim[1],
                       colors="k",
@@ -613,7 +630,7 @@ def plot_peaks(spectra,
     # axis settings, labels
     for ax in axes:
         ax.set_ylabel(r"flux", fontsize=fontsize)
-        ax.set_xlabel(r"wavelength", fontsize=fontsize)
+        ax.set_xlabel(r"wavelength [${\rm \AA}$]", fontsize=fontsize)
         ax.tick_params(labelsize=labelsize,
                        size=ticksize,
                        width=tickwidth,
@@ -739,7 +756,8 @@ def plot_peakfinder_stats_vs_magnitude(mag_cuts,
         fig.suptitle(title, fontsize=fontsize)
 
 
-def redshift_precision_histogram(df, mag_bins, title=None):
+def redshift_precision_histogram(df, mag_bins, title=None,
+                                 bins=np.arange(-2e4, 2e4, 750)):
     """ Plot the redshift precision histogram. Also print a table summarising
     the precision.
 
@@ -752,7 +770,10 @@ def redshift_precision_histogram(df, mag_bins, title=None):
     List of the magnitude limits in each bins. For example [18, 20, 22]
     has two bins: from 18 to 20 and from 20 to 22.
 
-    title: str or None
+    bins: array of float - Default: np.arange(-2e4, 2e4, 750)
+    These are the histogram bins.
+
+    title: str or None - Default: None
     If not None, then add title as the plot title
     """
     # plot options
@@ -769,11 +790,12 @@ def redshift_precision_histogram(df, mag_bins, title=None):
     gs.update(wspace=0., hspace=0.2, bottom=0.15, left=0.1, right=0.95, top=0.9)
     ax = fig.add_subplot(gs[0])
 
-    bins = np.arange(-2e4, 2e4, 750)
     redsfhit_precision = {
         "mag bin": [],
         r"$\overline{\Delta v}$ [km/s]": [],
         r"$\sigma_{\Delta v}$ [km/s]": [],
+        r"100$\sigma_{\rm NMAD}$": [],
+        "$N$": [],
     }
 
     if "DELTA_V" not in df.columns:
@@ -797,6 +819,10 @@ def redshift_precision_histogram(df, mag_bins, title=None):
             aux['DELTA_V'].mean())
         redsfhit_precision[r"$\sigma_{\Delta v}$ [km/s]"].append(
             aux['DELTA_V'].std())
+        redsfhit_precision[r"100$\sigma_{\rm NMAD}$"].append(
+            np.fabs(aux['DELTA_V']).median()/3e5*1.48*100)
+        redsfhit_precision["$N$"].append(
+            aux.shape[0])
 
     ax.set_xlabel(r"$\Delta v$ [km/s]", fontsize=fontsize)
     ax.set_ylabel(r"normalized counts", fontsize=fontsize)
