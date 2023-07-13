@@ -35,7 +35,8 @@ def compare_performances_plot(stats_dict,
                               control_name,
                               plot_f1=False,
                               add_purity=False,
-                              add_completeness=False):
+                              add_completeness=False,
+                              sharey=True):
     """ Plot the f1-score as a function of magnitude of multiple runs of SQUEzE
     to compare them.
 
@@ -66,6 +67,9 @@ def compare_performances_plot(stats_dict,
 
     add_completeness: bool - Default: False
     If True, then add a dotted line with the completeness values
+
+    sharey: bool - Default: True
+    If True, the plots at low-z and high-z will share the y axis
 
     Return
     ------
@@ -108,11 +112,17 @@ def compare_performances_plot(stats_dict,
               top=0.9)
     if plot_f1:
         ax_lowz_f1 = fig.add_subplot(gs[0, 0])
-        ax_highz_f1 = fig.add_subplot(gs[0, 1])
+        if sharey:
+            ax_highz_f1 = fig.add_subplot(gs[0, 1], sharey=ax_lowz_f1)
+        else:
+            ax_highz_f1 = fig.add_subplot(gs[0, 1])
         lns_lowz_f1 = []
         lns_highz_f1 = []
     ax_lowz_diff = fig.add_subplot(gs[-2, 0])
-    ax_highz_diff = fig.add_subplot(gs[-2, 1])
+    if sharey:
+        ax_highz_diff = fig.add_subplot(gs[-2, 1], sharey=ax_lowz_diff)
+    else:
+        ax_highz_diff = fig.add_subplot(gs[-2, 1])
     lns_lowz_diff = []
     lns_highz_diff = []
     ax_legend = fig.add_subplot(gs[-1, :])
@@ -238,6 +248,10 @@ def compare_performances_plot(stats_dict,
                                 labelright=False)
         ax_highz_f1.set_xlim(xlim)
 
+    else:
+        ax_lowz_diff.set_title(r"$z < 2.1$", fontsize=fontsize)
+        ax_highz_diff.set_title(r"$z \geq 2.1$", fontsize=fontsize)
+
     ax_lowz_diff.set_ylabel(r"$f_{1} - f_{1} ({\rm fid})$", fontsize=fontsize)
     ax_lowz_diff.set_xlabel("r mag cut", fontsize=fontsize)
     ax_lowz_diff.tick_params(labelsize=labelsize,
@@ -319,8 +333,8 @@ def confusion_line_plots(df,
     labelsize = 14
     ticksize = 8
     tickwidth = 2
-    markersize = 8
-    markersize2 = 14
+    markersize = 20
+    markersize2 = 30
     fig = plt.figure(figsize=figsize)
     gs = fig.add_gridspec(nrows=nrows, ncols=ncols)
     gs.update(wspace=0., hspace=0.2, bottom=0.15, left=0.1, right=0.95, top=0.9)
@@ -483,7 +497,8 @@ def plot_peaks(spectra,
                offset=1.0,
                ontop=True,
                plot_lines=True,
-               emission_lines=LINES):
+               emission_lines=LINES,
+               add_legend=False):
     """ Plot the peaks found by one or more peak finder instances
     All peak finders accepted by SQUEzE can be passed
 
@@ -650,6 +665,7 @@ def plot_peakfinder_stats_vs_magnitude(mag_cuts,
                                        significance_cut_vs_mag,
                                        completeness_vs_mag,
                                        num_spectra_vs_mag,
+                                       num_spectra_qso_vs_mag,
                                        num_entries_vs_mag,
                                        num_correct_entries_vs_mag,
                                        significance_cut_lim=None,
@@ -722,7 +738,7 @@ def plot_peakfinder_stats_vs_magnitude(mag_cuts,
               cmap=cmap)
     multiline(significance_cut_vs_mag,
               num_correct_entries_vs_mag /
-              num_spectra_vs_mag,
+              num_spectra_qso_vs_mag,
               mag_cuts,
               ax=ax2,
               cmap=cmap,

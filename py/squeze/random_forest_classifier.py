@@ -144,6 +144,7 @@ class RandomForestClassifier:
         self.trees = []
         self.num_categories = 0
         self.classes = []
+        self.feature_importances = []
 
     def fit(self, X, y):
         """ Create and train models
@@ -165,10 +166,12 @@ class RandomForestClassifier:
         self.num_trees = len(random_forest.estimators_)
         self.num_categories = np.unique(y).size
         self.classes = random_forest.classes_
+        self.feature_importances = random_forest.feature_importances_
         for decision_tree in random_forest.estimators_:
             tree_sklearn = decision_tree.tree_
 
             tree = {}
+            tree["feature_importance"] = decision_tree.feature_importances_.astype(float)
             tree["children_left"] = tree_sklearn.children_left.astype(int)
             tree["children_right"] = tree_sklearn.children_right.astype(int)
             tree["feature"] = tree_sklearn.feature.astype(int)
@@ -199,6 +202,13 @@ class RandomForestClassifier:
         cls_instance.num_trees = data.get("num_trees")
         cls_instance.num_categories = data.get("num_categories")
         cls_instance.classes = deserialize(data.get("classes"))
+        # DEPRECATED: older models might not have feature importance
+        # at some point this will be removed
+        feature_importances = data.get("feature_importances")
+        if feature_importances is None:
+            cls_instance.feature_importances = feature_importances
+        else:
+            cls_instance.feature_importances = deserialize(feature_importances)
 
         trees = data.get("trees")
         for tree in trees:
