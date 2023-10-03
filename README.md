@@ -6,13 +6,16 @@ Spectroscopic QUasar Extractor and redshift (z) Estimator
 ## Description
 
 SQUEzE is a software package to identify quasars and estimate their redshift in a sample of spectra.
-The quasars id and redshif is estimated in a two-step process:
+The quasar identifications and redshifts are estimated in a two-step process:
+
     1. Generate a high completeness and low purity sample of candidates
     2. Filter the candidates to improve purity while keeping a target completeness
-See Perez-Rafols et al. 2019 (https://arxiv.org/abs/1903.00023) for more details. Consider referencing
+
+See Perez-Rafols et al. 2020 (https://arxiv.org/abs/1903.00023) for more details. Consider referencing
 this paper if you are using SQUEzE in your analysis.
 
 SQUEzE can run in different modes:
+
     1. training - Use a known sample to decide on model options
     2. test - Use a known sample to assess model performance
     3. operation - Apply cuts to unknown sample to build a catalogue
