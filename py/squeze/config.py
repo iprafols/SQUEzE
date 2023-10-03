@@ -150,7 +150,7 @@ class Config:
             if os.path.exists(os.path.expandvars(filename)):
                 self.config.read(os.path.expandvars(filename))
             else:
-                message = f"Config file not found: {filename}; using default config"
+                message = f"Config file not found: {filename}"
                 raise Error(message)
         else:
             self.config.read_dict(config_dict)

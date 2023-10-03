@@ -121,7 +121,7 @@ class Candidates:
         if lines is None:
             message = "In section [candidates], variable 'lines' is required"
             raise Error(message)
-        self.lines = deserialize(load_json(os.path.expandvars(lines)))
+        self.lines = pd.read_json(os.path.expandvars(lines))
         if not isinstance(self.lines, pd.DataFrame):
             message = ("Expected a DataFrame with the line information. "
                        f"Found: {type(self.lines)}\n    lines: {lines}\n"
