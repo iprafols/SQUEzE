@@ -73,7 +73,7 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
             z_try = z_try - 1.0
             if z_try < 0.0:
                 continue
-            oneplusz = (1.0 + z_try)
+            oneplusz = 1.0 + z_try
 
             candidate_info = []
 

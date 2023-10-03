@@ -27,9 +27,7 @@ class SimpleSpectrum(Spectrum):
         """ This function deserializes a json string to correclty build the class.
             For this function to work, data should have been serialized using the
             serialization method specified in `save_json` function present on
-            `utils.py`. The current deserialisation includes the
-            possibility to interpret the flux, ivar, and wave arrays as either
-            normal (np.array) or masked (np.ma.array) arrays."""
+            `utils.py`."""
         flux = deserialize(data.get("flux"))
         ivar = deserialize(data.get("ivar"))
         wave = deserialize(data.get("wave"))

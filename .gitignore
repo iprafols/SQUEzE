@@ -103,6 +103,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# storage_files
+**/.DS_Store
+
 # test results
 py/squeze/tests/results/
 

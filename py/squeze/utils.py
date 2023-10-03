@@ -111,18 +111,8 @@ def serialize(obj):
         TypeError upon unsuccesful serialization
         """
     encodable_object = None
-    # first deal with  all special types of numpy arrays (mandatory since they
-    # also inherit from np.ndarray)
-    if isinstance(obj, np.ma.core.MaskedArray):
-        encodable_object = {
-            "np.ma.core.MakedArray": {
-                "data": obj.data.tolist(),
-                "mask": obj.mask.tolist(),
-                "dtype": obj.dtype
-            }
-        }
-    # now deal with normal numpy arrays
-    elif isinstance(obj, np.ndarray):
+    # deal with normal numpy arrays
+    if isinstance(obj, np.ndarray):
         encodable_object = {
             "np.ndarray": {
                 "data": obj.tolist(),
@@ -185,9 +175,6 @@ def deserialize(json_dict):
     if "np.ndarray" in json_dict:
         aux = json_dict.get("np.ndarray")
         my_object = np.array(aux.get("data"), dtype=aux.get("dtype"))
-    if "np.ma.core.MakedArray" in json_dict:
-        aux = json_dict.get("np.ma.core.MakedArray")
-        my_object = np.ma.array(aux.get("data"), mask=aux.get("mask"))
     if "pd.DataFrame" in json_dict:
         my_object = pd.read_json(json_dict.get("pd.DataFrame"))
     return my_object

@@ -87,55 +87,171 @@ class AbstractTest(unittest.TestCase):
             # this bit tests if they are equal within machine z_precision
             are_similar = True
             for col, dtype in zip(orig_df.columns, orig_df.dtypes):
-                self.assertTrue(col in new_df.columns)
-                if (dtype == "O"):
-                    self.assertTrue(orig_df[col].equals(new_df[col]))
-                else:
-                    self.assertTrue(np.allclose(orig_df[col], new_df[col],
-                                    equal_nan=True))
+                if not col in new_df.columns:
+                    self.report_dataframe_mismatch(
+                        orig_file, new_file, orig_df, new_df, col, missing_col="new")
+                if (dtype == "O") and not orig_df[col].equals(new_df[col]):
+                    self.report_dataframe_mismatch(
+                        orig_file, new_file, orig_df, new_df, col, equals=True)
+                elif not np.allclose(orig_df[col], new_df[col], equal_nan=True):
+                    self.report_dataframe_mismatch(
+                        orig_file, new_file, orig_df, new_df, col)
             for col in new_df.columns:
-                self.assertTrue(col in orig_df.columns)
+                if not col in orig_df.columns:
+                    self.report_dataframe_mismatch(
+                        orig_file, new_file, orig_df, new_df, col, missing_col="orig")
 
     def compare_fits(self, orig_file, new_file):
-        """ Compares two fits files to check that they are equal """
+        """Compare two fits files to check that they are equal
+
+        Arguments
+        ---------
+        orig_file: str
+        Control file
+
+        new_file: str
+        New file
+        """
         # open fits files
         orig_hdul = fits.open(orig_file)
         new_hdul = fits.open(new_file)
+        try:
+            # compare them
+            if not len(orig_hdul) == len(new_hdul):
+                self.report_fits_mismatch_hdul(orig_file, new_file, orig_hdul,
+                                               new_hdul)
 
-        # compare them
-        self.assertTrue(len(orig_hdul), len(new_hdul))
-        # loop over HDUs
-        for hdu_index, _ in enumerate(orig_hdul):
-            # check header
-            orig_header = orig_hdul[hdu_index].header
-            new_header = new_hdul[hdu_index].header
-            for key in orig_header:
-                self.assertTrue(key in new_header)
-                if not key in ["CHECKSUM", "DATASUM"]:
-                    self.assertTrue((orig_header[key]==new_header[key]) or
-                                    (np.isclose(orig_header[key], new_header[key])))
+            # loop over HDUs
+            for hdu_index, hdu in enumerate(orig_hdul):
+                if "EXTNAME" in hdu.header:
+                    hdu_name = hdu.header["EXTNAME"]
+                else:
+                    hdu_name = hdu_index
+                # check header
+                self.compare_fits_headers(orig_file, new_file,
+                                          orig_hdul[hdu_name].header,
+                                          new_hdul[hdu_name].header)
+                # check data
+                self.compare_fits_data(orig_file, new_file, orig_hdul[hdu_name],
+                                       new_hdul[hdu_name])
+        finally:
+            orig_hdul.close()
+            new_hdul.close()
 
-            for key in new_header:
-                if key not in orig_header:
-                    print(f"key {key} missing in orig header")
-                self.assertTrue(key in orig_header)
+    def compare_fits_data(self, orig_file, new_file, orig_hdu, new_hdu):
+        """Compare the data of two HDUs
 
-            # check data
-            orig_data = orig_hdul[hdu_index].data
-            new_data = new_hdul[hdu_index].data
-            if orig_data is None:
-                self.assertTrue(new_data is None)
-            else:
-                for col in orig_data.dtype.names:
-                    self.assertTrue(col in new_data.dtype.names)
-                    self.assertTrue(((orig_data[col] == new_data[col]).all()) or
-                                    (np.allclose(orig_data[col],
-                                                 new_data[col],
-                                                 equal_nan=True)))
-                for col in new_data.dtype.names:
-                    if col not in orig_data.dtype.names:
-                        print(f"Columns {col} missing in orig header")
-                    self.assertTrue(col in orig_data.dtype.names)
+        Arguments
+        ---------
+        orig_file: str
+        Control file. Used only for error reporting
+
+        new_file: str
+        New file. Used only for error reporting
+
+        orig_hdu: fits.hdu.table.BinTableHDU or fits.hdu.image.ImageHDU
+        Control header
+
+        new_hdu: fits.hdu.table.BinTableHDU or fits.hdu.image.ImageHDU
+        New header
+        """
+        orig_data = orig_hdu.data
+        new_data = new_hdu.data
+
+        # Empty HDU
+        if orig_data is None:
+            if new_data is not None:
+                self.report_fits_mismatch_data(orig_file, new_file, orig_data,
+                                               new_data,
+                                               orig_hdu.header["EXTNAME"])
+
+        # Image HDU
+        elif orig_data.dtype.names is None:
+            if not np.allclose(orig_data, new_data, equal_nan=True):
+                self.report_fits_mismatch_data(orig_file, new_file, orig_data,
+                                               new_data,
+                                               orig_hdu.header["EXTNAME"])
+
+        # Table HDU
+        else:
+            for col in orig_data.dtype.names:
+                if not col in new_data.dtype.names:
+                    self.report_fits_mismatch_data(orig_file,
+                                                   new_file,
+                                                   orig_data,
+                                                   new_data,
+                                                   orig_hdu.header["EXTNAME"],
+                                                   col=col,
+                                                   missing_col="new")
+                self.assertTrue(col in new_data.dtype.names)
+                # This is passed to np.allclose and np.isclose to properly handle IDs
+                if col in ['LOS_ID', 'TARGETID', 'THING_ID']:
+                    rtol = 0
+                # This is the default numpy rtol value
+                else:
+                    rtol = 1e-5
+
+                if (np.all(orig_data[col] != new_data[col]) and not np.allclose(
+                        orig_data[col], new_data[col], equal_nan=True,
+                        rtol=rtol)):
+                    self.report_fits_mismatch_data(orig_file,
+                                                   new_file,
+                                                   orig_data,
+                                                   new_data,
+                                                   orig_hdu.header["EXTNAME"],
+                                                   col=col,
+                                                   rtol=rtol)
+            for col in new_data.dtype.names:
+                if col not in orig_data.dtype.names:
+                    self.report_fits_mismatch_data(orig_file,
+                                                   new_file,
+                                                   orig_data,
+                                                   new_data,
+                                                   orig_hdu.header["EXTNAME"],
+                                                   col=col,
+                                                   missing_col="orig")
+
+    def compare_fits_headers(self, orig_file, new_file, orig_header,
+                             new_header):
+        """Compare the headers of two HDUs
+
+        Arguments
+        ---------
+        orig_file: str
+        Control file. Used only for error reporting
+
+        new_file: str
+        New file. Used only for error reporting
+
+        orig_header: fits.header.Header
+        Control header
+
+        new_header: fits.header.Header
+        New header
+        """
+        for key in orig_header:
+            if key not in new_header:
+                self.report_fits_mismatch_header(orig_file,
+                                                 new_file,
+                                                 orig_header,
+                                                 new_header,
+                                                 key,
+                                                 missing_key="new")
+            if key in ["CHECKSUM", "DATASUM", "DATETIME"]:
+                continue
+            if (orig_header[key] != new_header[key] and
+                (isinstance(orig_header[key], str) or
+                 not np.isclose(orig_header[key], new_header[key]))):
+                self.report_fits_mismatch_header(orig_file, new_file,
+                                                 orig_header, new_header, key)
+        for key in new_header:
+            if key not in orig_header:
+                self.report_fits_mismatch_header(orig_file,
+                                                 new_file,
+                                                 orig_header,
+                                                 new_header,
+                                                 key,
+                                                 missing_key="orig")
 
     def compare_json_spectra(self, orig_file, new_file):
         """Compares two sets of spectra saved in a json file"""
@@ -152,6 +268,227 @@ class AbstractTest(unittest.TestCase):
                                         new_spectra_list[index].flux))
             self.assertTrue(np.allclose(orig_spectra_list[index].ivar,
                                         new_spectra_list[index].ivar))
+
+    def report_dataframe_mismatch(self,
+                                  orig_file,
+                                  new_file,
+                                  orig_data,
+                                  new_data,
+                                  col,
+                                  missing_col=None,
+                                  rtol=1e-5,
+                                  equals=False):
+        """Print messages to give more details on a mismatch when comparing
+        data frames
+
+        Arguments
+        ---------
+        orig_file: str
+        Control file
+
+        new_file: str
+        New file
+
+        orig_data: pd.DataFrame
+        Control data
+
+        new_data: pd.DataFrame
+        New data
+
+        col: str
+        Name of the offending column
+
+        missing_col: "new", "orig" or None - Default: None
+        HDU where the key is missing. None if it is present in both
+
+        rtol: float - Default: 1e-5
+        Relative tolerance parameter (see documentation for
+        numpy.islcose or np.allclose). Ignored if equals is True
+
+        equals: boolean - Default: False
+        If True, then compare using a direct equality, otherwise, use np.allclose
+        with the specified tolerance
+        """
+        report_mismatch(orig_file, new_file)
+
+        if missing_col is None:
+            print(f"Different values found for column {col}")
+            print("original new isclose original-new\n")
+            if equals:
+                for new, orig in zip(new_data[col], orig_data[col]):
+                    print(f"{orig} {new} "
+                          f"{orig == new} "
+                          f"{orig-new}")
+            else:
+                for new, orig in zip(new_data[col], orig_data[col]):
+                    print(f"{orig} {new} "
+                          f"{np.isclose(orig, new, equal_nan=True, rtol=rtol)} "
+                          f"{orig-new}")
+        else:
+            print(
+                f"Column {col} missing in {missing_col} file"
+            )
+
+        self.fail()
+
+    def report_fits_mismatch_data(self,
+                                  orig_file,
+                                  new_file,
+                                  orig_data,
+                                  new_data,
+                                  hdu_name,
+                                  col=None,
+                                  missing_col=None,
+                                  rtol=1e-5):
+        """Print messages to give more details on a mismatch when comparing
+        data arrays in fits files
+
+        Arguments
+        ---------
+        orig_file: str
+        Control file
+
+        new_file: str
+        New file
+
+        orig_data: fits.fitsrec.FITS_rec
+        Control data
+
+        new_data: fits.fitsrec.FITS_rec
+        New data
+
+        hdu_name: str
+        Name of the ofending HDU
+
+        col: str or None - Default: None
+        Name of the offending column. None if there are differences
+        in the data array in ImageHDUs
+
+        missing_col: "new", "orig" or None - Default: None
+        HDU where the key is missing. None if it is present in both
+
+        rtol: float - Default: 1e-5
+        Relative tolerance parameter (see documentation for
+        numpy.islcose or np.allclose)
+        """
+        report_mismatch(orig_file, new_file)
+
+        if col is None:
+            if orig_data is None:
+                print("Data found in new HDU but not in orig HDU")
+            else:
+                print(f"Different values found for HDU {hdu_name}")
+                print("original new isclose original-new\n")
+                for new, orig in zip(orig_data, new_data):
+                    print(f"{orig} {new} "
+                          f"{np.isclose(orig, new, equal_nan=True)} "
+                          f"{orig-new}")
+
+        else:
+            if missing_col is None:
+                print(f"Different values found for column {col} in "
+                      f"HDU {hdu_name}")
+                print("original new isclose original-new\n")
+                for new, orig in zip(new_data[col], orig_data[col]):
+                    print(f"{orig} {new} "
+                          f"{np.isclose(orig, new, equal_nan=True, rtol=rtol)} "
+                          f"{orig-new}")
+            else:
+                print(
+                    f"Column {col} in HDU {hdu_name} missing in {missing_col} file"
+                )
+
+        self.fail()
+
+    def report_fits_mismatch_header(self,
+                                    orig_file,
+                                    new_file,
+                                    orig_header,
+                                    new_header,
+                                    key,
+                                    missing_key=None):
+        """Print messages to give more details on a mismatch when comparing
+        headers in fits files
+
+        Arguments
+        ---------
+        orig_file: str
+        Control file
+
+        new_file: str
+        New file
+
+        orig_obj: fits.header.Header
+        Control header.
+
+        new_obj: fits.header.Header
+        New header
+
+        key: str
+        Name of the offending key
+
+        missing_key: "new", "orig" or None - Default: None
+        HDU where the key is missing. None if it is present in both
+        """
+        report_mismatch(orig_file, new_file)
+
+        if missing_key is None:
+            if "EXTNAME" in orig_header:
+                print(f"\n For header {orig_header['EXTNAME']}")
+            else:
+                print("\n For nameless header (possibly a PrimaryHDU)")
+            print(f"Different values found for key {key}: "
+                  f"orig: {orig_header[key]}, new: {new_header[key]}")
+
+        else:
+            print(f"key {key} missing in {missing_key} header")
+
+        self.fail()
+
+    def report_fits_mismatch_hdul(self, orig_file, new_file, orig_hdul,
+                                  new_hdul):
+        """Print messages to give more details on a mismatch when comparing
+        HDU lists in fits files
+
+        Arguments
+        ---------
+        orig_file: str
+        Control file
+
+        new_file: str
+        New file
+
+        orig_hdul: fits.hdu.hdulist.HDUList
+        Control HDU list
+
+        new_hdul: fits.hdu.hdulist.HDUList
+        New HDU list
+        """
+        report_mismatch(orig_file, new_file)
+
+        print("Different number of extensions found")
+        print("orig_hdul.info():")
+        orig_hdul.info()
+        print("new_hdul.info():")
+        new_hdul.info()
+
+        self.fail()
+
+
+def report_mismatch(orig_file, new_file):
+    """Print messages to give more details on a mismatch when comparing
+    files
+
+    Arguments
+    ---------
+    orig_file: str
+    Control file
+
+    new_file: str
+    New file
+    """
+    print(f"\nOriginal file: {orig_file}")
+    print(f"New file: {new_file}")
 
 
 if __name__ == '__main__':

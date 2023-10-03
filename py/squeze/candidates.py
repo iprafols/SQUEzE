@@ -762,21 +762,21 @@ class Candidates:
             raise Error("The function merge is available in the " +
                         f"merge mode only. Detected mode is {self.mode}")
 
+        other_dfs = [self.candidates]
         for index, candidates_filename in enumerate(others_list):
-            self.userprint(f"Merging... {index} of {len(others_list)}")
+            self.userprint(f"Loading... {index} of {len(others_list)}")
 
             try:
                 # load candidates
-                other = load_df(candidates_filename)
-
-                # append to candidates list
-                self.candidates = self.candidates.append(other,
-                                                         ignore_index=True)
+                other_dfs.append(load_df(candidates_filename))
 
             except TypeError:
                 self.userprint(
                     f"Error occured when loading file {candidates_filename}.")
                 self.userprint("Ignoring file")
+
+        self.candidates = pd.concat(other_dfs, ignore_index=True)
+
 
     def plot_histograms(self, plot_col, normed=True):
         """ Plot the histogram of the specified column

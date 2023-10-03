@@ -129,8 +129,8 @@ class Spectrum:
 
         mask[np.where((np.isnan(rebinned_flux)) |
                       (np.isnan(rebinned_ivar)))] = True
-        rebinned_flux = np.ma.array(rebinned_flux, mask=mask)
-        rebinned_ivar = np.ma.array(rebinned_ivar, mask=mask)
+        rebinned_flux[mask] = 0.0
+        rebinned_ivar[mask] = 0.0
 
         # return flux, error and wavelength
         return rebinned_flux, rebinned_ivar, rebinned_wave
