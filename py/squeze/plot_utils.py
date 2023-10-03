@@ -529,6 +529,9 @@ def plot_peaks(spectra,
     emission_lines: pd.DataFrame - Default: LINES
     Emission lines to plot. Format is a datframe with the field "WAVE" with
     the rest-frame wavelength of the lines.
+
+    add_legend: boolean - Default: False
+    If True, then plot the plot legend
     """
     if len(peak_finders) > len(COLOR_LIST):
         print("Too many items to plot. Either add more colors to the list or "
@@ -554,7 +557,10 @@ def plot_peaks(spectra,
         nrows += 1
     figsize = (13, 5 * nrows)
     fig = plt.figure(figsize=figsize)
-    gs = fig.add_gridspec(nrows=nrows + 1, ncols=ncols)
+    if add_legend:
+        gs = fig.add_gridspec(nrows=nrows + 1, ncols=ncols)
+    else:
+        gs = fig.add_gridspec(nrows=nrows, ncols=ncols)
     gs.update(wspace=0.25,
               hspace=0.4,
               bottom=0.15,
@@ -566,7 +572,8 @@ def plot_peaks(spectra,
         for index_row in range(nrows)
         for index_col in range(ncols)
     ]
-    ax_legend = fig.add_subplot(gs[-1, :])
+    if add_legend:
+        ax_legend = fig.add_subplot(gs[-1, :])
 
     lines = []
     for index, (ax, spectrum) in enumerate(zip(axes, spectra.spectra_list)):
@@ -656,9 +663,10 @@ def plot_peaks(spectra,
                        labelright=False)
 
     # legend
-    labels = [lns.get_label() for lns in lines]
-    ax_legend.legend(lines, labels, ncol=3, loc=9, fontsize=fontsize)
-    ax_legend.axis('off')
+    if add_legend:
+        labels = [lns.get_label() for lns in lines]
+        ax_legend.legend(lines, labels, ncol=3, loc=9, fontsize=fontsize)
+        ax_legend.axis('off')
 
 
 def plot_peakfinder_stats_vs_magnitude(mag_cuts,
