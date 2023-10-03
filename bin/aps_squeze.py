@@ -11,6 +11,8 @@
      1.2 Modified By Alireza Molaeinezhad (APS, Feb 2022)
      1.3 Modified By Alireza Molaeinezhad (APS, Feb 2022)
      1.4 Modified By Ignasi Perez-Rafols (ICCUB, Sep 2022)
+     1.5 Modified By Alireza Molaeinezhad (APS, Sept 2023)
+     1.6 Modified By Ignasi Perez-Rafols (UPC, Sept 2023)
 
 
 ########### BAISC APS PARAM ###########################################################################################################
@@ -25,6 +27,7 @@ area (Optional)           |     None        |  --area             (Optional)    
 mask_areas (Optional)     |     None        |  --mask_areas       (Optional)      |        None       |                               |
 sens_corr (Optional)      |     True        |  --sens_corr        (Optional)      |        True       |                               |
 mask_gaps (Optional)      |     True        |  --mask_gaps        (Optional)      |        True       |                               |
+safe_mask_gaps (Optional) |     True        |  --safe_mask_gaps   (Optional)      |        True       |                               |
 vacuum (Optional)         |     False       |  --vacuum           (Optional)      |        True       |                               |
 tellurics (Optional)      |     False       |  --tellurics        (Optional)      |        False      |                               |
 fill_gap (Optional)       |     False       |  --fill_gap         (Optional)      |        False      |                               |
@@ -62,7 +65,7 @@ cache_Rcsr  (Optional)    |     -           |  --cache_Rcsr       (Optional)    
 
 Example:
 
-python3 aps_squeze.py --infiles $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004074.fit $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004073.fit --outpath $HOME/PyAPS/PyAPS_results/20170930/4011/ --headname stacked_1004074__stacked_1004073 --wlranges 4200.0,6000.0 6000.0,8000.0 --aps_ids 1002,9,1007,1006 --targsrvy WL,WQ --targclass None --mask_aps_ids None --area None --mask_areas None --templates $HOME/PyAPS/PyAPS_templates/templates_SQ/ --srvyconf $HOME/PyAPS/configs/weave_cls.json --join_arms False --mp 2 --archetypes None --zall False --chi2_scan None --nminima 3 --cache_Rcsr False --debug False --overwrite True --fig True --sens_corr True --mask_gaps True --tellurics False --vacuum True --fill_gap False --arms_ratio 1.0,0.83 --model $HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json --prob_cut 0.0 --clean_dir False
+python3 aps_squeze.py --infiles $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004074.fit $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004073.fit --outpath $HOME/PyAPS/PyAPS_results/20170930/4011/ --headname stacked_1004074__stacked_1004073 --wlranges 4200.0,6000.0 6000.0,8000.0 --aps_ids 1002,9,1007,1006 --targsrvy WL,WQ --targclass None --mask_aps_ids None --area None --mask_areas None --templates $HOME/PyAPS/PyAPS_templates/templates_SQ/ --srvyconf $HOME/PyAPS/configs/weave_cls.json --join_arms False --mp 2 --archetypes None --zall False --chi2_scan None --nminima 3 --cache_Rcsr False --debug False --overwrite True --safe_mask_gaps True --fig True --sens_corr True --mask_gaps True --tellurics False --vacuum True --fill_gap False --arms_ratio 1.0,0.83 --model $HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json --prob_cut 0.0 --clean_dir False
 
 
 
@@ -83,6 +86,8 @@ History:
 topcat is the preferable function for QSO but the redrock code right now cannot handle it properly. So I added Gaussian as the default function.
 29 Apr 2022: I.P: Fixed PROV names in primary HDU
 9 Sep 2022: I.P: SQUEzE is now running with configuration files. Adapted changes here
+29 Sept 2023: Compability check and updating the code to make sure it is compatible with teh PyAPS version > 09.2023
+
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.2"
@@ -100,7 +105,7 @@ from datetime import datetime
 
 import PyAPS
 from PyAPS.aps_utils import APSOB, makeR, print_args, none_or_str, str2bool, aps_ids_class,l1_fileinfo, gen_targlist
-from PyAPS.aps_rr import write_ztable, gen_zfitall, gen_zbest, gen_zspec, rrweave_worker
+from PyAPS.aps_rr import rrweave_worker
 from PyAPS import aps_constants
 import warnings
 
@@ -140,7 +145,7 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
     # load model
     userprint("================================================")
     userprint("")
-    
+
     # load spectra
     userprint("Loading spectra")
     weave_formatted_spectra = APSOB(infiles, aps_ids=aps_ids,
@@ -166,10 +171,11 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
         "model": {
             "filename": model,
         },
-    })
+    }
     if save_file is not None:
-        config["general"]["output"] = save_file
-    candidates = Candidates(config_dict=config_dict)
+        config_dict["general"]["output"] = save_file
+    config = Config(config_dict=config_dict)
+    candidates = Candidates(config)
 
     # look for candidates
     userprint("Looking for candidates")
@@ -452,6 +458,9 @@ def main(options=None, comm=None):
 
     parser.add_argument("--mask_gaps", type=str2bool, default=True,
         required=False, help="mask the gaps between CCD by putting ivar = 0")
+
+    parser.add_argument("--safe_mask_gaps", type=str2bool, default=True,
+        required=False, help="mask the gaps between chips (read from lookup table) by putting ivar= 0")
 
     parser.add_argument("--vacuum", type=str2bool, default=True,
         required=False, help="transform wavelenght from air to vacuum")
@@ -794,7 +803,7 @@ def main(options=None, comm=None):
         scandata, zbest, zspec, zfitall = rrweave_worker(
             args.infiles, args.templates, srvyconf=args.srvyconf,
             zbest_fname=zbest_fname, zall_fname =zall_fname,zspec_fname=zspec_fname, aps_ids=aps_ids,
-            targsrvy= targsrvy, targclass = targclass, mask_aps_ids=mask_aps_ids , area=area, mask_areas=mask_areas,
+            targsrvy= targsrvy, targclass = targclass, mask_aps_ids=mask_aps_ids , area=area, mask_areas=mask_areas, safe_mask_gaps=args.safe_mask_gaps,
             wlranges=wlranges, sens_corr=args.sens_corr, mask_gaps=args.mask_gaps, vacuum=args.vacuum, tellurics=args.tellurics,
             fill_gap=args.fill_gap, arms_ratio=arms_ratio, join_arms=args.join_arms, ncpus= args.mp, comm=comm,
             comm_rank=comm_rank, comm_size=comm_size,nminima=args.nminima, archetypes=args.archetypes,cache_Rcsr=args.cache_Rcsr,
@@ -838,6 +847,7 @@ if __name__ == '__main__':
     '--wlranges', '4300.0,5000', '6000.0,6800',
     '--sens_corr', 'True',
     '--mask_gaps', 'True',
+    '--safe_mask_gaps', 'True',
     '--tellurics', 'False',
     '--vacuum', 'True',
     '--fill_gap', 'False',
@@ -856,7 +866,7 @@ if __name__ == '__main__':
     '--debug', 'False',
     '--overwrite', 'True',
     '--mp' ,'2',
-    '--model', '$HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json',
+    '--model', '$HOME/PyAPS/PyAPS_templates/templates_SQ/BOSS_train_64plates_model.json',
     "--prob_cut", '0.0',
     # "--output_catalogue", 'stacked_1004074__stacked_1004073_SQUEZE.fits',
     "--clean_dir", 'False',
