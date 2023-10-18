@@ -13,6 +13,8 @@
      1.4 Modified By Ignasi Perez-Rafols (ICCUB, Sep 2022)
      1.5 Modified By Alireza Molaeinezhad (APS, Sept 2023)
      1.6 Modified By Ignasi Perez-Rafols (UPC, Sept 2023)
+     1.7 Modified By Alireza Molaeinezhad (CASU/APS, Oct 2023)
+     1.8 Modified By Ignasi Perez-Rafols (UPC, Oct 2023)
 
 
 ########### BAISC APS PARAM ###########################################################################################################
@@ -87,7 +89,9 @@ topcat is the preferable function for QSO but the redrock code right now cannot 
 29 Apr 2022: I.P: Fixed PROV names in primary HDU
 9 Sep 2022: I.P: SQUEzE is now running with configuration files. Adapted changes here
 29 Sept 2023: Compability check and updating the code to make sure it is compatible with teh PyAPS version > 09.2023
-
+06 Oct 2023:  Following the discussion with ignasi, we temporarily replace the Config mechanism with the default_config from the config.py file
+06 Oct 2023:  candicate_utils updated to skip doggy spectrums in the spectra
+10 Oct 2023: Imported default config instead of redefining it here
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.2"
@@ -124,6 +128,7 @@ from squeze.model import Model
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
 from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
+from squeze.config import Config, default_config
 
 
 __aps_squeze_version__=1.1
@@ -156,7 +161,6 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
                                     vacuum=vacuum, tellurics=tellurics,
                                     fill_gap=fill_gap, arms_ratio=arms_ratio,
                                     join_arms=join_arms)
-
     userprint("Formatting spectra to be digested by SQUEzE")
     spectra = Spectra.from_weave(weave_formatted_spectra, userprint=userprint)
 
@@ -164,14 +168,16 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
 
     # initialize candidates object
     userprint("Initialize candidates object")
-    config_dict = {
-        "general": {
-            "mode": "operation",
-        },
-        "model": {
-            "filename": model,
-        },
-    }
+    # TODO: fix the config so that defaults are automatically loaded
+    # config_dict = {"general": {"mode": "operation",},"model": {"filename": "",},}
+
+    # Following the discussion with ignasi, we temporarily replace this with the default_config from the config.py file
+    config_dict = default_config.copy()
+    config_dict["general"]["mode"] = "operation"
+    default_config["candidates"]["lines"] = "/scratch/aps/PyAPS/CS/SQUEzE/data/default_lines.json"
+    config_dict["model"]["filename"] = model
+    config_dict["model"]["random forest options"] = "/scratch/aps/PyAPS/CS/SQUEzE/data/default_random_forest_options.json",
+
     if save_file is not None:
         config_dict["general"]["output"] = save_file
     config = Config(config_dict=config_dict)
@@ -183,7 +189,6 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
     columns_candidates = spectra.spectra_list[0].metadata_names()
 
     candidates.find_candidates(spectra.spectra_list,columns_candidates)
-
     if save_file is None:
         candidates.candidates_list_to_dataframe(columns_candidates, save=False)
     else:
@@ -741,15 +746,15 @@ def main(options=None, comm=None):
         #     save_file = args.outpath + save_file
 
         candidates_df, z_precision = squeze_worker(args.infiles, args.model,
-                                                   aps_ids, targsrvy, targclass,
-                                                   mask_aps_ids, area, mask_areas,
-                                                   wlranges, args.cache_Rcsr,
-                                                   args.sens_corr, args.mask_gaps,
-                                                   args.vacuum, args.tellurics,
-                                                   args.fill_gap, arms_ratio,
-                                                   args.join_arms,
-                                                   quiet=args.quiet,
-                                                   save_file=save_file)
+                                                    aps_ids, targsrvy, targclass,
+                                                    mask_aps_ids, area, mask_areas,
+                                                    wlranges, args.cache_Rcsr,
+                                                    args.sens_corr, args.mask_gaps,
+                                                    args.vacuum, args.tellurics,
+                                                    args.fill_gap, arms_ratio,
+                                                    args.join_arms,
+                                                    quiet=args.quiet,
+                                                    save_file=save_file)
 
         # here is where we format SQUEzE output into priors
         # we currently take a flat prior with SQUEzE preferred redshift solution
@@ -798,7 +803,6 @@ def main(options=None, comm=None):
 
         del aux, columns, hdu
 
-
         # now we run redrock
         scandata, zbest, zspec, zfitall = rrweave_worker(
             args.infiles, args.templates, srvyconf=args.srvyconf,
@@ -837,7 +841,7 @@ def main(options=None, comm=None):
 if __name__ == '__main__':
 
     option = [
-    '--infiles', '/Users/alireza/PyAPS/PyAPS_data/squeze/4011/stacked_1004074.fit','/Users/alireza/PyAPS/PyAPS_data/squeze/4011/stacked_1004073.fit',
+    '--infiles', '/scratch/aps/PyAPS/PyAPS_data_dev/L1/squeze/4011/stacked_1004074.fit','/scratch/aps/PyAPS/PyAPS_data_dev/L1/squeze/4011/stacked_1004073.fit',
     '--aps_ids', '1004,1002,9,1003,1007',
     '--targsrvy', 'WL',
     '--targclass', 'None',
@@ -855,8 +859,8 @@ if __name__ == '__main__':
     '--join_arms', 'True',
     '--templates', '$HOME/PyAPS/PyAPS_templates/templates_SQ/',
     '--srvyconf', '$HOME/PyAPS/configs/weave_cls.json',
-    '--archetypes', '$HOME/PyAPS/PyAPS_templates/templates_ARC_SQ/',
-    '--outpath', '$HOME/PyAPS/PyAPS_results/20170930/4011_3/',
+    '--archetypes', 'None',
+    '--outpath', '/scratch/aps/PyAPS/PyAPS_data_dev/L2/test2_OPR4_Jan2022/20170930/4011/',
     '--headname', 'stacked_1004074__stacked_1004073',
     '--zall', 'False',
     '--chi2_scan', 'None',
