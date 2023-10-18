@@ -12,18 +12,22 @@ import pandas as pd
 
 from squeze.candidates import Candidates
 from squeze.utils import verboseprint
+from squeze.config import Config
 
 def main():
     """ This function pretrains SQUEzE using BOSS data and creates the json file
         associated with the trained model"""
 
-    verboseprint("Loading dataset")
-    config = Config()
-    config.set_option("general", "output", "../data/BOSS_train_64plates.fits.gz")
+    config = Config(config_dict={
+        "general": {
+            "output": "../data/BOSS_train_64plates.fits.gz"},
+        "candidates": {
+            "load candidates": True,
+            "input candidates": "../data/BOSS_train_64plates.fits.gz",
+        }
+    })
     candidates = Candidates(config)
-    candidates.load_candidates("../data/BOSS_train_64plates.fits.gz")
-    verboseprint("Training model")
-    candidates.train_model(False)
+    candidates.train_model()
 
     verboseprint("Done")
 

@@ -11,6 +11,10 @@
      1.2 Modified By Alireza Molaeinezhad (APS, Feb 2022)
      1.3 Modified By Alireza Molaeinezhad (APS, Feb 2022)
      1.4 Modified By Ignasi Perez-Rafols (ICCUB, Sep 2022)
+     1.5 Modified By Alireza Molaeinezhad (APS, Sept 2023)
+     1.6 Modified By Ignasi Perez-Rafols (UPC, Sept 2023)
+     1.7 Modified By Alireza Molaeinezhad (CASU/APS, Oct 2023)
+     1.8 Modified By Ignasi Perez-Rafols (UPC, Oct 2023)
 
 
 ########### BAISC APS PARAM ###########################################################################################################
@@ -25,6 +29,7 @@ area (Optional)           |     None        |  --area             (Optional)    
 mask_areas (Optional)     |     None        |  --mask_areas       (Optional)      |        None       |                               |
 sens_corr (Optional)      |     True        |  --sens_corr        (Optional)      |        True       |                               |
 mask_gaps (Optional)      |     True        |  --mask_gaps        (Optional)      |        True       |                               |
+safe_mask_gaps (Optional) |     True        |  --safe_mask_gaps   (Optional)      |        True       |                               |
 vacuum (Optional)         |     False       |  --vacuum           (Optional)      |        True       |                               |
 tellurics (Optional)      |     False       |  --tellurics        (Optional)      |        False      |                               |
 fill_gap (Optional)       |     False       |  --fill_gap         (Optional)      |        False      |                               |
@@ -62,7 +67,7 @@ cache_Rcsr  (Optional)    |     -           |  --cache_Rcsr       (Optional)    
 
 Example:
 
-python3 aps_squeze.py --infiles $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004074.fit $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004073.fit --outpath $HOME/PyAPS/PyAPS_results/20170930/4011/ --headname stacked_1004074__stacked_1004073 --wlranges 4200.0,6000.0 6000.0,8000.0 --aps_ids 1002,9,1007,1006 --targsrvy WL,WQ --targclass None --mask_aps_ids None --area None --mask_areas None --templates $HOME/PyAPS/PyAPS_templates/templates_SQ/ --srvyconf $HOME/PyAPS/configs/weave_cls.json --join_arms False --mp 2 --archetypes None --zall False --chi2_scan None --nminima 3 --cache_Rcsr False --debug False --overwrite True --fig True --sens_corr True --mask_gaps True --tellurics False --vacuum True --fill_gap False --arms_ratio 1.0,0.83 --model $HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json --prob_cut 0.0 --clean_dir False
+python3 aps_squeze.py --infiles $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004074.fit $HOME/PyAPS/PyAPS_data/squeze/4011/stacked_1004073.fit --outpath $HOME/PyAPS/PyAPS_results/20170930/4011/ --headname stacked_1004074__stacked_1004073 --wlranges 4200.0,6000.0 6000.0,8000.0 --aps_ids 1002,9,1007,1006 --targsrvy WL,WQ --targclass None --mask_aps_ids None --area None --mask_areas None --templates $HOME/PyAPS/PyAPS_templates/templates_SQ/ --srvyconf $HOME/PyAPS/configs/weave_cls.json --join_arms False --mp 2 --archetypes None --zall False --chi2_scan None --nminima 3 --cache_Rcsr False --debug False --overwrite True --safe_mask_gaps True --fig True --sens_corr True --mask_gaps True --tellurics False --vacuum True --fill_gap False --arms_ratio 1.0,0.83 --model $HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json --prob_cut 0.0 --clean_dir False
 
 
 
@@ -83,6 +88,10 @@ History:
 topcat is the preferable function for QSO but the redrock code right now cannot handle it properly. So I added Gaussian as the default function.
 29 Apr 2022: I.P: Fixed PROV names in primary HDU
 9 Sep 2022: I.P: SQUEzE is now running with configuration files. Adapted changes here
+29 Sept 2023: Compability check and updating the code to make sure it is compatible with teh PyAPS version > 09.2023
+06 Oct 2023:  Following the discussion with ignasi, we temporarily replace the Config mechanism with the default_config from the config.py file
+06 Oct 2023:  candicate_utils updated to skip doggy spectrums in the spectra
+10 Oct 2023: Imported default config instead of redefining it here
 """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 __version__ = "0.2"
@@ -100,7 +109,7 @@ from datetime import datetime
 
 import PyAPS
 from PyAPS.aps_utils import APSOB, makeR, print_args, none_or_str, str2bool, aps_ids_class,l1_fileinfo, gen_targlist
-from PyAPS.aps_rr import write_ztable, gen_zfitall, gen_zbest, gen_zspec, rrweave_worker
+from PyAPS.aps_rr import rrweave_worker
 from PyAPS import aps_constants
 import warnings
 
@@ -119,6 +128,7 @@ from squeze.model import Model
 from squeze.spectra import Spectra
 from squeze.candidates import Candidates
 from squeze.parsers import PARENT_PARSER, QUASAR_CATALOGUE_PARSER
+from squeze.config import Config, default_config
 
 
 __aps_squeze_version__=1.1
@@ -140,7 +150,7 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
     # load model
     userprint("================================================")
     userprint("")
-    
+
     # load spectra
     userprint("Loading spectra")
     weave_formatted_spectra = APSOB(infiles, aps_ids=aps_ids,
@@ -151,7 +161,6 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
                                     vacuum=vacuum, tellurics=tellurics,
                                     fill_gap=fill_gap, arms_ratio=arms_ratio,
                                     join_arms=join_arms)
-
     userprint("Formatting spectra to be digested by SQUEzE")
     spectra = Spectra.from_weave(weave_formatted_spectra, userprint=userprint)
 
@@ -159,17 +168,20 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
 
     # initialize candidates object
     userprint("Initialize candidates object")
-    config_dict = {
-        "general": {
-            "mode": "operation",
-        },
-        "model": {
-            "filename": model,
-        },
-    })
+    # TODO: fix the config so that defaults are automatically loaded
+    # config_dict = {"general": {"mode": "operation",},"model": {"filename": "",},}
+
+    # Following the discussion with ignasi, we temporarily replace this with the default_config from the config.py file
+    config_dict = default_config.copy()
+    config_dict["general"]["mode"] = "operation"
+    default_config["candidates"]["lines"] = "/scratch/aps/PyAPS/CS/SQUEzE/data/default_lines.json"
+    config_dict["model"]["filename"] = model
+    config_dict["model"]["random forest options"] = "/scratch/aps/PyAPS/CS/SQUEzE/data/default_random_forest_options.json",
+
     if save_file is not None:
-        config["general"]["output"] = save_file
-    candidates = Candidates(config_dict=config_dict)
+        config_dict["general"]["output"] = save_file
+    config = Config(config_dict=config_dict)
+    candidates = Candidates(config)
 
     # look for candidates
     userprint("Looking for candidates")
@@ -177,7 +189,6 @@ def squeze_worker(infiles, model, aps_ids, targsrvy, targclass, mask_aps_ids,
     columns_candidates = spectra.spectra_list[0].metadata_names()
 
     candidates.find_candidates(spectra.spectra_list,columns_candidates)
-
     if save_file is None:
         candidates.candidates_list_to_dataframe(columns_candidates, save=False)
     else:
@@ -452,6 +463,9 @@ def main(options=None, comm=None):
 
     parser.add_argument("--mask_gaps", type=str2bool, default=True,
         required=False, help="mask the gaps between CCD by putting ivar = 0")
+
+    parser.add_argument("--safe_mask_gaps", type=str2bool, default=True,
+        required=False, help="mask the gaps between chips (read from lookup table) by putting ivar= 0")
 
     parser.add_argument("--vacuum", type=str2bool, default=True,
         required=False, help="transform wavelenght from air to vacuum")
@@ -732,15 +746,15 @@ def main(options=None, comm=None):
         #     save_file = args.outpath + save_file
 
         candidates_df, z_precision = squeze_worker(args.infiles, args.model,
-                                                   aps_ids, targsrvy, targclass,
-                                                   mask_aps_ids, area, mask_areas,
-                                                   wlranges, args.cache_Rcsr,
-                                                   args.sens_corr, args.mask_gaps,
-                                                   args.vacuum, args.tellurics,
-                                                   args.fill_gap, arms_ratio,
-                                                   args.join_arms,
-                                                   quiet=args.quiet,
-                                                   save_file=save_file)
+                                                    aps_ids, targsrvy, targclass,
+                                                    mask_aps_ids, area, mask_areas,
+                                                    wlranges, args.cache_Rcsr,
+                                                    args.sens_corr, args.mask_gaps,
+                                                    args.vacuum, args.tellurics,
+                                                    args.fill_gap, arms_ratio,
+                                                    args.join_arms,
+                                                    quiet=args.quiet,
+                                                    save_file=save_file)
 
         # here is where we format SQUEzE output into priors
         # we currently take a flat prior with SQUEzE preferred redshift solution
@@ -789,12 +803,11 @@ def main(options=None, comm=None):
 
         del aux, columns, hdu
 
-
         # now we run redrock
         scandata, zbest, zspec, zfitall = rrweave_worker(
             args.infiles, args.templates, srvyconf=args.srvyconf,
             zbest_fname=zbest_fname, zall_fname =zall_fname,zspec_fname=zspec_fname, aps_ids=aps_ids,
-            targsrvy= targsrvy, targclass = targclass, mask_aps_ids=mask_aps_ids , area=area, mask_areas=mask_areas,
+            targsrvy= targsrvy, targclass = targclass, mask_aps_ids=mask_aps_ids , area=area, mask_areas=mask_areas, safe_mask_gaps=args.safe_mask_gaps,
             wlranges=wlranges, sens_corr=args.sens_corr, mask_gaps=args.mask_gaps, vacuum=args.vacuum, tellurics=args.tellurics,
             fill_gap=args.fill_gap, arms_ratio=arms_ratio, join_arms=args.join_arms, ncpus= args.mp, comm=comm,
             comm_rank=comm_rank, comm_size=comm_size,nminima=args.nminima, archetypes=args.archetypes,cache_Rcsr=args.cache_Rcsr,
@@ -828,7 +841,7 @@ def main(options=None, comm=None):
 if __name__ == '__main__':
 
     option = [
-    '--infiles', '/Users/alireza/PyAPS/PyAPS_data/squeze/4011/stacked_1004074.fit','/Users/alireza/PyAPS/PyAPS_data/squeze/4011/stacked_1004073.fit',
+    '--infiles', '/scratch/aps/PyAPS/PyAPS_data_dev/L1/squeze/4011/stacked_1004074.fit','/scratch/aps/PyAPS/PyAPS_data_dev/L1/squeze/4011/stacked_1004073.fit',
     '--aps_ids', '1004,1002,9,1003,1007',
     '--targsrvy', 'WL',
     '--targclass', 'None',
@@ -838,6 +851,7 @@ if __name__ == '__main__':
     '--wlranges', '4300.0,5000', '6000.0,6800',
     '--sens_corr', 'True',
     '--mask_gaps', 'True',
+    '--safe_mask_gaps', 'True',
     '--tellurics', 'False',
     '--vacuum', 'True',
     '--fill_gap', 'False',
@@ -845,8 +859,8 @@ if __name__ == '__main__':
     '--join_arms', 'True',
     '--templates', '$HOME/PyAPS/PyAPS_templates/templates_SQ/',
     '--srvyconf', '$HOME/PyAPS/configs/weave_cls.json',
-    '--archetypes', '$HOME/PyAPS/PyAPS_templates/templates_ARC_SQ/',
-    '--outpath', '$HOME/PyAPS/PyAPS_results/20170930/4011_3/',
+    '--archetypes', 'None',
+    '--outpath', '/scratch/aps/PyAPS/PyAPS_data_dev/L2/test2_OPR4_Jan2022/20170930/4011/',
     '--headname', 'stacked_1004074__stacked_1004073',
     '--zall', 'False',
     '--chi2_scan', 'None',
@@ -856,7 +870,7 @@ if __name__ == '__main__':
     '--debug', 'False',
     '--overwrite', 'True',
     '--mp' ,'2',
-    '--model', '$HOME/PyAPS/CS/SQUEzE/data/BOSS_train_64plates_model.json',
+    '--model', '$HOME/PyAPS/PyAPS_templates/templates_SQ/BOSS_train_64plates_model.json',
     "--prob_cut", '0.0',
     # "--output_catalogue", 'stacked_1004074__stacked_1004073_SQUEZE.fits',
     "--clean_dir", 'False',

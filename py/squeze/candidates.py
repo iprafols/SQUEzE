@@ -121,7 +121,7 @@ class Candidates:
         if lines is None:
             message = "In section [candidates], variable 'lines' is required"
             raise Error(message)
-        self.lines = deserialize(load_json(os.path.expandvars(lines)))
+        self.lines = pd.read_json(os.path.expandvars(lines))
         if not isinstance(self.lines, pd.DataFrame):
             message = ("Expected a DataFrame with the line information. "
                        f"Found: {type(self.lines)}\n    lines: {lines}\n"
@@ -541,8 +541,12 @@ class Candidates:
         for spectrum in spectra:
             # locate candidates in this spectrum
             # candidates are appended to self.candidates_list
-            self.__find_candidates(spectrum)
-
+            try:
+                self.__find_candidates(spectrum)
+            except Exception:
+                self.userprint(
+                "Error occured in finding candidates in spectrum.")
+                self.userprint("Ignoring spectrum")
             if len(self.candidates_list) > MAX_CANDIDATES_TO_CONVERT:
                 self.userprint("Converting candidates to dataframe")
                 time0 = time.time()
@@ -677,12 +681,12 @@ class Candidates:
         If True, save candidates before exiting
         """
         settings = self.config.get_section("candidates")
-        load_candidates = settings.getboolean("load candidates")
-        if load_candidates is None:
+        _load_candidates = settings.getboolean("load candidates")
+        if _load_candidates is None:
             message = ("In section [candidates], variable 'load candidates' "
                        "is required")
             raise Error(message)
-        if load_candidates:
+        if _load_candidates:
             self.userprint("Loading existing candidates")
             time_start = time.time()
             input_candidates = settings.get("input candidates")

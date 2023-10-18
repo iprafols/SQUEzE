@@ -20,6 +20,12 @@ CHECK_PROBS = " ".join([str(item) for item in np.arange(0.9, 0.0, -0.05)])
 QSO_COLS = ("ra dec thing_id plate mjd fiberid z_vi class_person z_conf_person "
             "boss_target1 ancillary_target1 ancillary_target2 eboss_target0")
 
+# add system variables required to load the default configuration
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+SQUEZE = THIS_DIR.split("py/squeze")[0]
+os.environ["SQUEZE"] = SQUEZE
+
+
 default_config = {
     "general": {
         "mode": "training",
@@ -150,7 +156,7 @@ class Config:
             if os.path.exists(os.path.expandvars(filename)):
                 self.config.read(os.path.expandvars(filename))
             else:
-                message = f"Config file not found: {filename}; using default config"
+                message = f"Config file not found: {filename}"
                 raise Error(message)
         else:
             self.config.read_dict(config_dict)
