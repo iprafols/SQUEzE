@@ -99,6 +99,10 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
                     (pix_blue.size < pix_peak.size // 2) or
                     (pix_red.size < pix_peak.size // 2)):
                     compute_ratio = False
+                    peak = np.nan
+                    cont_red = np.nan
+                    cont_blue = np.nan
+                    cont_red_and_blue = np.nan
                 else:
                     peak = np.mean(flux[pix_peak])
                     cont_red = np.mean(flux[pix_red])
