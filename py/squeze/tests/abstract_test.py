@@ -94,21 +94,22 @@ class AbstractTest(unittest.TestCase):
             for col, dtype in zip(orig_df.columns, orig_df.dtypes):
                 if not col in new_df.columns:
                     self.report_dataframe_mismatch(orig_file,
-                                                   new_file,
-                                                   orig_df,
-                                                   new_df,
-                                                   col,
-                                                   missing_col="new")
-                if (dtype == "O") and not orig_df[col].equals(new_df[col]):
-                    self.report_dataframe_mismatch(orig_file,
-                                                   new_file,
-                                                   orig_df,
-                                                   new_df,
-                                                   col,
-                                                   equals=True)
+                                                    new_file,
+                                                    orig_df,
+                                                    new_df,
+                                                    col,
+                                                    missing_col="new")
+                if (dtype == "object"):
+                    if not orig_df[col].equals(new_df[col]):
+                        self.report_dataframe_mismatch(orig_file,
+                                                        new_file,
+                                                        orig_df,
+                                                        new_df,
+                                                        col,
+                                                        equals=True)
                 elif not np.allclose(orig_df[col], new_df[col], equal_nan=True):
                     self.report_dataframe_mismatch(orig_file, new_file, orig_df,
-                                                   new_df, col)
+                                                    new_df, col)
             for col in new_df.columns:
                 if not col in orig_df.columns:
                     self.report_dataframe_mismatch(orig_file,
