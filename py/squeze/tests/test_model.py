@@ -19,6 +19,7 @@ from squeze.utils import deserialize, load_json
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 os.environ["THIS_DIR"] = THIS_DIR
 
+
 @unittest.skipIf(module_not_found, ("Skip training tests since sklearn was not"
                                     "installed"))
 class TestModel(AbstractTest):
@@ -27,6 +28,7 @@ class TestModel(AbstractTest):
         CLASS: TestModel
         PURPOSE: Test the Model
         """
+
     def test_fits_model(self):
         """ Create a fits model and test it"""
 
@@ -40,7 +42,8 @@ class TestModel(AbstractTest):
         # now test the model
         in_file = f"{THIS_DIR}/data/configs/test_fits_model_test.ini"
         out_file = "{}/results/test_boss_test2_nostats.fits.gz".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test2_pred.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test2_pred.fits.gz".format(
+            THIS_DIR)
 
         self.run_squeze(in_file, out_file, test_file)
 
@@ -50,14 +53,16 @@ class TestModel(AbstractTest):
         # first create the model by running squeze_training.py
         in_file = f"{THIS_DIR}/data/configs/test_json_model_training.ini"
         out_file = "{}/results/training_boss_test1.fits.gz".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(
+            THIS_DIR)
 
         self.run_squeze(in_file, out_file, test_file, json_model=True)
 
         # now test the model
         in_file = f"{THIS_DIR}/data/configs/test_json_model_test.ini"
         out_file = "{}/results/test_boss_test2_nostats.fits.gz".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test2_pred.fits.gz".format(THIS_DIR)
+        test_file = "{}/data/candidates_boss_test2_pred.fits.gz".format(
+            THIS_DIR)
 
         self.run_squeze(in_file, out_file, test_file)
 
@@ -66,17 +71,22 @@ class TestModel(AbstractTest):
 
         # first create the model by running squeze_training.py
         in_file = f"{THIS_DIR}/data/configs/test_single_random_forest_model_training.ini"
-        out_file = "{}/results/training_boss_test1_singlerf.fits.gz".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(THIS_DIR)
+        out_file = "{}/results/training_boss_test1_singlerf.fits.gz".format(
+            THIS_DIR)
+        test_file = "{}/data/candidates_boss_test1_nopred.fits.gz".format(
+            THIS_DIR)
 
         self.run_squeze(in_file, out_file, test_file, json_model=True)
 
         # now test the model
         in_file = f"{THIS_DIR}/data/configs/test_single_random_forest_model_test.ini"
-        out_file = "{}/results/test_boss_test2_nostats_singlerf.fits.gz".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test2_pred_singlerf.fits.gz".format(THIS_DIR)
+        out_file = "{}/results/test_boss_test2_nostats_singlerf.fits.gz".format(
+            THIS_DIR)
+        test_file = "{}/data/candidates_boss_test2_pred_singlerf.fits.gz".format(
+            THIS_DIR)
 
         self.run_squeze(in_file, out_file, test_file)
-        
+
+
 if __name__ == '__main__':
     unittest.main()

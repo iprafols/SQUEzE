@@ -6,6 +6,7 @@
 """
 import numpy as np
 
+
 def gaussian(wave, amp, mu, sig):
     """Return a peak with a Gaussian shape
 
@@ -23,7 +24,8 @@ def gaussian(wave, amp, mu, sig):
     sig : float
     Squared root of the Gaussian variance
     """
-    return amp*np.exp(-(wave-mu)**2./(2*sig**2.))
+    return amp * np.exp(-(wave - mu)**2. / (2 * sig**2.))
+
 
 if __name__ == '__main__':
     pass

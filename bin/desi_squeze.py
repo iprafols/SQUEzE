@@ -27,10 +27,11 @@ from squeze.utils import save_json, load_json, verboseprint, quietprint
 
 
 def convert_dtype(dtype):
-     if dtype == "O":
-         return "15A"
-     else:
-         return dtype
+    if dtype == "O":
+        return "15A"
+    else:
+        return dtype
+
 
 def main(cmdargs):
     """ Load DESI spectra using the Spectra and DESISpectrum Classes
@@ -39,25 +40,46 @@ def main(cmdargs):
         """
 
     # load options
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-i", "--input-filename", type=str, required=True,
-                        help="""Name of the filename to be loaded to be loaded.""")
-    parser.add_argument("-m", "--model", type=str, required=True,
-                        help="""Name of the file containing the trained model.""")
-    parser.add_argument("-o","--output-filename", type=str, required=True,
+    parser.add_argument(
+        "-i",
+        "--input-filename",
+        type=str,
+        required=True,
+        help="""Name of the filename to be loaded to be loaded.""")
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        required=True,
+        help="""Name of the file containing the trained model.""")
+    parser.add_argument("-o",
+                        "--output-filename",
+                        type=str,
+                        required=True,
                         help="""Name of the output fits file.""")
-    parser.add_argument("-e","--single-exp", action="store_true",
-                        help="""Load only the first reobservation for each spectrum""")
-    parser.add_argument("--metadata", nargs='+', required=False,
-                        default=["TARGETID"],
-                        help="""White-spaced list of the list of columns to keep as metadata""")
-    parser.add_argument("-v", "--verbose", action="store_true",
+    parser.add_argument(
+        "-e",
+        "--single-exp",
+        action="store_true",
+        help="""Load only the first reobservation for each spectrum""")
+    parser.add_argument(
+        "--metadata",
+        nargs='+',
+        required=False,
+        default=["TARGETID"],
+        help="""White-spaced list of the list of columns to keep as metadata""")
+    parser.add_argument("-v",
+                        "--verbose",
+                        action="store_true",
                         help="""Print messages""")
     args = parser.parse_args(cmdargs)
 
     # prepare variables
-    assert args.output_filename.endswith("fits") or args.output_filename.endswith("fits.gz")
+    assert args.output_filename.endswith(
+        "fits") or args.output_filename.endswith("fits.gz")
     if args.verbose:
         userprint = verboseprint
     else:
@@ -81,7 +103,10 @@ def main(cmdargs):
         pos = np.where(desi_spectra.fibermap["TARGETID"] == targid)
 
         # prepare metadata
-        metadata = {col.upper(): desi_spectra.fibermap[col][pos[0][0]] for col in args.metadata}
+        metadata = {
+            col.upper(): desi_spectra.fibermap[col][pos[0][0]]
+            for col in args.metadata
+        }
 
         # add specid
         metadata["SPECID"] = targid
@@ -98,7 +123,8 @@ def main(cmdargs):
             mask[band] = desi_spectra.mask[band][pos]
 
         # format spectrum
-        spectrum = DesiSpectrum(flux, wave, ivar, mask, metadata, args.single_exp)
+        spectrum = DesiSpectrum(flux, wave, ivar, mask, metadata,
+                                args.single_exp)
 
         # append to list
         squeze_spectra.append(spectrum)
@@ -112,12 +138,13 @@ def main(cmdargs):
 
     # initialize candidates object
     userprint("Initialize candidates object")
-    candidates = Candidates(mode="operation", model=model,
+    candidates = Candidates(mode="operation",
+                            model=model,
                             name=args.output_filename)
 
     # look for candidates
     userprint('Looking for candidates')
-    candidates.find_candidates(squeze_spectra.spectra_list
+    candidates.find_candidates(squeze_spectra.spectra_list)
     columns_candidates = squeze_spectra.spectra_list[0].metadata_names()
     candidates.candidates_list_to_dataframe(columns_candidates, save=False)
 
@@ -130,14 +157,17 @@ def main(cmdargs):
     data_frame = data_frame[~data_frame["DUPLICATED"]]
 
     # save results
-    data_out = np.zeros(len(data_frame), dtype=[('TARGETID','int64'),('Z_SQ','float64'),('Z_SQ_CONF','float64')])
+    data_out = np.zeros(len(data_frame),
+                        dtype=[('TARGETID', 'int64'), ('Z_SQ', 'float64'),
+                               ('Z_SQ_CONF', 'float64')])
     data_out['TARGETID'] = data_frame['TARGETID'].values
     data_out['Z_SQ'] = data_frame['Z_TRY'].values
     data_out['Z_SQ_CONF'] = data_frame['PROB'].values
 
-    data_hdu = fits.BinTableHDU.from_columns(data_out,name='SQZ_CAT')
+    data_hdu = fits.BinTableHDU.from_columns(data_out, name='SQZ_CAT')
     data_hdu.writeto(args.output_filename)
 
+
 if __name__ == '__main__':
-    cmdargs=sys.argv[1:]
+    cmdargs = sys.argv[1:]
     main(cmdargs)

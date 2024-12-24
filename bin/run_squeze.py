@@ -53,10 +53,12 @@ def main(cmdargs):
     candidates.load_spectra()
 
     # train model
-    if candidates.mode == "training":
+    if candidates.mode in ["training", "merge_training"]:
         candidates.train_model()
 
-    if candidates.mode in ["operation", "test"]:
+    if candidates.mode in [
+            "operation", "test", "merge_test", "merge_operation"
+    ]:
         # compute probabilities
         candidates.classify_candidates()
 
@@ -71,6 +73,7 @@ def main(cmdargs):
     userprint(f"INFO: total elapsed time: {(t1-t0)/60.0} minutes")
     userprint("Done")
 
+
 if __name__ == '__main__':
-    cmdargs=sys.argv[1:]
+    cmdargs = sys.argv[1:]
     main(cmdargs)

@@ -13,12 +13,14 @@ from squeze.simple_spectrum import SimpleSpectrum
 from squeze.peak_finder import PeakFinder
 from squeze.tests.test_utils import gaussian
 
+
 class TestPeakFinder(unittest.TestCase):
     """Test the peak finder.
 
         CLASS: TestPeakFinder
         PURPOSE: Test the peak finder
         """
+
     def setUp(self):
         """Create dummy spectra to test."""
 
@@ -31,9 +33,8 @@ class TestPeakFinder(unittest.TestCase):
         self.__peaks_positions = [5000, 5500, 7000]
         self.__peak_amplitudes = [10, 7, 7]
         self.__peak_sigmas = [100, 150, 100]
-        for mu, amp, sig in zip(self.__peaks_positions,
-                                 self.__peak_amplitudes,
-                                 self.__peak_sigmas):
+        for mu, amp, sig in zip(self.__peaks_positions, self.__peak_amplitudes,
+                                self.__peak_sigmas):
             flux += gaussian(wave, amp, mu, sig)
 
         # keep the noiseless spectrum
@@ -47,12 +48,10 @@ class TestPeakFinder(unittest.TestCase):
         peaks. All three peaks should be recovered.
         """
         config = ConfigParser()
-        config.read_dict({
-            "peak finder": {
-                "width": 70,
-                "min significance": 6,
-            }
-        })
+        config.read_dict({"peak finder": {
+            "width": 70,
+            "min significance": 6,
+        }})
         peak_finder = PeakFinder(config["peak finder"])
         indexs, significances = peak_finder.find_peaks(self.__noiseless_spec)
 
@@ -66,12 +65,11 @@ class TestPeakFinder(unittest.TestCase):
         should be lost due to the high significance cut
         """
         config = ConfigParser()
-        config.read_dict({
-            "peak finder": {
+        config.read_dict(
+            {"peak finder": {
                 "width": 70,
                 "min significance": 40,
-            }
-        })
+            }})
         peak_finder = PeakFinder(config["peak finder"])
         indexs, significances = peak_finder.find_peaks(self.__noiseless_spec)
 
@@ -85,16 +83,16 @@ class TestPeakFinder(unittest.TestCase):
         first two should be smoothed into a single peak
         """
         config = ConfigParser()
-        config.read_dict({
-            "peak finder": {
+        config.read_dict(
+            {"peak finder": {
                 "width": 200,
                 "min significance": 6,
-            }
-        })
+            }})
         peak_finder = PeakFinder(config["peak finder"])
         indexs, significances = peak_finder.find_peaks(self.__noiseless_spec)
 
         self.assertTrue(indexs.size == 2)
+
 
 if __name__ == '__main__':
     unittest.main()

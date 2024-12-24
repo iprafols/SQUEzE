@@ -25,7 +25,6 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 SQUEZE = THIS_DIR.split("py/squeze")[0]
 os.environ["SQUEZE"] = SQUEZE
 
-
 default_config = {
     "general": {
         "mode": "training",

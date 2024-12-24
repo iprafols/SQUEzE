@@ -394,8 +394,8 @@ def confusion_line_plots(df,
                     if line1 == line2 or (line1, line2) in exclude_line_pairs:
                         continue
                     z_line1_as_line2 = (
-                        LINES["WAVE"][line1] / LINES["WAVE"][line2] *
-                        (1 + z) - 1)
+                        LINES["WAVE"][line1] / LINES["WAVE"][line2] * (1 + z) -
+                        1)
                     ax.plot(z_line1_as_line2,
                             z,
                             label=f"real: {line1}; assumed: {line2}")
@@ -583,19 +583,16 @@ def plot_peaks(spectra,
         class_person = spectrum.metadata_by_key("CLASS_PERSON")
 
         if index == 0:
-            lines += ax.plot(
-                spectrum.wave,
-                spectrum.flux,
-                color="k",
-                linestyle="-",
-                label="spectrum"
-                )
-        ax.errorbar(
-            spectrum.wave,
-            spectrum.flux,
-            yerr=1/np.sqrt(spectrum.ivar),
-            color="k",
-            linestyle="-")
+            lines += ax.plot(spectrum.wave,
+                             spectrum.flux,
+                             color="k",
+                             linestyle="-",
+                             label="spectrum")
+        ax.errorbar(spectrum.wave,
+                    spectrum.flux,
+                    yerr=1 / np.sqrt(spectrum.ivar),
+                    color="k",
+                    linestyle="-")
         ax.set_title(f"SPECID: {specid}, R_MAG: {rmag}, Z_TRUE: {z_true:.2f}",
                      fontsize=labelsize)
 
@@ -745,8 +742,7 @@ def plot_peakfinder_stats_vs_magnitude(mag_cuts,
               ax=ax2,
               cmap=cmap)
     multiline(significance_cut_vs_mag,
-              num_correct_entries_vs_mag /
-              num_spectra_qso_vs_mag,
+              num_correct_entries_vs_mag / num_spectra_qso_vs_mag,
               mag_cuts,
               ax=ax2,
               cmap=cmap,
@@ -780,7 +776,9 @@ def plot_peakfinder_stats_vs_magnitude(mag_cuts,
         fig.suptitle(title, fontsize=fontsize)
 
 
-def redshift_precision_histogram(df, mag_bins, title=None,
+def redshift_precision_histogram(df,
+                                 mag_bins,
+                                 title=None,
                                  bins=np.arange(-2e4, 2e4, 750)):
     """ Plot the redshift precision histogram. Also print a table summarising
     the precision.
@@ -830,11 +828,12 @@ def redshift_precision_histogram(df, mag_bins, title=None,
         aux = df[(df["R_MAG"] > rmag_min) & (df["R_MAG"] <= rmag_max) &
                  (df["IS_CORRECT"])]
 
-        ax.hist(aux["DELTA_V"],
-                bins=bins,
-                label=fr"${rmag_min:.1f} < r \leq {rmag_max:.1f}$",
-                histtype="step",
-                density=True,
+        ax.hist(
+            aux["DELTA_V"],
+            bins=bins,
+            label=fr"${rmag_min:.1f} < r \leq {rmag_max:.1f}$",
+            histtype="step",
+            density=True,
         )
 
         redsfhit_precision["mag bin"].append(
@@ -844,9 +843,8 @@ def redshift_precision_histogram(df, mag_bins, title=None,
         redsfhit_precision[r"$\sigma_{\Delta v}$ [km/s]"].append(
             aux['DELTA_V'].std())
         redsfhit_precision[r"100$\sigma_{\rm NMAD}$"].append(
-            np.fabs(aux['DELTA_V']).median()/3e5*1.48*100)
-        redsfhit_precision["$N$"].append(
-            aux.shape[0])
+            np.fabs(aux['DELTA_V']).median() / 3e5 * 1.48 * 100)
+        redsfhit_precision["$N$"].append(aux.shape[0])
 
     ax.set_xlabel(r"$\Delta v$ [km/s]", fontsize=fontsize)
     ax.set_ylabel(r"normalized counts", fontsize=fontsize)
