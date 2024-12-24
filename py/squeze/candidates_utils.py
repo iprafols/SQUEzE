@@ -12,6 +12,7 @@ import os
 from math import sqrt
 from numba import prange, jit, vectorize
 import numpy as np
+from astropy.io import fits
 from astropy.table import Table
 
 
@@ -395,7 +396,15 @@ def load_df(filename):
     candidates: pd.DataFrame
     The loaded dataframe
     """
-    data = Table.read(os.path.expandvars(filename), format='fits')
-    candidates = data.to_pandas()
+    try:
+        data = Table.read(os.path.expandvars(filename), format='fits')
+        candidates = data.to_pandas()
+    except TypeError:
+        with fits.open(os.path.expandvars(filename), memmap=True) as hdul:
+            data = hdul[1].data
+            candidates = pd.DataFrame(data.byteswap().newbyteorder())
+    
     candidates.columns = candidates.columns.str.upper()
+    
     return candidates
+

@@ -53,10 +53,10 @@ def main(cmdargs):
     candidates.load_spectra()
 
     # train model
-    if candidates.mode == "training":
+    if candidates.mode in ["training", "merge_training"]:
         candidates.train_model()
 
-    if candidates.mode in ["operation", "test"]:
+    if candidates.mode in ["operation", "test", "merge_test", "merge_operation"]:
         # compute probabilities
         candidates.classify_candidates()
 

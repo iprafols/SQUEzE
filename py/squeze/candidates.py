@@ -33,7 +33,7 @@ try:
 except ImportError as error:
     PLOTTING_ERROR = error
 
-MODES = ["training", "test", "operation", "candidates", "merge"]
+MODES = ["training", "test", "operation", "candidates", "merge", "merge_training", "merge_test", "merge_operation"]
 
 # This variable sets the maximum number of candidates allowed before a partial
 # conversion to dataframe is executed
@@ -183,7 +183,7 @@ class Candidates:
         model_filename = model_config.get("filename")
 
         # create model from scratch
-        if self.mode == "training" or model_filename is None:
+        if "training" in self.mode or model_filename is None:
             # update selected cols
             selected_cols = []
             selected_cols += [
@@ -383,7 +383,7 @@ class Candidates:
         aux = pd.DataFrame(self.candidates_list, columns=columns_candidates)
 
         # add truth table if running in training or test modes
-        if (self.mode in ["training", "test"] or
+        if (self.mode in ["training", "test", "merge_training", "merge_test"] or
             (self.mode == "candidates" and "Z_TRUE" in aux.columns)):
             self.userprint("Adding control variables from truth table")
             aux["DELTA_Z"] = aux["Z_TRY"] - aux["Z_TRUE"]
@@ -493,7 +493,7 @@ class Candidates:
         If True, then save the catalogue file after predictions are made
         """
         # consistency checks
-        if self.mode not in ["test", "operation"]:
+        if self.mode not in ["test", "operation", "merge_test", "merge_operation"]:
             raise Error(
                 "The function classify_candidates is available in the " +
                 f"test mode only. Detected mode is {self.mode}")
@@ -525,13 +525,13 @@ class Candidates:
         columns_candidates : list of str
         The column names of the spectral metadata
         """
-        if self.mode == "training" and "Z_TRUE" not in spectra[
+        if "training" in self.mode and "Z_TRUE" not in spectra[
                 0].metadata_names():
-            raise Error("Mode is set to 'training', but spectra do not " +
+            raise Error(f"Mode is set to '{self.mode}', but spectra do not " +
                         "have the property 'Z_TRUE'.")
 
-        if self.mode == "test" and "Z_TRUE" not in spectra[0].metadata_names():
-            raise Error("Mode is set to 'test', but spectra do not " +
+        if "test" in self.mode and "Z_TRUE" not in spectra[0].metadata_names():
+            raise Error(f"Mode is set to '{self.mode}', but spectra do not " +
                         "have the property 'Z_TRUE'.")
 
         if self.mode == "merge":
@@ -586,7 +586,7 @@ class Candidates:
         The total number of found quasars.
         """
         # consistency checks
-        if self.mode not in ["training", "test"]:
+        if self.mode not in ["training", "test", "merge_training", "merge_test"]:
             raise Error(
                 "The function find_completeness_purity is available in the " +
                 f"training and test modes only. Detected mode is {self.mode}")
@@ -762,7 +762,7 @@ class Candidates:
         others_list : pd.DataFrame
         The other candidates object to merge
         """
-        if self.mode != "merge":
+        if "merge" not in self.mode:
             raise Error("The function merge is available in the " +
                         f"merge mode only. Detected mode is {self.mode}")
 
@@ -812,7 +812,7 @@ class Candidates:
         axes_grid.update(hspace=0.4, wspace=0.0)
 
         # distinguish from contaminants and non-contaminants i necessary
-        if self.mode == "training":
+        if "training" in self.mode:
             contaminants_df = self.candidates[~self.candidates["IS_CORRECT"]]
             correct_df = self.candidates[self.candidates["IS_CORRECT"]]
 
@@ -820,7 +820,7 @@ class Candidates:
         fig_ax = fig.add_subplot(axes_grid[0])
 
         # plot the contaminants and non-contaminants separately
-        if self.mode == "training":
+        if "training" in self.mode:
             contaminants_df[plot_col].hist(ax=fig_ax,
                                            bins=100,
                                            range=(-1, 4),
@@ -893,7 +893,7 @@ class Candidates:
         axes_grid.update(hspace=0.4, wspace=0.0)
 
         # distinguish from contaminants and non-contaminants i necessary
-        if self.mode == "training":
+        if "training" in self.mode:
             contaminants_df = self.candidates[~self.candidates["IS_CORRECT"]]
             correct_df = self.candidates[self.candidates["IS_CORRECT"]]
 
@@ -901,7 +901,7 @@ class Candidates:
         for index, plot_col in enumerate(plot_cols):
             axes.append(fig.add_subplot(axes_grid[index]))
             # plot the contaminants and non-contaminants separately
-            if self.mode == "training":
+            if "training" in self.mode:
                 contaminants_df[plot_col].hist(ax=axes[index],
                                                bins=100,
                                                range=(-1, 4),
@@ -981,7 +981,7 @@ class Candidates:
     def train_model(self):
         """ Create a model instance and train it. Save the resulting model"""
         # consistency checks
-        if self.mode != "training":
+        if "training" not in self.mode:
             raise Error("The function train_model is available in the " +
                         f"training mode only. Detected mode is {self.mode}")
 
