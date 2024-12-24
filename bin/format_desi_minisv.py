@@ -35,6 +35,7 @@ from squeze.error import Error
 from squeze.spectra import Spectra
 from squeze.utils import save_json, verboseprint, quietprint
 
+
 def main(cmdargs):
     """ Load DESI spectra using the Spectra and DESISpectrum Classes
         defined in squeze_boss_spectra.py and squeze_desi_spectrum.py
@@ -42,17 +43,28 @@ def main(cmdargs):
         """
 
     # load options
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("--input-filename", type=str, required=True,
-                        help="""Name of the filename to be loaded to be loaded.""")
-    parser.add_argument("--output-filename", type=str, required=True,
+    parser.add_argument(
+        "--input-filename",
+        type=str,
+        required=True,
+        help="""Name of the filename to be loaded to be loaded.""")
+    parser.add_argument("--output-filename",
+                        type=str,
+                        required=True,
                         help="""Name of the output filename.""")
-    parser.add_argument("--single-exp", action="store_true",
-                        help="""Load only the first reobservation for each spectrum""")
-    parser.add_argument("--metadata", nargs='+', required=False,
-                        default=["TARGETID", "TARGET_RA", "TARGET_DEC", "CMX_TARGET"],
-                        help="""White-spaced list of the list of columns to keep as metadata""")
+    parser.add_argument(
+        "--single-exp",
+        action="store_true",
+        help="""Load only the first reobservation for each spectrum""")
+    parser.add_argument(
+        "--metadata",
+        nargs='+',
+        required=False,
+        default=["TARGETID", "TARGET_RA", "TARGET_DEC", "CMX_TARGET"],
+        help="""White-spaced list of the list of columns to keep as metadata""")
     args = parser.parse_args(cmdargs)
 
     # read desi spectra
@@ -71,7 +83,10 @@ def main(cmdargs):
         pos = np.where(desi_spectra.fibermap["TARGETID"] == targid)
 
         # prepare metadata
-        metadata = {col.upper(): desi_spectra.fibermap[col][pos[0][0]] for col in args.metadata}
+        metadata = {
+            col.upper(): desi_spectra.fibermap[col][pos[0][0]]
+            for col in args.metadata
+        }
 
         # add specid
         metadata["SPECID"] = targid
@@ -88,7 +103,8 @@ def main(cmdargs):
             mask[band] = desi_spectra.mask[band][pos]
 
         # format spectrum
-        spectrum = DesiSpectrum(flux, wave, ivar, mask, metadata, args.single_exp)
+        spectrum = DesiSpectrum(flux, wave, ivar, mask, metadata,
+                                args.single_exp)
 
         # append to list
         squeze_spectra.append(spectrum)
@@ -96,6 +112,7 @@ def main(cmdargs):
     # save formated spectra
     save_json(args.output_filename, squeze_spectra)
 
+
 if __name__ == '__main__':
-    cmdargs=sys.argv[1:]
+    cmdargs = sys.argv[1:]
     main(cmdargs)

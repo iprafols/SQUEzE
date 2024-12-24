@@ -18,16 +18,16 @@ from squeze.spectra import Spectra
 from squeze.utils import deserialize, load_json
 from squeze.utils import verboseprint as userprint
 
-
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 os.environ["THIS_DIR"] = THIS_DIR
 SQUEZE = THIS_DIR.split("py/squeze")[0]
 os.environ["SQUEZE"] = SQUEZE
-SQUEZE_BIN = SQUEZE+"bin/"
+SQUEZE_BIN = SQUEZE + "bin/"
 if SQUEZE_BIN not in sys.path:
     sys.path.append(SQUEZE_BIN)
 
 import run_squeze
+
 
 class AbstractTest(unittest.TestCase):
     """Test the training mode
@@ -35,13 +35,18 @@ class AbstractTest(unittest.TestCase):
         CLASS: AbstractTest
         PURPOSE: Abstrac test class to define functions used in all tests
         """
+
     def setUp(self):
         """ Check that the results folder exists and create it
             if it does not."""
         if not os.path.exists("{}/results/".format(THIS_DIR)):
             os.makedirs("{}/results/".format(THIS_DIR))
 
-    def run_squeze(self, filename, out_file, test_file, json_model=False,
+    def run_squeze(self,
+                   filename,
+                   out_file,
+                   test_file,
+                   json_model=False,
                    fits_model=False):
         """ Run a squeze with the specified configuration and check the results
 
@@ -68,11 +73,11 @@ class AbstractTest(unittest.TestCase):
 
         self.assertTrue(os.path.isfile(out_file))
         if json_model:
-            self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
-                                                            "_model.json")))
+            self.assertTrue(
+                os.path.isfile(out_file.replace(".fits.gz", "_model.json")))
         if fits_model:
-            self.assertTrue(os.path.isfile(out_file.replace(".fits.gz",
-                                                            "_model.fits.gz")))
+            self.assertTrue(
+                os.path.isfile(out_file.replace(".fits.gz", "_model.fits.gz")))
         self.compare_data_frames(test_file, out_file)
 
     def compare_data_frames(self, orig_file, new_file):
@@ -88,18 +93,30 @@ class AbstractTest(unittest.TestCase):
             are_similar = True
             for col, dtype in zip(orig_df.columns, orig_df.dtypes):
                 if not col in new_df.columns:
-                    self.report_dataframe_mismatch(
-                        orig_file, new_file, orig_df, new_df, col, missing_col="new")
+                    self.report_dataframe_mismatch(orig_file,
+                                                   new_file,
+                                                   orig_df,
+                                                   new_df,
+                                                   col,
+                                                   missing_col="new")
                 if (dtype == "O") and not orig_df[col].equals(new_df[col]):
-                    self.report_dataframe_mismatch(
-                        orig_file, new_file, orig_df, new_df, col, equals=True)
+                    self.report_dataframe_mismatch(orig_file,
+                                                   new_file,
+                                                   orig_df,
+                                                   new_df,
+                                                   col,
+                                                   equals=True)
                 elif not np.allclose(orig_df[col], new_df[col], equal_nan=True):
-                    self.report_dataframe_mismatch(
-                        orig_file, new_file, orig_df, new_df, col)
+                    self.report_dataframe_mismatch(orig_file, new_file, orig_df,
+                                                   new_df, col)
             for col in new_df.columns:
                 if not col in orig_df.columns:
-                    self.report_dataframe_mismatch(
-                        orig_file, new_file, orig_df, new_df, col, missing_col="orig")
+                    self.report_dataframe_mismatch(orig_file,
+                                                   new_file,
+                                                   orig_df,
+                                                   new_df,
+                                                   col,
+                                                   missing_col="orig")
 
     def compare_fits(self, orig_file, new_file):
         """Compare two fits files to check that they are equal
@@ -262,12 +279,15 @@ class AbstractTest(unittest.TestCase):
 
         self.assertTrue(orig_spectra.size(), new_spectra.size())
         for index in range(orig_spectra.size()):
-            self.assertTrue(np.allclose(orig_spectra_list[index].wave,
-                                        new_spectra_list[index].wave))
-            self.assertTrue(np.allclose(orig_spectra_list[index].flux,
-                                        new_spectra_list[index].flux))
-            self.assertTrue(np.allclose(orig_spectra_list[index].ivar,
-                                        new_spectra_list[index].ivar))
+            self.assertTrue(
+                np.allclose(orig_spectra_list[index].wave,
+                            new_spectra_list[index].wave))
+            self.assertTrue(
+                np.allclose(orig_spectra_list[index].flux,
+                            new_spectra_list[index].flux))
+            self.assertTrue(
+                np.allclose(orig_spectra_list[index].ivar,
+                            new_spectra_list[index].ivar))
 
     def report_dataframe_mismatch(self,
                                   orig_file,
@@ -316,18 +336,14 @@ class AbstractTest(unittest.TestCase):
             print("original new isclose original-new\n")
             if equals:
                 for new, orig in zip(new_data[col], orig_data[col]):
-                    print(f"{orig} {new} "
-                          f"{orig == new} "
-                          f"{orig-new}")
+                    print(f"{orig} {new} " f"{orig == new} " f"{orig-new}")
             else:
                 for new, orig in zip(new_data[col], orig_data[col]):
                     print(f"{orig} {new} "
                           f"{np.isclose(orig, new, equal_nan=True, rtol=rtol)} "
                           f"{orig-new}")
         else:
-            print(
-                f"Column {col} missing in {missing_col} file"
-            )
+            print(f"Column {col} missing in {missing_col} file")
 
         self.fail()
 

@@ -14,6 +14,7 @@ from numba import prange, jit, vectorize
 import numpy as np
 from astropy.io import fits
 from astropy.table import Table
+import pandas as pd
 
 
 @jit(nopython=True)
@@ -401,10 +402,9 @@ def load_df(filename):
         candidates = data.to_pandas()
     except TypeError:
         with fits.open(os.path.expandvars(filename), memmap=True) as hdul:
-            data = hdul[1].data
+            data = hdul[1].data # pylint: disable=no-member
             candidates = pd.DataFrame(data.byteswap().newbyteorder())
-    
-    candidates.columns = candidates.columns.str.upper()
-    
-    return candidates
 
+    candidates.columns = candidates.columns.str.upper()
+
+    return candidates

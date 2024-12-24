@@ -61,7 +61,7 @@ class PeakFinderPowerLaw:
         significances = np.zeros_like(flux)
         best_fit = np.array((0.0, 0.0))
 
-        userprint=quietprint
+        userprint = quietprint
         do_fit = True
         index = 0
         while do_fit:
@@ -73,11 +73,7 @@ class PeakFinderPowerLaw:
                 userprint = verboseprint
             # fit power law
             new_outliers_mask, new_significances, new_best_fit = fit_power_law(
-                wavelength,
-                flux,
-                ivar,
-                outliers_mask,
-                self.min_significance)
+                wavelength, flux, ivar, outliers_mask, self.min_significance)
 
             if np.allclose(best_fit, new_best_fit, equal_nan=True):
                 do_fit = False
@@ -95,14 +91,14 @@ class PeakFinderPowerLaw:
             return np.array([]), np.array([])
 
         # select only peaks
-        peaks = select_peaks(
-            wavelength, flux, outliers_mask, best_fit)
+        peaks = select_peaks(wavelength, flux, outliers_mask, best_fit)
 
         # compress neighbouring pixels into a single pixel
         peak_indexs, peak_significances = compress(peaks, significances)
 
         # return
         return peak_indexs, peak_significances
+
 
 def compress(peaks, significances):
     """Compress the neighbouring peak indexs into a single peak
@@ -133,7 +129,8 @@ def compress(peaks, significances):
     # compress
     groups = list(group_contiguous(peak_indexs))
     compressed_peak_indexs = np.zeros(len(groups), dtype=int)
-    compressed_significances = np.zeros_like(compressed_peak_indexs, dtype=float)
+    compressed_significances = np.zeros_like(compressed_peak_indexs,
+                                             dtype=float)
     for index, group in enumerate(groups):
         # single pixel
         if group[1] == group[0]:
@@ -141,13 +138,13 @@ def compress(peaks, significances):
             compressed_significances[index] = significances[group[0]]
         # grouped pixels
         else:
-            aux = np.arange(group[0], group[1]+1, dtype=int)
-            compressed_peak_indexs[index] = int(round(np.average(
-                aux, weights=significances[aux]), 0))
+            aux = np.arange(group[0], group[1] + 1, dtype=int)
+            compressed_peak_indexs[index] = int(
+                round(np.average(aux, weights=significances[aux]), 0))
             compressed_significances[index] = significances[aux].sum()
 
-
     return compressed_peak_indexs, compressed_significances
+
 
 def fit_power_law(wavelength, flux, ivar, outliers_mask, min_significance):
     """ Perform a power-law fit, then compute the outliers
@@ -183,23 +180,19 @@ def fit_power_law(wavelength, flux, ivar, outliers_mask, min_significance):
     """
     # do the actual fit
     data = odr.Data(wavelength, flux, we=ivar)
-    odr_instance = odr.ODR(
-        data,
-        POWER_LAW_MODEL,
-        beta0=(flux.mean(), 0.0))
+    odr_instance = odr.ODR(data, POWER_LAW_MODEL, beta0=(flux.mean(), 0.0))
     odr_instance.set_job(fit_type=0)
     fit_output = odr_instance.run()
 
     # figure out the outliers
     bestfit_flux = power_law(fit_output.beta, wavelength)
-    significances = np.abs(flux-bestfit_flux)*np.sqrt(ivar)
+    significances = np.abs(flux - bestfit_flux) * np.sqrt(ivar)
     new_outliers_mask = np.zeros_like(outliers_mask)
-    new_outliers_mask[np.where(
-        significances > min_significance
-    )] = True
+    new_outliers_mask[np.where(significances > min_significance)] = True
     new_outliers_mask &= outliers_mask
 
     return new_outliers_mask, significances, fit_output.beta
+
 
 def group_contiguous(data):
     """Group continuous elements together
@@ -217,6 +210,7 @@ def group_contiguous(data):
         group = list(group)
         yield group[0][1], group[-1][1]
 
+
 @njit()
 def power_law(parameters, x_data):
     """Power law function
@@ -230,7 +224,8 @@ def power_law(parameters, x_data):
     The points where to compute the power law
     """
     amplitude, power_law_index = parameters
-    return amplitude*x_data**(-power_law_index)
+    return amplitude * x_data**(-power_law_index)
+
 
 @njit()
 def select_peaks(wavelength, flux, outliers_mask, power_law_params):
@@ -260,5 +255,6 @@ def select_peaks(wavelength, flux, outliers_mask, power_law_params):
     peaks = outliers_mask & (flux > bestfit_flux)
 
     return peaks
+
 
 POWER_LAW_MODEL = odr.Model(power_law)

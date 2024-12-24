@@ -72,7 +72,7 @@ def compute_peak_finder_completeness(df_candidates,
 
     for index in range(significance_cut.size):
         df = df_candidates[(df_candidates["PEAK_SIGNIFICANCE"] >=
-                             significance_cut[index])]
+                            significance_cut[index])]
         num_entries[index] = df.shape[0]
         num_entries_zge2_1[index] = df[(df["Z_TRY"] >= 2.1)].shape[0]
         num_entries_zlt2_1[index] = df[(df["Z_TRY"] < 2.1)].shape[0]
@@ -89,9 +89,8 @@ def compute_peak_finder_completeness(df_candidates,
         num_entries_zge2_1[index] -= correction2
         num_entries_zlt2_1[index] += correction2
 
-
         aux = df[(df["CLASS_PERSON"] == 3) & (df["DELTA_Z"] <= z_precision) &
-                  (df["DELTA_Z"] >= -z_precision)]
+                 (df["DELTA_Z"] >= -z_precision)]
         num_correct_entries[index] = aux.shape[0]
         num_correct_entries_zge2_1[index] = aux[(aux["Z_TRUE"] >= 2.1)].shape[0]
         num_correct_entries_zlt2_1[index] = aux[(aux["Z_TRUE"] < 2.1)].shape[0]
@@ -102,21 +101,11 @@ def compute_peak_finder_completeness(df_candidates,
         completeness_zlt2_1[index] = np.unique(
             aux[(aux["Z_TRUE"] < 2.1)]["SPECID"]).size / num_spectra_qso_zlt2_1
 
-    return (num_spectra,
-            num_spectra_zge2_1,
-            num_spectra_zlt2_1,
-            num_spectra_qso,
-            num_spectra_qso_zge2_1,
-            num_spectra_qso_zlt2_1,
-            significance_cut,
-            num_entries,
-            num_entries_zge2_1,
-            num_entries_zlt2_1,
-            num_correct_entries,
-            num_correct_entries_zge2_1,
-            num_correct_entries_zlt2_1,
-            completeness,
-            completeness_zge2_1,
+    return (num_spectra, num_spectra_zge2_1, num_spectra_zlt2_1,
+            num_spectra_qso, num_spectra_qso_zge2_1, num_spectra_qso_zlt2_1,
+            significance_cut, num_entries, num_entries_zge2_1,
+            num_entries_zlt2_1, num_correct_entries, num_correct_entries_zge2_1,
+            num_correct_entries_zlt2_1, completeness, completeness_zge2_1,
             completeness_zlt2_1)
 
 
@@ -172,28 +161,28 @@ def compute_peak_finder_completeness_vs_mag(mag_cuts,
                                        dtype=float)
     completeness_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
                                    dtype=float)
-    completeness_zge2_1_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
-                                   dtype=float)
-    completeness_zlt2_1_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
-                                   dtype=float)
+    completeness_zge2_1_vs_mag = np.zeros(
+        (mag_cuts.size, significance_cut.size), dtype=float)
+    completeness_zlt2_1_vs_mag = np.zeros(
+        (mag_cuts.size, significance_cut.size), dtype=float)
     num_spectra_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
                                   dtype=int)
     num_spectra_zge2_1_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
-                                  dtype=int)
+                                         dtype=int)
     num_spectra_zlt2_1_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
-                                  dtype=int)
+                                         dtype=int)
     num_spectra_qso_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
-                                  dtype=int)
-    num_spectra_qso_zge2_1_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
-                                  dtype=int)
-    num_spectra_qso_zlt2_1_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
-                                  dtype=int)
+                                      dtype=int)
+    num_spectra_qso_zge2_1_vs_mag = np.zeros(
+        (mag_cuts.size, significance_cut.size), dtype=int)
+    num_spectra_qso_zlt2_1_vs_mag = np.zeros(
+        (mag_cuts.size, significance_cut.size), dtype=int)
     num_entries_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
                                   dtype=int)
     num_entries_zge2_1_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
-                                  dtype=int)
+                                         dtype=int)
     num_entries_zlt2_1_vs_mag = np.zeros((mag_cuts.size, significance_cut.size),
-                                  dtype=int)
+                                         dtype=int)
     num_correct_entries_vs_mag = np.zeros(
         (mag_cuts.size, significance_cut.size), dtype=int)
     num_correct_entries_zge2_1_vs_mag = np.zeros(
@@ -202,20 +191,14 @@ def compute_peak_finder_completeness_vs_mag(mag_cuts,
         (mag_cuts.size, significance_cut.size), dtype=int)
 
     for index, mag_cut in tqdm.tqdm(enumerate(mag_cuts), total=len(mag_cuts)):
-        (num_spectra_vs_mag[index],
-         num_spectra_zge2_1_vs_mag[index],
-         num_spectra_zlt2_1_vs_mag[index],
-         num_spectra_qso_vs_mag[index],
+        (num_spectra_vs_mag[index], num_spectra_zge2_1_vs_mag[index],
+         num_spectra_zlt2_1_vs_mag[index], num_spectra_qso_vs_mag[index],
          num_spectra_qso_zge2_1_vs_mag[index],
-         num_spectra_qso_zlt2_1_vs_mag[index],
-         significance_cut_vs_mag[index],
-         num_entries_vs_mag[index],
-         num_entries_zge2_1_vs_mag[index],
-         num_entries_zlt2_1_vs_mag[index],
-         num_correct_entries_vs_mag[index],
+         num_spectra_qso_zlt2_1_vs_mag[index], significance_cut_vs_mag[index],
+         num_entries_vs_mag[index], num_entries_zge2_1_vs_mag[index],
+         num_entries_zlt2_1_vs_mag[index], num_correct_entries_vs_mag[index],
          num_correct_entries_zge2_1_vs_mag[index],
-         num_correct_entries_zlt2_1_vs_mag[index],
-         completeness_vs_mag[index],
+         num_correct_entries_zlt2_1_vs_mag[index], completeness_vs_mag[index],
          completeness_zge2_1_vs_mag[index],
          completeness_zlt2_1_vs_mag[index]) = compute_peak_finder_completeness(
              df_candidates[df_candidates["R_MAG"] <= mag_cut],
@@ -223,12 +206,14 @@ def compute_peak_finder_completeness_vs_mag(mag_cuts,
              significance_cut=significance_cut,
              z_precision=z_precision)
 
-    return (mag_cuts, significance_cut_vs_mag,
-            completeness_vs_mag, completeness_zge2_1_vs_mag, completeness_zlt2_1_vs_mag,
-            num_spectra_vs_mag, num_spectra_zge2_1_vs_mag, num_spectra_zlt2_1_vs_mag,
-            num_spectra_qso_vs_mag, num_spectra_qso_zge2_1_vs_mag, num_spectra_qso_zlt2_1_vs_mag,
-            num_entries_vs_mag, num_entries_zge2_1_vs_mag, num_entries_zlt2_1_vs_mag,
-            num_correct_entries_vs_mag, num_correct_entries_zge2_1_vs_mag,
+    return (mag_cuts, significance_cut_vs_mag, completeness_vs_mag,
+            completeness_zge2_1_vs_mag, completeness_zlt2_1_vs_mag,
+            num_spectra_vs_mag, num_spectra_zge2_1_vs_mag,
+            num_spectra_zlt2_1_vs_mag, num_spectra_qso_vs_mag,
+            num_spectra_qso_zge2_1_vs_mag, num_spectra_qso_zlt2_1_vs_mag,
+            num_entries_vs_mag, num_entries_zge2_1_vs_mag,
+            num_entries_zlt2_1_vs_mag, num_correct_entries_vs_mag,
+            num_correct_entries_zge2_1_vs_mag,
             num_correct_entries_zlt2_1_vs_mag)
 
 

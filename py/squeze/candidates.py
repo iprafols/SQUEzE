@@ -33,7 +33,10 @@ try:
 except ImportError as error:
     PLOTTING_ERROR = error
 
-MODES = ["training", "test", "operation", "candidates", "merge", "merge_training", "merge_test", "merge_operation"]
+MODES = [
+    "training", "test", "operation", "candidates", "merge", "merge_training",
+    "merge_test", "merge_operation"
+]
 
 # This variable sets the maximum number of candidates allowed before a partial
 # conversion to dataframe is executed
@@ -493,7 +496,9 @@ class Candidates:
         If True, then save the catalogue file after predictions are made
         """
         # consistency checks
-        if self.mode not in ["test", "operation", "merge_test", "merge_operation"]:
+        if self.mode not in [
+                "test", "operation", "merge_test", "merge_operation"
+        ]:
             raise Error(
                 "The function classify_candidates is available in the " +
                 f"test mode only. Detected mode is {self.mode}")
@@ -545,7 +550,7 @@ class Candidates:
                 self.__find_candidates(spectrum)
             except Exception:
                 self.userprint(
-                "Error occured in finding candidates in spectrum.")
+                    "Error occured in finding candidates in spectrum.")
                 self.userprint("Ignoring spectrum")
             if len(self.candidates_list) > MAX_CANDIDATES_TO_CONVERT:
                 self.userprint("Converting candidates to dataframe")
@@ -586,7 +591,9 @@ class Candidates:
         The total number of found quasars.
         """
         # consistency checks
-        if self.mode not in ["training", "test", "merge_training", "merge_test"]:
+        if self.mode not in [
+                "training", "test", "merge_training", "merge_test"
+        ]:
             raise Error(
                 "The function find_completeness_purity is available in the " +
                 f"training and test modes only. Detected mode is {self.mode}")
@@ -780,7 +787,6 @@ class Candidates:
                 self.userprint("Ignoring file")
 
         self.candidates = pd.concat(other_dfs, ignore_index=True)
-
 
     def plot_histograms(self, plot_col, normed=True):
         """ Plot the histogram of the specified column

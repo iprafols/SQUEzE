@@ -40,30 +40,50 @@ from squeze.spectra import Spectra
 from squeze.utils import save_json, verboseprint, quietprint
 from squeze.weave_spectrum import WeaveSpectrum
 
+
 def main(cmdargs):
     """ Load WEAVE spectra using the WeaveSpectrum Class defined in
         squeze_weave_spectrum.py.
         """
 
     # load options
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                     parents=[PARENT_PARSER,
-                                              QUASAR_CATALOGUE_PARSER])
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        parents=[PARENT_PARSER, QUASAR_CATALOGUE_PARSER])
 
-    parser.add_argument("--red-spectra", nargs='+', type=str, default=None, required=True,
-                        help="""Name of the fits file containig the red CCD data.
-                            Size should be the same as the list in --blue-spectra.""")
+    parser.add_argument(
+        "--red-spectra",
+        nargs='+',
+        type=str,
+        default=None,
+        required=True,
+        help="""Name of the fits file containig the red CCD data.
+                            Size should be the same as the list in --blue-spectra."""
+    )
 
-    parser.add_argument("--blue-spectra", nargs='+', type=str, default=None, required=True,
-                        help="""Name of the fits file containig the blue CCD data.
-                            Size should be the same as the list in --blue-spectra.""")
+    parser.add_argument(
+        "--blue-spectra",
+        nargs='+',
+        type=str,
+        default=None,
+        required=True,
+        help="""Name of the fits file containig the blue CCD data.
+                            Size should be the same as the list in --blue-spectra."""
+    )
 
-    parser.add_argument("--out", type=str, default="spectra.json", required=False,
+    parser.add_argument("--out",
+                        type=str,
+                        default="spectra.json",
+                        required=False,
                         help="""Name of the json file where the list of spectra
                             will be saved""")
 
-    parser.add_argument("--mag-cat", type=str, default=None, required=False,
-                        help="""Name of the text file containing the measured magnitudes
+    parser.add_argument(
+        "--mag-cat",
+        type=str,
+        default=None,
+        required=False,
+        help="""Name of the text file containing the measured magnitudes
                             for the observed spectra""")
 
     args = parser.parse_args(cmdargs)
@@ -73,7 +93,8 @@ def main(cmdargs):
 
     # load quasar catalogue
     userprint("loading catalogue from {}".format(args.qso_cat))
-    quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols, args.qso_specid, args.qso_hdu)
+    quasar_catalogue = QuasarCatalogue(args.qso_cat, args.qso_cols,
+                                       args.qso_specid, args.qso_hdu)
     quasar_catalogue = quasar_catalogue.quasar_catalogue()
 
     # load magnitudes catalogue
@@ -87,18 +108,24 @@ def main(cmdargs):
         # load red spectra
         userprint("loading red spectra from {}".format(red_filename))
         observed_red = fits.open(red_filename)
-        wave = {"red_delta_wave" : observed_red["RED_DATA"].header["CD1_1"],
-                "red_wave" : np.zeros(observed_red["RED_DATA"].header["NAXIS1"], dtype=float)}
+        wave = {
+            "red_delta_wave":
+                observed_red["RED_DATA"].header["CD1_1"],
+            "red_wave":
+                np.zeros(observed_red["RED_DATA"].header["NAXIS1"], dtype=float)
+        }
         wave.get("red_wave")[0] = observed_red["RED_DATA"].header["CRVAL1"]
         for index in range(1, wave.get("red_wave").size):
-            wave["red_wave"][index] = wave["red_wave"][index - 1] + wave.get("red_delta_wave")
+            wave["red_wave"][index] = wave["red_wave"][index - 1] + wave.get(
+                "red_delta_wave")
         targid = observed_red["FIBTABLE"].data["TARGID"].astype(str)
 
         # load blue spectra
         userprint("loading blue spectra from {}".format(blue_filename))
         observed_blue = fits.open(blue_filename)
         wave["blue_delta_wave"] = observed_blue["BLUE_DATA"].header["CD1_1"]
-        wave["blue_wave"] = np.zeros(observed_blue["BLUE_DATA"].header["NAXIS1"], dtype=float)
+        wave["blue_wave"] = np.zeros(
+            observed_blue["BLUE_DATA"].header["NAXIS1"], dtype=float)
         wave.get("blue_wave")[0] = observed_blue["BLUE_DATA"].header["CRVAL1"]
         for index in range(1, wave.get("blue_wave").size):
             wave.get("blue_wave")[index] = wave.get("blue_wave")[index - 1] + \
@@ -106,7 +133,8 @@ def main(cmdargs):
 
         # format spectra
         userprint("formatting red and blue data into a single spectra")
-        for index in tqdm.tqdm(range(observed_red["RED_DATA"].header["NAXIS2"])):
+        for index in tqdm.tqdm(range(
+                observed_red["RED_DATA"].header["NAXIS2"])):
             spectrum_dict = {"red_flux" : observed_red["RED_DATA"].data[index]*\
                 observed_red["RED_SENSFUNC"].data[index],
                              "red_ivar" : observed_red["RED_IVAR"].data[index]*\
@@ -121,17 +149,19 @@ def main(cmdargs):
                 continue
 
             # add targid to metadata
-            metadata = {"TARGID" : targid[index], "SPECID" : targid[index]}
+            metadata = {"TARGID": targid[index], "SPECID": targid[index]}
 
             # add true redshift to metadata
-            if quasar_catalogue[quasar_catalogue["TARGID"] == targid[index]]["Z"].shape[0] > 0:
-                metadata["Z_TRUE"] = quasar_catalogue[quasar_catalogue["TARGID"] ==
-                                                      targid[index]]["Z"].values[0]
+            if quasar_catalogue[quasar_catalogue["TARGID"] ==
+                                targid[index]]["Z"].shape[0] > 0:
+                metadata["Z_TRUE"] = quasar_catalogue[
+                    quasar_catalogue["TARGID"] == targid[index]]["Z"].values[0]
             else:
                 metadata["Z_TRUE"] = np.nan
 
             # add magnitudes to metadata
-            if mags_catalogue[mags_catalogue["TARGID"] == targid[index]]["GMAG"].shape[0] > 0:
+            if mags_catalogue[mags_catalogue["TARGID"] ==
+                              targid[index]]["GMAG"].shape[0] > 0:
                 metadata["GMAG"] = mags_catalogue[mags_catalogue["TARGID"] == \
                                                   targid[index]]["GMAG"].values[0]
                 metadata["RMAG"] = mags_catalogue[mags_catalogue["TARGID"] == \
@@ -146,6 +176,7 @@ def main(cmdargs):
     # save them as a json file to be used by SQUEzE
     save_json(args.out, spectra)
 
+
 if __name__ == '__main__':
-    cmdargs=sys.argv[1:]
+    cmdargs = sys.argv[1:]
     main(cmdargs)

@@ -41,7 +41,8 @@ except ImportError as error:
         "tree_proba": numba.types.float64[:, :, :],
         "proba": numba.types.float64[:, :],
         "indexs": numba.types.int64[:],
-        "node_id": numba.types.int64},
+        "node_id": numba.types.int64
+    },
 )
 def search_nodes(X, children_left, children_right, features, thresholds,
                  tree_proba, proba, indexs, node_id):
@@ -171,7 +172,9 @@ class RandomForestClassifier:
             tree_sklearn = decision_tree.tree_
 
             tree = {}
-            tree["feature_importance"] = decision_tree.feature_importances_.astype(float)
+            tree[
+                "feature_importance"] = decision_tree.feature_importances_.astype(
+                    float)
             tree["children_left"] = tree_sklearn.children_left.astype(int)
             tree["children_right"] = tree_sklearn.children_right.astype(int)
             tree["feature"] = tree_sklearn.feature.astype(int)
