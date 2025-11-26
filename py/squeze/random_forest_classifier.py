@@ -40,14 +40,69 @@ except ImportError as error:
         "thresholds": numba.types.float64[:],
         "tree_proba": numba.types.float64[:, :, :],
         "proba": numba.types.float64[:, :],
-        "indexs": numba.types.int64[:],
+        "indexs": numba.types.int32[:],
+        "node_id": numba.types.int64
+    },
+)
+def predict_proba_tree(X, children_left, children_right, features, thresholds,
+                       tree_proba, num_categories):
+    """ Compute the probability using a given tree
+
+        Parameters
+        ----------
+        X : array of floats
+        The dataset to classify. Each line contains the information for a given
+        candidate
+
+        children_left : array of int
+        For node i, j=children_left[i] is the position of left tree node. -1
+        indicates a leaf node
+
+        children_right : array of int
+        For node i, j=children_left[i] is the position of right tree node. -1
+        indicates a leaf node
+
+        features : array of int
+        For node i, j=features[i] is the index of the feature used to split the
+        dataset
+
+        thresholds : array of float
+        For node i, y=thresholds[i] is the threshold used to split the
+        dataset. Candidates where its feature j is evaluated to less or equal y
+        are assigned to the left child node, others are assigned to the right
+        child node
+
+        tree_proba : array of float
+        Probabilities for the different leafs of the tree and for the different
+        classes
+
+        num_categories : int
+        Number of categories
+        """
+    proba = np.zeros((X.shape[0], num_categories), numba.types.float64)
+    indexs = np.arange(0, X.shape[0], 1, numba.types.int32)
+    search_nodes(X, children_left, children_right, features, thresholds,
+                 tree_proba, proba, indexs, 0)
+    
+    return proba
+
+@jit(
+    nopython=True,
+    locals={
+        "X": numba.types.float64[:, :],
+        "children_left": numba.types.int64[:],
+        "children_right": numba.types.int64[:],
+        "thresholds": numba.types.float64[:],
+        "tree_proba": numba.types.float64[:, :, :],
+        "proba": numba.types.float64[:, :],
+        "indexs": numba.types.int32[:],
         "node_id": numba.types.int64
     },
 )
 def search_nodes(X, children_left, children_right, features, thresholds,
                  tree_proba, proba, indexs, node_id):
     """ Recursively navigates in the tree and calculate the tree response
-        by updating the values stored in self.__proba
+        by updating the values stored in proba
 
         Parameters
         ----------
@@ -274,6 +329,40 @@ class RandomForestClassifier:
         ---------
         Refer to sklearn.ensemble.RandomForestClassifier.predic_proba
         """
+        if len(self.trees[0]["children_left"]) > sys.getrecursionlimit():
+            sys.setrecursionlimit(int(len(self.trees[0]["children_left"]) * 1.2))
+    
+        output = np.zeros((len(X), self.num_categories))
+
+        for tree_index in np.arange(self.num_trees):
+            output += predict_proba_tree(
+                X,
+                self.trees[tree_index]["children_left"],
+                self.trees[tree_index]["children_right"],
+                self.trees[tree_index]["feature"],
+                self.trees[tree_index]["threshold"],
+                self.trees[tree_index]["proba"],
+                self.num_categories,
+            )
+        output /= self.num_trees
+
+        return output
+        
+        output = np.array([
+            predict_proba_tree(
+                X,
+                self.trees[tree_index]["children_left"],
+                self.trees[tree_index]["children_right"],
+                self.trees[tree_index]["feature"],
+                self.trees[tree_index]["threshold"],
+                self.trees[tree_index]["proba"],
+                self.num_categories,
+            )
+            for tree_index in np.arange(self.num_trees)
+        ]).sum() / self.num_trees
+
+        return output
+
         output = np.zeros((len(X), self.num_categories))
 
         for tree_index in np.arange(self.num_trees):
@@ -287,7 +376,7 @@ class RandomForestClassifier:
             if len(children_left) > sys.getrecursionlimit():
                 sys.setrecursionlimit(int(len(children_left) * 1.2))
             search_nodes(X, children_left, children_right, features, thresholds,
-                         tree_proba, proba, indexs, 0)
+                            tree_proba, proba, indexs, 0)
             output += proba
 
         output /= self.num_trees

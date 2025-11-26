@@ -22,8 +22,7 @@ defaults = {
     "return bestfit": False,
 }
 
-
-class PeakFinderPowerLaw:
+class PeakFinderTwoPowerLaw:
     """ Create and manage the peak finder used by SQUEzE
 
     CLASS: PeakFinder
@@ -59,41 +58,76 @@ class PeakFinderPowerLaw:
         wavelength = spectrum.wave
         flux = spectrum.flux
         ivar = spectrum.ivar
-        outliers_mask = np.ones_like(flux, dtype=bool)
-        significances = np.zeros_like(flux)
-        best_fit = np.array((0.0, 0.0))
+        outliers_mask = ivar != 0
+        outliers_mask &= flux >= 0 
 
+        # initial guess
+        intial_guess = np.array([
+            flux.mean(), 
+            0.0, 0.0,
+            wavelength.mean(),
+        ])
+        
+        # initial fit
+        outliers_mask, differences, best_fit = fit_two_power_law(
+            wavelength, flux, ivar, outliers_mask, self.min_significance, beta0=intial_guess)
+        best_fit_chi2 = np.nansum(
+            (flux[outliers_mask] - two_power_law(best_fit, wavelength[outliers_mask]))**2*
+            ivar[outliers_mask])
+
+        # repeat ignoring masked pixels until convergence
         userprint = quietprint
         do_fit = True
         index = 0
         while do_fit:
+            if index % 100 == 0 and index > 0:
+                userprint = verboseprint
+            else:
+                userprint = quietprint
             userprint(
                 f"Running iteration {index}, {outliers_mask.sum()} pixels are "
                 f"considered in the fit. Best fit is {best_fit}")
-            index += 1
-            if index > 100:
-                userprint = verboseprint
+            userprint(outliers_mask)
+            userprint(f"Current chi2 = {best_fit_chi2}")
+            
             # fit power law
-            new_outliers_mask, new_significances, new_best_fit = fit_power_law(
-                wavelength, flux, ivar, outliers_mask, self.min_significance)
+            new_outliers_mask, new_differences, new_best_fit = fit_two_power_law(
+                wavelength, flux, ivar, outliers_mask, self.min_significance, beta0=best_fit)
+            new_best_fit_chi2 = np.nansum(
+                (flux[new_outliers_mask] - two_power_law(new_best_fit, wavelength[new_outliers_mask]))**2*
+                ivar[new_outliers_mask])
 
-            if np.allclose(best_fit, new_best_fit, equal_nan=True):
-                do_fit = False
-            else:
+            userprint(f"Fit performed, {new_outliers_mask.sum()} pixels remaining. New best fit is {new_best_fit}")
+            userprint(f"New chi2 {new_best_fit_chi2}")
+            userprint(f"New outliers mask {new_outliers_mask}")
+            
+            if new_best_fit_chi2 < best_fit_chi2:
                 outliers_mask = new_outliers_mask
-                significances = new_significances
+                differences = new_differences
                 best_fit = new_best_fit
+                best_fit_chi2 = new_best_fit_chi2
+            else:
+                do_fit = False
 
+            if np.isclose(new_best_fit_chi2, best_fit_chi2, rtol=0.01):
+                do_fit = False
+
+            index += 1
+        
         userprint(
             f"Fit converged after {index} iterations. {outliers_mask.sum()} "
             f"pixels are considered in the fit. Best fit is {best_fit}")
+        userprint(outliers_mask)
+        userprint(f"Current chi2 = {best_fit_chi2}")
 
         # if fit did not converge, return
         if any(best_fit == np.nan):
             return np.array([]), np.array([])
-
+        
+        significances = np.abs(differences) * np.sqrt(ivar)
+        
         # select only peaks
-        peaks = select_peaks(wavelength, flux, outliers_mask, best_fit)
+        peaks = select_peaks_two_power_law(wavelength, flux, outliers_mask, best_fit)
 
         # compress neighbouring pixels into a single pixel
         peak_indexs, peak_significances = compress(peaks, significances)
@@ -103,8 +137,6 @@ class PeakFinderPowerLaw:
             return peak_indexs, peak_significances, best_fit
         else:
             return peak_indexs, peak_significances
-    
-
 
 def compress(peaks, significances):
     """Compress the neighbouring peak indexs into a single peak
@@ -146,14 +178,13 @@ def compress(peaks, significances):
         else:
             aux = np.arange(group[0], group[1] + 1, dtype=int)
             compressed_peak_indexs[index] = int(
-                round(np.average(aux, weights=significances[aux]), 0))
+                round(np.average(aux, weights=significances[aux]**2), 0))
             compressed_significances[index] = significances[aux].sum()
 
     return compressed_peak_indexs, compressed_significances
 
-
-def fit_power_law(wavelength, flux, ivar, outliers_mask, min_significance):
-    """ Perform a power-law fit, then compute the outliers
+def fit_two_power_law(wavelength, flux, ivar, outliers_mask, min_significance, beta0=None):
+    """ Perform a two power-law fit, then compute the outliers
 
     Arguments
     ---------
@@ -181,24 +212,33 @@ def fit_power_law(wavelength, flux, ivar, outliers_mask, min_significance):
     Significance of the outlier detection, computed as
     abs(flux - bestfit_flux)*np.sqrt(ivar)
 
-    best_fit: (float, float)
-    The best fit power law amplitude and index
+    best_fit: (float, float, float, float)
+    The best fit parameters: the amplitude and power law indexs for the first and second power laws, 
+    and the breaking point
     """
     # do the actual fit
-    data = odr.Data(wavelength, flux, we=ivar)
-    odr_instance = odr.ODR(data, POWER_LAW_MODEL, beta0=(flux.mean(), 0.0))
+    data = odr.Data(wavelength[outliers_mask], flux[outliers_mask], we=ivar[outliers_mask])
+    if beta0 is None:
+        beta0 = (
+            flux[outliers_mask].mean(), 
+            0.0, 0.0,
+            wavelength[outliers_mask].mean(),
+        )
+    odr_instance = odr.ODR(data, TWO_POWER_LAW_MODEL, beta0=beta0)
     odr_instance.set_job(fit_type=0)
     fit_output = odr_instance.run()
 
     # figure out the outliers
-    bestfit_flux = power_law(fit_output.beta, wavelength)
-    significances = np.abs(flux - bestfit_flux) * np.sqrt(ivar)
-    new_outliers_mask = np.zeros_like(outliers_mask)
-    new_outliers_mask[np.where(significances > min_significance)] = True
-    new_outliers_mask &= outliers_mask
+    model = two_power_law(fit_output.beta, wavelength)
+    differences = flux - model
+    quartiles = np.percentile(differences, [25, 50, 75])
+    mu, sig = quartiles[1], 0.74 * (quartiles[2] - quartiles[0])
 
-    return new_outliers_mask, significances, fit_output.beta
-
+    new_outliers_mask = ivar != 0
+    new_outliers_mask &= flux >= 0 
+    new_outliers_mask &= differences < mu + min_significance*sig
+    
+    return new_outliers_mask, differences, fit_output.beta
 
 def group_contiguous(data):
     """Group continuous elements together
@@ -216,25 +256,34 @@ def group_contiguous(data):
         group = list(group)
         yield group[0][1], group[-1][1]
 
-
 @njit()
-def power_law(parameters, x_data):
-    """Power law function
+def two_power_law(parameters, x_data):
+    """Two power-laws function
 
     Arguments
     ---------
-    parameters: (float, float)
-    The amplitude and power law index
+    parameters: (float, float, float, float)
+    The amplitude, power law indexes for the first and second power laws, and the breaking point
 
     x_data: array of float
     The points where to compute the power law
-    """
-    amplitude, power_law_index = parameters
-    return amplitude * x_data**(-power_law_index)
 
+    Return
+    ------
+    result: array of float
+    The two power-laws function
+    """
+    amplitude, power_law_index1, power_law_index2, break_point = parameters
+
+    result = np.zeros_like(x_data)
+    pos = x_data < break_point
+    result[pos] = amplitude * (x_data[pos]/break_point)**(-power_law_index1)
+    result[~pos] = amplitude * (x_data[~pos]/break_point)**(-power_law_index2)
+    
+    return result
 
 @njit()
-def select_peaks(wavelength, flux, outliers_mask, power_law_params):
+def select_peaks_two_power_law(wavelength, flux, outliers_mask, power_law_params):
     """ Select which of the outliers are peaks
 
     Arguments
@@ -248,8 +297,8 @@ def select_peaks(wavelength, flux, outliers_mask, power_law_params):
     outliers_mask: array of bool
     Outliers mask, only pixels with outliers_mask=True are used in the fit
 
-    power_law_params: (float, float)
-    The power law amplitude and index
+    power_law_params: (float, float, float, float)
+    The amplitude, power law indexes for the first and second power laws, and the breaking point
 
     Return
     ------
@@ -257,10 +306,9 @@ def select_peaks(wavelength, flux, outliers_mask, power_law_params):
     Pixels mask, only pixels with peaks=True are considered to be peaks
     """
     # figure out the peaks
-    bestfit_flux = power_law(power_law_params, wavelength)
-    peaks = outliers_mask & (flux > bestfit_flux)
+    bestfit_flux = two_power_law(power_law_params, wavelength)
+    peaks = ~outliers_mask & (flux > bestfit_flux)
 
     return peaks
 
-
-POWER_LAW_MODEL = odr.Model(power_law)
+TWO_POWER_LAW_MODEL = odr.Model(two_power_law)

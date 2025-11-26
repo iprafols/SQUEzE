@@ -12,6 +12,8 @@ import pandas as pd
 
 from squeze.utils import quietprint, verboseprint
 
+PROB_STEP = .01
+PROBS = np.arange(1.0, 0.0, -PROB_STEP)
 
 def compute_peak_finder_completeness(df_candidates,
                                      df_truth,
@@ -217,7 +219,7 @@ def compute_peak_finder_completeness_vs_mag(mag_cuts,
             num_correct_entries_zlt2_1_vs_mag)
 
 
-def compute_stats(df_candidates, df_truth):
+def compute_stats(df_candidates, df_truth, probs=PROBS):
     """ Compute summary statistics.
     Two sets of summary statistics are computed. The primary one (without the *)
     requiring the redshift to be correct in correct classifications. The
@@ -232,104 +234,101 @@ def compute_stats(df_candidates, df_truth):
     df_truth: pd.DataFrame
     A dataframe with the truth
 
+    probs: np.array
+    The list of probabilities where stats will be computed
+
     Return
     ------
     stats: pd.DataFrame
     A dataframe with the summary statistics.
     """
-    prob_step = .01
-    probs = np.arange(1.0, 0.0, -prob_step)
     num_quasars = float(df_truth.shape[0])
     num_quasars_zge2_1 = float(df_truth[df_truth["Z_TRUE"] >= 2.1].shape[0])
     num_quasars_zlt2_1 = float(df_truth[df_truth["Z_TRUE"] < 2.1].shape[0])
 
-    num_candidates = np.zeros_like(probs, dtype=int)
-    num_candidates_zge2_1 = np.zeros_like(probs, dtype=int)
-    num_candidates_zlt2_1 = np.zeros_like(probs, dtype=int)
-    for index_prob, prob in enumerate(probs):
-        num_candidates[index_prob] = df_candidates[
-            df_candidates["PROB"] > prob].shape[0]
-        num_candidates_zge2_1[index_prob] = df_candidates[
-            (df_candidates["PROB"] > prob) &
-            (df_candidates["Z_TRY"] >= 2.1)].shape[0]
-        num_candidates_zlt2_1[index_prob] = df_candidates[
-            (df_candidates["PROB"] > prob) &
-            (df_candidates["Z_TRY"] < 2.1)].shape[0]
-
-    found = np.zeros_like(probs, dtype=int)
-    found_zge2_1 = np.zeros_like(probs, dtype=int)
-    found_zlt2_1 = np.zeros_like(probs, dtype=int)
-    found_alt = np.zeros_like(probs, dtype=int)
-    found_alt_zge2_1 = np.zeros_like(probs, dtype=int)
-    found_alt_zlt2_1 = np.zeros_like(probs, dtype=int)
+    num_candidates = np.zeros_like(probs, dtype=float)
+    num_candidates_zge2_1 = np.zeros_like(probs, dtype=float)
+    num_candidates_zlt2_1 = np.zeros_like(probs, dtype=float)
+    found = np.zeros_like(probs, dtype=float)
+    found_zge2_1 = np.zeros_like(probs, dtype=float)
+    found_zlt2_1 = np.zeros_like(probs, dtype=float)
+    found_alt = np.zeros_like(probs, dtype=float)
+    found_alt_zge2_1 = np.zeros_like(probs, dtype=float)
+    found_alt_zlt2_1 = np.zeros_like(probs, dtype=float)
     for index_prob, prob in enumerate(probs):
         df = df_candidates[(df_candidates["PROB"] >= prob) &
                            (~df_candidates["DUPLICATED"])]
 
+        num_candidates[index_prob] = df.shape[0]
+        if num_candidates[index_prob] == 0:
+            continue
+
         found[index_prob] = df[(df['IS_CORRECT']) &
                                np.isin(df["CLASS_PERSON"], [3, 30])].shape[0]
-        found_zge2_1[index_prob] = df[(df["Z_TRUE"] >= 2.1) &
-                                      (df['IS_CORRECT']) & np.isin(
-                                          df["CLASS_PERSON"], [3, 30])].shape[0]
-        found_zlt2_1[index_prob] = df[(df["Z_TRUE"] < 2.1) &
-                                      (df['IS_CORRECT']) & np.isin(
-                                          df["CLASS_PERSON"], [3, 30])].shape[0]
+        
+        num_candidates_zge2_1[index_prob] = df[df["Z_TRY"] >= 2.1].shape[0]
+        num_candidates_zlt2_1[index_prob] = df[df["Z_TRY"] < 2.1].shape[0]
 
-        correction1 = df[(df["Z_TRUE"] >= 2.1) & (df["Z_TRY"] < 2.1) &
-                         (df['IS_CORRECT'])].shape[0]
-        num_candidates_zge2_1[index_prob] += correction1
-        num_candidates_zlt2_1[index_prob] -= correction1
-
-        correction2 = df[(df["Z_TRUE"] < 2.1) & (df["Z_TRY"] >= 2.1) &
-                         (df['IS_CORRECT'])].shape[0]
-        num_candidates_zge2_1[index_prob] -= correction2
-        num_candidates_zlt2_1[index_prob] += correction2
-
-        found_alt_zge2_1[index_prob] = df[(df["Z_TRUE"] >= 2.1) &
-                                          (df["Z_TRY"] >= 2.1) &
-                                          np.isin(df["CLASS_PERSON"],
-                                                  [3, 30])].shape[0]
-        found_alt_zge2_1[index_prob] += correction1
-        found_alt_zlt2_1[index_prob] = df[(df["Z_TRUE"] < 2.1) &
+        
+        if num_candidates_zge2_1[index_prob] > 0:
+            found_zge2_1[index_prob] = df[(df["Z_TRUE"] >= 2.1) &
+                                        (df['IS_CORRECT']) & np.isin(
+                                            df["CLASS_PERSON"], [3, 30])].shape[0]
+            found_alt_zge2_1[index_prob] = df[(df["Z_TRUE"] >= 2.1) &
+                                    (df["Z_TRY"] >= 2.1) &
+                                    np.isin(df["CLASS_PERSON"],
+                                            [3, 30])].shape[0]
+        if num_candidates_zlt2_1[index_prob] > 0:
+            found_zlt2_1[index_prob] = df[(df["Z_TRUE"] < 2.1) &
+                                        (df['IS_CORRECT']) & np.isin(
+                                            df["CLASS_PERSON"], [3, 30])].shape[0]
+            found_alt_zlt2_1[index_prob] = df[(df["Z_TRUE"] < 2.1) &
                                           (df["Z_TRY"] < 2.1) &
                                           np.isin(df["CLASS_PERSON"],
                                                   [3, 30])].shape[0]
-        found_alt_zlt2_1[index_prob] += correction2
+        
+        correction1 = df[(df["Z_TRUE"] >= 2.1) & (df["Z_TRY"] < 2.1) &
+                         (df['IS_CORRECT'])].shape[0]
+        if correction1 > 0:
+            num_candidates_zge2_1[index_prob] += correction1
+            num_candidates_zlt2_1[index_prob] -= correction1
+            found_alt_zge2_1[index_prob] += correction1
+        correction2 = df[(df["Z_TRUE"] < 2.1) & (df["Z_TRY"] >= 2.1) &
+                         (df['IS_CORRECT'])].shape[0]
+        if correction2 > 0:
+            num_candidates_zge2_1[index_prob] -= correction2
+            num_candidates_zlt2_1[index_prob] += correction2
+            found_alt_zlt2_1[index_prob] += correction2
+        
         found_alt[index_prob] = found_alt_zge2_1[index_prob] + found_alt_zlt2_1[
             index_prob]
 
-    purity = found.astype(float) / num_candidates.astype(float)
-    completeness = found.astype(float) / num_quasars
+    purity = found / num_candidates
+    completeness = found / num_quasars
     f1_score = 2.0 * purity * completeness / (purity + completeness)
 
-    purity_zge2_1 = found_zge2_1.astype(float) / num_candidates_zge2_1.astype(
-        float)
-    completeness_zge2_1 = found_zge2_1.astype(float) / num_quasars_zge2_1
+    purity_zge2_1 = found_zge2_1 / num_candidates_zge2_1
+    completeness_zge2_1 = found_zge2_1 / num_quasars_zge2_1
     f1_score_zge2_1 = 2.0 * purity_zge2_1 * completeness_zge2_1 / (
         purity_zge2_1 + completeness_zge2_1)
 
-    purity_zlt2_1 = found_zlt2_1.astype(float) / num_candidates_zlt2_1.astype(
-        float)
-    completeness_zlt2_1 = found_zlt2_1.astype(float) / num_quasars_zlt2_1
+    purity_zlt2_1 = found_zlt2_1 / num_candidates_zlt2_1
+    completeness_zlt2_1 = found_zlt2_1 / num_quasars_zlt2_1
     f1_score_zlt2_1 = 2.0 * purity_zlt2_1 * completeness_zlt2_1 / (
         purity_zlt2_1 + completeness_zlt2_1)
 
-    purity_alt = found_alt.astype(float) / num_candidates.astype(float)
-    completeness_alt = found_alt.astype(float) / num_quasars
+    purity_alt = found_alt / num_candidates
+    completeness_alt = found_alt / num_quasars
     f1_score_alt = 2.0 * purity_alt * completeness_alt / (purity_alt +
                                                           completeness_alt)
 
-    purity_alt_zge2_1 = found_alt_zge2_1.astype(
-        float) / num_candidates_zge2_1.astype(float)
-    completeness_alt_zge2_1 = found_alt_zge2_1.astype(
-        float) / num_quasars_zge2_1
+    purity_alt_zge2_1 = found_alt_zge2_1 / num_candidates_zge2_1
+    completeness_alt_zge2_1 = found_alt_zge2_1 / num_quasars_zge2_1
     f1_score_alt_zge2_1 = 2.0 * purity_alt_zge2_1 * completeness_alt_zge2_1 / (
         purity_alt_zge2_1 + completeness_alt_zge2_1)
 
-    purity_alt_zlt2_1 = found_alt_zlt2_1.astype(
-        float) / num_candidates_zlt2_1.astype(float)
-    completeness_alt_zlt2_1 = found_alt_zlt2_1.astype(
-        float) / num_quasars_zlt2_1
+    purity_alt_zlt2_1 = found_alt_zlt2_1 / num_candidates_zlt2_1
+    completeness_alt_zlt2_1 = found_alt_zlt2_1 / num_quasars_zlt2_1
     f1_score_alt_zlt2_1 = 2.0 * purity_alt_zlt2_1 * completeness_alt_zlt2_1 / (
         purity_alt_zlt2_1 + completeness_alt_zlt2_1)
 
@@ -503,8 +502,7 @@ def find_prob(stats, do_print=True, opt_f1score=True):
     f1_score_alt = []
     for compare_sign in ["<", ">="]:
         case.append(f"z{compare_sign}2.1")
-        if do_print:
-            userprint(f"Stats for case z{compare_sign}2.1\n")
+        userprint(f"Stats for case z{compare_sign}2.1\n")
 
         if opt_f1score:
             pos = np.argmax(stats[f"f1 score z{compare_sign}2.1"])
@@ -522,9 +520,8 @@ def find_prob(stats, do_print=True, opt_f1score=True):
             col for col in stats.columns
             if "prob" in col or (compare_sign in col and "*" not in col)
         ]
-        if do_print:
-            userprint(stats.iloc[pos][cols])
-            userprint("\n")
+        userprint(stats.iloc[pos][cols])
+        userprint("\n")
 
         pos_alt = np.argmax(stats[f"f1 score* z{compare_sign}2.1"])
         prob_alt.append(stats.iloc[pos_alt]["prob"])
@@ -539,13 +536,11 @@ def find_prob(stats, do_print=True, opt_f1score=True):
             col for col in stats.columns
             if "prob" in col or (compare_sign in col and "*" in col)
         ]
-        if do_print:
-            userprint(stats.iloc[pos_alt][cols])
-            userprint("\n")
+        userprint(stats.iloc[pos_alt][cols])
+        userprint("\n")
 
     case.append("all z")
-    if do_print:
-        print("Stats for all objects")
+    userprint("Stats for all objects")
 
     if opt_f1score:
         pos = np.argmax(stats["f1 score"])
@@ -561,9 +556,8 @@ def find_prob(stats, do_print=True, opt_f1score=True):
         col for col in stats.columns
         if "prob" in col or ("2.1" not in col and "*" not in col)
     ]
-    if do_print:
-        userprint(stats.iloc[pos][cols])
-        userprint("\n")
+    userprint(stats.iloc[pos][cols])
+    userprint("\n")
 
     pos_alt = np.argmax(stats["f1 score*"])
     prob_alt.append(stats.iloc[pos_alt]["prob"])
@@ -575,8 +569,7 @@ def find_prob(stats, do_print=True, opt_f1score=True):
         col for col in stats.columns
         if "prob" in col or ("2.1" not in col and "*" in col)
     ]
-    if do_print:
-        userprint(stats.iloc[pos_alt][cols])
+    userprint(stats.iloc[pos_alt][cols])
 
     opt_prob = pd.DataFrame({
         "case": case,
