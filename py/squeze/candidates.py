@@ -291,7 +291,7 @@ class Candidates:
         A list with the candidates for the given spectrum.
         """
         # find peaks
-        peak_indexs, significances = self.peak_finder.find_peaks(spectrum)
+        peak_indexs, significances, _ = self.peak_finder.find_peaks(spectrum)
 
         # keep peaks in the spectrum
         # if there are no peaks, include the spectrum with redshift np.nan
@@ -548,10 +548,12 @@ class Candidates:
             # candidates are appended to self.candidates_list
             try:
                 self.__find_candidates(spectrum)
-            except Exception:
+            except Exception as error:
                 self.userprint(
                     "Error occured in finding candidates in spectrum.")
+                self.userprint(str(error))
                 self.userprint("Ignoring spectrum")
+                raise error
             if len(self.candidates_list) > MAX_CANDIDATES_TO_CONVERT:
                 self.userprint("Converting candidates to dataframe")
                 time0 = time.time()

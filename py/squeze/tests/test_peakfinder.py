@@ -32,10 +32,16 @@ class TestPeakFinder(unittest.TestCase):
         # add three peaks
         self.__peaks_positions = [5000, 5500, 7000]
         self.__peak_amplitudes = [10, 7, 7]
-        self.__peak_sigmas = [100, 150, 100]
+        self.__peak_sigmas = [100, 100, 150]
         for mu, amp, sig in zip(self.__peaks_positions, self.__peak_amplitudes,
                                 self.__peak_sigmas):
             flux += gaussian(wave, amp, mu, sig)
+
+        # store the peak indices and significances
+        self.__peak_indices = [1002, 1500, 3000]
+        self.__significances = [76.4883757, 53.48831078, 30.52738474]
+        self.__peak_indices_smooth = [1039, 3000]
+        self.__significances_smooth = [95.92189993, 131.96229093]
 
         # keep the noiseless spectrum
         self.__noiseless_spec = SimpleSpectrum(flux.copy(), ivar.copy(),
@@ -53,9 +59,12 @@ class TestPeakFinder(unittest.TestCase):
             "min significance": 6,
         }})
         peak_finder = PeakFinder(config["peak finder"])
-        indexs, significances = peak_finder.find_peaks(self.__noiseless_spec)
+        indices, significances, best_fit = peak_finder.find_peaks(self.__noiseless_spec)
 
-        self.assertTrue(indexs.size == 3)
+        self.assertTrue(indices.size == 3)
+        self.assertTrue(np.allclose(indices, self.__peak_indices, atol=5))
+        self.assertTrue(np.allclose(significances, self.__significances, atol=1))
+        self.assertTrue(best_fit.size == 0)
 
     def test_significance_cut(self):
         """Test that the significance cut works.
@@ -71,9 +80,13 @@ class TestPeakFinder(unittest.TestCase):
                 "min significance": 40,
             }})
         peak_finder = PeakFinder(config["peak finder"])
-        indexs, significances = peak_finder.find_peaks(self.__noiseless_spec)
+        indices, significances, best_fit = peak_finder.find_peaks(self.__noiseless_spec)
 
-        self.assertTrue(indexs.size == 2)
+        self.assertTrue(indices.size == 2)
+        self.assertTrue(np.allclose(indices, self.__peak_indices[:-1], atol=5))
+        self.assertTrue(np.allclose(significances, self.__significances[:-1], atol=1))
+        self.assertTrue(best_fit.size == 0)
+
 
     def test_smoothing(self):
         """Test that the smoothing works.
@@ -89,9 +102,13 @@ class TestPeakFinder(unittest.TestCase):
                 "min significance": 6,
             }})
         peak_finder = PeakFinder(config["peak finder"])
-        indexs, significances = peak_finder.find_peaks(self.__noiseless_spec)
+        indices, significances, best_fit = peak_finder.find_peaks(self.__noiseless_spec)
 
-        self.assertTrue(indexs.size == 2)
+        self.assertTrue(indices.size == 2)
+        self.assertTrue(np.allclose(indices, self.__peak_indices_smooth, atol=5))
+        self.assertTrue(np.allclose(significances, self.__significances_smooth, atol=1))
+        self.assertTrue(best_fit.size == 0)
+
 
 
 if __name__ == '__main__':

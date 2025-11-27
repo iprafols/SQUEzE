@@ -14,12 +14,11 @@ from scipy import odr
 
 from squeze.utils import quietprint, verboseprint
 
-accepted_options = ["min significance", "return bestfit"]
+accepted_options = ["min significance"]
 
 defaults = {
     # This variable sets the minimum sigmas of an outlier.
     "min significance": 2.0,
-    "return bestfit": False,
 }
 
 
@@ -42,7 +41,6 @@ class PeakFinderPowerLaw:
         Parsed options to initialize class
         """
         self.min_significance = config.getfloat("min significance")
-        self.return_bestfit = config.getboolean("return bestfit")
 
     def find_peaks(self, spectrum):
         """ Find significant peaks in a given spectrum.
@@ -54,7 +52,14 @@ class PeakFinderPowerLaw:
 
         Return
         ------
+        peak_indices: array of int
         An array with the position of the peaks
+        
+        peak_significances: array of float
+        An array with the significance of the peaks
+
+        best_fit: array of float
+        The best fit parameters: the amplitude and power law index
         """
         wavelength = spectrum.wave
         flux = spectrum.flux
@@ -90,7 +95,7 @@ class PeakFinderPowerLaw:
 
         # if fit did not converge, return
         if any(best_fit == np.nan):
-            return np.array([]), np.array([])
+            return np.array([]), np.array([]), best_fit
 
         # select only peaks
         peaks = select_peaks(wavelength, flux, outliers_mask, best_fit)
@@ -99,9 +104,7 @@ class PeakFinderPowerLaw:
         peak_indexs, peak_significances = compress(peaks, significances)
 
         # return
-        if self.return_bestfit:
-            return peak_indexs, peak_significances, best_fit
-        return peak_indexs, peak_significances
+        return peak_indexs, peak_significances, best_fit
 
 
 def compress(peaks, significances):

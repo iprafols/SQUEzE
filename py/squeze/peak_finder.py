@@ -90,7 +90,14 @@ class PeakFinder:
 
         Return
         ------
+        peak_indices: array of int
         An array with the position of the peaks
+        
+        peak_significances: array of float
+        An array with the significance of the peaks
+
+        best_fit: empty array
+        Unused. Included for compatiblity with other peak finders.
         """
         # smooth the spectrum
         smoothed_data = spectrum.smooth(self.width)
@@ -115,4 +122,4 @@ class PeakFinder:
         significances = np.array(significances, dtype=float)
 
         # return
-        return peak_indexs, significances
+        return peak_indexs, significances, np.array(())
