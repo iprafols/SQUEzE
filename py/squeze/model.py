@@ -41,22 +41,10 @@ def find_prob(row, columns):
         np.nan
         """
     if "PROB_CLASS3" in columns and "PROB_CLASS30" in columns:
-        #if np.isnan(row["PROB_CLASS3"]):
-        #    prob = np.nan
-        #else:
-        #    prob = row["PROB_CLASS3"] + row["PROB_CLASS30"]
         prob = row["PROB_CLASS3"] + row["PROB_CLASS30"]
     elif "PROB_CLASS30" in columns:
-        #if np.isnan(row["PROB_CLASS30"]):
-        #    prob = np.nan
-        #else:
-        #    prob = row["PROB_CLASS30"]
         prob = row["PROB_CLASS30"]
     elif "PROB_CLASS3" in columns:
-        #if np.isnan(row["PROB_CLASS3"]):
-        #    prob = np.nan
-        #else:
-        #    prob = row["PROB_CLASS3"]
         prob = row["PROB_CLASS3"]
     else:
         prob = np.nan
@@ -329,7 +317,7 @@ class Model:
                 data_vector = data_frame_peaks[self.selected_cols[:-2]].fillna(
                     -9999.99).astype(float).values
                 data_class_probs = self.clf.predict_proba(data_vector)
-                
+
                 # save the probability for each of the classes
                 for index, class_label in enumerate(self.clf.classes):
                     data_frame_peaks[
@@ -397,8 +385,9 @@ class Model:
             self.clf_low.fit(data_vector, data_class)
 
         else:
-            data_frame = data_frame[(data_frame["Z_TRY"] >=
-                                     0.0)][self.selected_cols].fillna(-9999.99)
+            data_frame = data_frame[(
+                data_frame["Z_TRY"]
+                >= 0.0)][self.selected_cols].fillna(-9999.99)
             data_vector = data_frame[self.selected_cols[:-2]].values
             data_class = data_frame.apply(self.__find_class,
                                           axis=1,

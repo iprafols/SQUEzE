@@ -15,6 +15,7 @@ from squeze.utils import quietprint, verboseprint
 PROB_STEP = .01
 PROBS = np.arange(1.0, 0.0, -PROB_STEP)
 
+
 def compute_peak_finder_completeness(df_candidates,
                                      df_truth,
                                      significance_cut=np.arange(0, 10, 0.1),
@@ -55,10 +56,10 @@ def compute_peak_finder_completeness(df_candidates,
     Completeness considering the entries that meet the significance cut
     """
     num_spectra_qso = np.unique(df_truth["SPECID"]).size
-    num_spectra_qso_zge2_1 = np.unique(
-        df_truth[(df_truth["Z_TRUE"] >= 2.1)]["SPECID"]).size
-    num_spectra_qso_zlt2_1 = np.unique(
-        df_truth[(df_truth["Z_TRUE"] < 2.1)]["SPECID"]).size
+    num_spectra_qso_zge2_1 = np.unique(df_truth[(df_truth["Z_TRUE"]
+                                                 >= 2.1)]["SPECID"]).size
+    num_spectra_qso_zlt2_1 = np.unique(df_truth[(df_truth["Z_TRUE"]
+                                                 < 2.1)]["SPECID"]).size
     num_spectra = np.unique(df_candidates["SPECID"]).size
     num_spectra_zge2_1 = np.unique(df_candidates["SPECID"]).size
     num_spectra_zlt2_1 = np.unique(df_candidates["SPECID"]).size
@@ -73,8 +74,8 @@ def compute_peak_finder_completeness(df_candidates,
     completeness_zlt2_1 = np.zeros_like(significance_cut)
 
     for index in range(significance_cut.size):
-        df = df_candidates[(df_candidates["PEAK_SIGNIFICANCE"] >=
-                            significance_cut[index])]
+        df = df_candidates[(df_candidates["PEAK_SIGNIFICANCE"]
+                            >= significance_cut[index])]
         num_entries[index] = df.shape[0]
         num_entries_zge2_1[index] = df[(df["Z_TRY"] >= 2.1)].shape[0]
         num_entries_zlt2_1[index] = df[(df["Z_TRY"] < 2.1)].shape[0]
@@ -265,28 +266,29 @@ def compute_stats(df_candidates, df_truth, probs=PROBS):
 
         found[index_prob] = df[(df['IS_CORRECT']) &
                                np.isin(df["CLASS_PERSON"], [3, 30])].shape[0]
-        
+
         num_candidates_zge2_1[index_prob] = df[df["Z_TRY"] >= 2.1].shape[0]
         num_candidates_zlt2_1[index_prob] = df[df["Z_TRY"] < 2.1].shape[0]
 
-        
         if num_candidates_zge2_1[index_prob] > 0:
             found_zge2_1[index_prob] = df[(df["Z_TRUE"] >= 2.1) &
-                                        (df['IS_CORRECT']) & np.isin(
-                                            df["CLASS_PERSON"], [3, 30])].shape[0]
-            found_alt_zge2_1[index_prob] = df[(df["Z_TRUE"] >= 2.1) &
-                                    (df["Z_TRY"] >= 2.1) &
-                                    np.isin(df["CLASS_PERSON"],
-                                            [3, 30])].shape[0]
-        if num_candidates_zlt2_1[index_prob] > 0:
-            found_zlt2_1[index_prob] = df[(df["Z_TRUE"] < 2.1) &
-                                        (df['IS_CORRECT']) & np.isin(
-                                            df["CLASS_PERSON"], [3, 30])].shape[0]
-            found_alt_zlt2_1[index_prob] = df[(df["Z_TRUE"] < 2.1) &
-                                          (df["Z_TRY"] < 2.1) &
+                                          (df['IS_CORRECT']) &
                                           np.isin(df["CLASS_PERSON"],
                                                   [3, 30])].shape[0]
-        
+            found_alt_zge2_1[index_prob] = df[(df["Z_TRUE"] >= 2.1) &
+                                              (df["Z_TRY"] >= 2.1) &
+                                              np.isin(df["CLASS_PERSON"],
+                                                      [3, 30])].shape[0]
+        if num_candidates_zlt2_1[index_prob] > 0:
+            found_zlt2_1[index_prob] = df[(df["Z_TRUE"] < 2.1) &
+                                          (df['IS_CORRECT']) &
+                                          np.isin(df["CLASS_PERSON"],
+                                                  [3, 30])].shape[0]
+            found_alt_zlt2_1[index_prob] = df[(df["Z_TRUE"] < 2.1) &
+                                              (df["Z_TRY"] < 2.1) &
+                                              np.isin(df["CLASS_PERSON"],
+                                                      [3, 30])].shape[0]
+
         correction1 = df[(df["Z_TRUE"] >= 2.1) & (df["Z_TRY"] < 2.1) &
                          (df['IS_CORRECT'])].shape[0]
         if correction1 > 0:
@@ -299,7 +301,7 @@ def compute_stats(df_candidates, df_truth, probs=PROBS):
             num_candidates_zge2_1[index_prob] -= correction2
             num_candidates_zlt2_1[index_prob] += correction2
             found_alt_zlt2_1[index_prob] += correction2
-        
+
         found_alt[index_prob] = found_alt_zge2_1[index_prob] + found_alt_zlt2_1[
             index_prob]
 

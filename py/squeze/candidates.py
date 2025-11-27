@@ -615,10 +615,10 @@ class Candidates:
         found_quasars_zge1 = 0
         found_quasars_zge2_1 = 0
         num_quasars = quasars_data_frame.shape[0]
-        num_quasars_zge1 = quasars_data_frame[
-            quasars_data_frame["Z_TRUE"] >= 1.0].shape[0]
-        num_quasars_zge2_1 = quasars_data_frame[
-            quasars_data_frame["Z_TRUE"] >= 2.1].shape[0]
+        num_quasars_zge1 = quasars_data_frame[quasars_data_frame["Z_TRUE"] >=
+                                              1.0].shape[0]
+        num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["Z_TRUE"] >=
+                                                2.1].shape[0]
         for index in np.arange(num_quasars):
             specid = quasars_data_frame.iloc[
                 quasars_data_frame.index[index]]["SPECID"]

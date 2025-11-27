@@ -406,7 +406,7 @@ def load_df(filename):
         candidates = data.to_pandas()
     except TypeError:
         with fits.open(os.path.expandvars(filename), memmap=True) as hdul:
-            data = hdul[1].data # pylint: disable=no-member
+            data = hdul[1].data  # pylint: disable=no-member
             candidates = pd.DataFrame(data.byteswap().newbyteorder())
 
     candidates.columns = candidates.columns.str.upper()

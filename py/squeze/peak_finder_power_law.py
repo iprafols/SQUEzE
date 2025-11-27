@@ -42,7 +42,7 @@ class PeakFinderPowerLaw:
         Parsed options to initialize class
         """
         self.min_significance = config.getfloat("min significance")
-        self.returm_bestfit = config.getboolean("return bestfit")
+        self.return_bestfit = config.getboolean("return bestfit")
 
     def find_peaks(self, spectrum):
         """ Find significant peaks in a given spectrum.
@@ -99,11 +99,9 @@ class PeakFinderPowerLaw:
         peak_indexs, peak_significances = compress(peaks, significances)
 
         # return
-        if self.returm_bestfit:
+        if self.return_bestfit:
             return peak_indexs, peak_significances, best_fit
-        else:
-            return peak_indexs, peak_significances
-    
+        return peak_indexs, peak_significances
 
 
 def compress(peaks, significances):

@@ -59,7 +59,7 @@ def predict_proba_tree(X, children_left, children_right, features, thresholds,
         indicates a leaf node
 
         children_right : array of int
-        For node i, j=children_left[i] is the position of right tree node. -1
+        For node i, j=children_right[i] is the position of right tree node. -1
         indicates a leaf node
 
         features : array of int
@@ -83,8 +83,9 @@ def predict_proba_tree(X, children_left, children_right, features, thresholds,
     indexs = np.arange(0, X.shape[0], 1, numba.types.int32)
     search_nodes(X, children_left, children_right, features, thresholds,
                  tree_proba, proba, indexs, 0)
-    
+
     return proba
+
 
 @jit(
     nopython=True,
@@ -330,8 +331,9 @@ class RandomForestClassifier:
         Refer to sklearn.ensemble.RandomForestClassifier.predic_proba
         """
         if len(self.trees[0]["children_left"]) > sys.getrecursionlimit():
-            sys.setrecursionlimit(int(len(self.trees[0]["children_left"]) * 1.2))
-    
+            sys.setrecursionlimit(int(
+                len(self.trees[0]["children_left"]) * 1.2))
+
         output = np.zeros((len(X), self.num_categories))
 
         for tree_index in np.arange(self.num_trees):
@@ -344,41 +346,6 @@ class RandomForestClassifier:
                 self.trees[tree_index]["proba"],
                 self.num_categories,
             )
-        output /= self.num_trees
-
-        return output
-        
-        output = np.array([
-            predict_proba_tree(
-                X,
-                self.trees[tree_index]["children_left"],
-                self.trees[tree_index]["children_right"],
-                self.trees[tree_index]["feature"],
-                self.trees[tree_index]["threshold"],
-                self.trees[tree_index]["proba"],
-                self.num_categories,
-            )
-            for tree_index in np.arange(self.num_trees)
-        ]).sum() / self.num_trees
-
-        return output
-
-        output = np.zeros((len(X), self.num_categories))
-
-        for tree_index in np.arange(self.num_trees):
-            proba = np.zeros((len(X), self.num_categories))
-            children_left = self.trees[tree_index]["children_left"]
-            children_right = self.trees[tree_index]["children_right"]
-            features = self.trees[tree_index]["feature"]
-            thresholds = self.trees[tree_index]["threshold"]
-            tree_proba = self.trees[tree_index]["proba"]
-            indexs = np.arange(X.shape[0], dtype=int)
-            if len(children_left) > sys.getrecursionlimit():
-                sys.setrecursionlimit(int(len(children_left) * 1.2))
-            search_nodes(X, children_left, children_right, features, thresholds,
-                            tree_proba, proba, indexs, 0)
-            output += proba
-
         output /= self.num_trees
 
         return output
