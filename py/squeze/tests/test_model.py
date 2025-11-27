@@ -34,16 +34,15 @@ class TestModel(AbstractTest):
 
         # first create the model by running squeze_training.py
         in_file = f"{THIS_DIR}/data/configs/test_fits_model_training.ini"
-        out_file = "{}/results/training_boss_test1.fits.gz".format(THIS_DIR)
+        out_file = f"{THIS_DIR}/results/training_boss_test1.fits.gz"
         test_file = f"{THIS_DIR}/data/candidates_boss_test1_nopred.fits.gz"
 
         self.run_squeze(in_file, out_file, test_file, fits_model=True)
 
         # now test the model
         in_file = f"{THIS_DIR}/data/configs/test_fits_model_test.ini"
-        out_file = "{}/results/test_boss_test2_nostats.fits.gz".format(THIS_DIR)
-        test_file = "{}/data/candidates_boss_test2_pred.fits.gz".format(
-            THIS_DIR)
+        out_file = f"{THIS_DIR}/results/test_boss_test2_nostats.fits.gz"
+        test_file = f"{THIS_DIR}/data/candidates_boss_test2_pred.fits.gz"
 
         self.run_squeze(in_file, out_file, test_file)
 

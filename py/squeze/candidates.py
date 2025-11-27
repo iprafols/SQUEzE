@@ -27,11 +27,11 @@ from squeze.spectra import Spectra
 from squeze.utils import deserialize, load_json
 
 # extra imports for plotting function
-PLOTTING_ERROR = None
+plotting_error = None
 try:
     import matplotlib.pyplot as plt
 except ImportError as error:
-    PLOTTING_ERROR = error
+    plotting_error = error
 
 MODES = [
     "training", "test", "operation", "candidates", "merge", "merge_training",
@@ -806,8 +806,8 @@ class Candidates:
         ------
         The figure object
         """
-        if PLOTTING_ERROR is not None:
-            raise PLOTTING_ERROR
+        if plotting_error is not None:
+            raise plotting_error
 
         # plot settings
         fontsize = 20
@@ -881,8 +881,8 @@ class Candidates:
         ------
         The figure object
         """
-        if PLOTTING_ERROR is not None:
-            raise PLOTTING_ERROR
+        if plotting_error is not None:
+            raise plotting_error
 
         # get the number of plots and the names of the columns
         plot_cols = np.array(

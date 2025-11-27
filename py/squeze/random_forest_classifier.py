@@ -23,11 +23,11 @@ from numba import prange, jit
 from squeze.utils import deserialize
 
 # extra imports for training model
-SKLEARN_ERROR = None
+sklearn_error = None
 try:
     from sklearn.ensemble import RandomForestClassifier as rf_sklearn
 except ImportError as error:
-    SKLEARN_ERROR = error
+    sklearn_error = error
 # load sklearn modules to train the model
 
 
@@ -210,8 +210,8 @@ class RandomForestClassifier:
         ---------
         Refer to sklearn.ensemble.RandomForestClassifier.fit
         """
-        if SKLEARN_ERROR is not None:
-            raise SKLEARN_ERROR
+        if sklearn_error is not None:
+            raise sklearn_error
 
         # create a RandomForestClassifier
         random_forest = rf_sklearn(**self.args)
