@@ -15,6 +15,7 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
 import sys
+import os
 
 import numpy as np
 import numba
@@ -30,20 +31,41 @@ except ImportError as error:
     sklearn_error = error
 # load sklearn modules to train the model
 
+# Handle JIT compilation conditionally for testing/coverage
+# Check if JIT is disabled
+if os.environ.get('NUMBA_DISABLE_JIT', '0') == '1':
+    # Create dummy decorators and use regular range
+    def jit(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+    
+    prange = range
+    # Create dummy numba types - can't use slice notation when disabled
+    numba_types = None
+else:
+    numba_types = numba.types
 
-@jit(
-    nopython=True,
-    locals={
-        "X": numba.types.float64[:, :],
-        "children_left": numba.types.int64[:],
-        "children_right": numba.types.int64[:],
-        "thresholds": numba.types.float64[:],
-        "tree_proba": numba.types.float64[:, :, :],
-        "proba": numba.types.float64[:, :],
-        "indexs": numba.types.int32[:],
-        "node_id": numba.types.int64
-    },
-)
+# Conditional decorator to handle numba types
+def conditional_jit_with_locals():
+    if numba_types is None:
+        return jit(nopython=True)
+    else:
+        return jit(
+            nopython=True,
+            locals={
+                "X": numba_types.float64[:, :],
+                "children_left": numba_types.int64[:],
+                "children_right": numba_types.int64[:],
+                "thresholds": numba_types.float64[:],
+                "tree_proba": numba_types.float64[:, :, :],
+                "proba": numba_types.float64[:, :],
+                "indexs": numba_types.int32[:],
+                "node_id": numba_types.int64
+            },
+        )
+
+@conditional_jit_with_locals()
 def predict_proba_tree(X, children_left, children_right, features, thresholds,
                        tree_proba, num_categories):
     """ Compute the probability using a given tree
@@ -79,27 +101,15 @@ def predict_proba_tree(X, children_left, children_right, features, thresholds,
         num_categories : int
         Number of categories
         """
-    proba = np.zeros((X.shape[0], num_categories), numba.types.float64)
-    indexs = np.arange(0, X.shape[0], 1, numba.types.int32)
+    proba = np.zeros((X.shape[0], num_categories), dtype=np.float64)
+    indexs = np.arange(0, X.shape[0], 1, dtype=np.int32)
     search_nodes(X, children_left, children_right, features, thresholds,
                  tree_proba, proba, indexs, 0)
 
     return proba
 
 
-@jit(
-    nopython=True,
-    locals={
-        "X": numba.types.float64[:, :],
-        "children_left": numba.types.int64[:],
-        "children_right": numba.types.int64[:],
-        "thresholds": numba.types.float64[:],
-        "tree_proba": numba.types.float64[:, :, :],
-        "proba": numba.types.float64[:, :],
-        "indexs": numba.types.int32[:],
-        "node_id": numba.types.int64
-    },
-)
+@conditional_jit_with_locals()
 def search_nodes(X, children_left, children_right, features, thresholds,
                  tree_proba, proba, indexs, node_id):
     """ Recursively navigates in the tree and calculate the tree response

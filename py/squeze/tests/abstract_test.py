@@ -18,8 +18,6 @@ from squeze.spectra import Spectra
 from squeze.utils import deserialize, load_json
 from squeze.utils import verboseprint as userprint
 
-import run_squeze
-
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 os.environ["THIS_DIR"] = THIS_DIR
 SQUEZE = THIS_DIR.split("py/squeze")[0]
@@ -28,7 +26,9 @@ SQUEZE_BIN = SQUEZE + "bin/"
 if SQUEZE_BIN not in sys.path:
     sys.path.append(SQUEZE_BIN)
 
-# diable numba in tests
+import run_squeze
+
+# disable numba in tests
 os.environ['NUMBA_DISABLE_JIT'] = '1'
 
 

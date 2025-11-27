@@ -16,6 +16,19 @@ from astropy.io import fits
 from astropy.table import Table
 import pandas as pd
 
+# Handle JIT compilation conditionally for testing/coverage
+# Check if JIT is disabled
+if os.environ.get('NUMBA_DISABLE_JIT', '0') == '1':
+    # Create dummy decorators and use regular range
+    def jit(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+    
+    # For vectorize, we need to directly use np.vectorize
+    vectorize = np.vectorize
+    
+    prange = range
 
 @jit(nopython=True)
 def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
@@ -374,7 +387,7 @@ def compute_is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
         # not a peak
         elif assumed_line_index[index1] == -1:
             continue
-        else:
+        else:                
             for index2 in prange(lines.shape[0]):
                 #for line in self.lines.index:
                 if index2 == assumed_line_index[index1]:
