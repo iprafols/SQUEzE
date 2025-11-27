@@ -10,25 +10,13 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
 import os
 from math import sqrt
-from numba import prange, jit, vectorize
 import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 import pandas as pd
 
-# Handle JIT compilation conditionally for testing/coverage
-# Check if JIT is disabled
-if os.environ.get('NUMBA_DISABLE_JIT', '0') == '1':
-    # Create dummy decorators and use regular range
-    def jit(*args, **kwargs):
-        def decorator(func):
-            return func
-        return decorator
-    
-    # For vectorize, we need to directly use np.vectorize
-    vectorize = np.vectorize
-    
-    prange = range
+from squeze.numba_utils import jit, prange, vectorize
+
 
 @jit(nopython=True)
 def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
@@ -79,6 +67,8 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
     new_candidates = []
     # pylint: disable=not-an-iterable
     # prange is the numba equivalent to range
+    # pylint: disable=consider-using-enumerate
+    # usually we would use enumerate, but numba does not support it
     for index1 in prange(peak_indexs.size):
         for index2 in prange(len(try_lines)):
             # compute redshift
@@ -236,6 +226,8 @@ def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
 
         # pylint: disable=not-an-iterable
         # prange is the numba equivalent to range
+        # pylint: disable=consider-using-enumerate
+        # usually we would use enumerate, but numba does not support it
         for index2 in prange(len(try_lines)):
             #for try_line in try_lines:
 
@@ -387,7 +379,7 @@ def compute_is_line(is_correct, class_person, assumed_line_index, z_true, z_try,
         # not a peak
         elif assumed_line_index[index1] == -1:
             continue
-        else:                
+        else:
             for index2 in prange(lines.shape[0]):
                 #for line in self.lines.index:
                 if index2 == assumed_line_index[index1]:

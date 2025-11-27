@@ -7,22 +7,12 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
 import itertools
-import os
 
-from numba import njit
 import numpy as np
 from scipy import odr
 
 from squeze.utils import quietprint, verboseprint
-
-# Handle JIT compilation conditionally for testing/coverage
-# Check if JIT is disabled
-if os.environ.get('NUMBA_DISABLE_JIT', '0') == '1':
-    # Create dummy decorators
-    def njit(*args, **kwargs):
-        def decorator(func):
-            return func
-        return decorator
+from squeze.numba_utils import njit
 
 accepted_options = ["min significance"]
 

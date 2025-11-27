@@ -405,8 +405,7 @@ class Candidates:
                         self.try_lines_dict.get(assumed_line)
                         for assumed_line in aux["ASSUMED_LINE"]
                     ]), aux["Z_TRUE"].values, aux["Z_TRY"].values,
-                    self.z_precision,
-                    self.lines.values)
+                    self.z_precision, self.lines.values)
             else:
                 self.userprint("    is_correct_redshift")
                 aux["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)

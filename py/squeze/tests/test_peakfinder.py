@@ -59,11 +59,13 @@ class TestPeakFinder(unittest.TestCase):
             "min significance": 6,
         }})
         peak_finder = PeakFinder(config["peak finder"])
-        indices, significances, best_fit = peak_finder.find_peaks(self.__noiseless_spec)
+        indices, significances, best_fit = peak_finder.find_peaks(
+            self.__noiseless_spec)
 
         self.assertTrue(indices.size == 3)
         self.assertTrue(np.allclose(indices, self.__peak_indices, atol=5))
-        self.assertTrue(np.allclose(significances, self.__significances, atol=1))
+        self.assertTrue(np.allclose(significances, self.__significances,
+                                    atol=1))
         self.assertTrue(best_fit.size == 0)
 
     def test_significance_cut(self):
@@ -80,13 +82,14 @@ class TestPeakFinder(unittest.TestCase):
                 "min significance": 40,
             }})
         peak_finder = PeakFinder(config["peak finder"])
-        indices, significances, best_fit = peak_finder.find_peaks(self.__noiseless_spec)
+        indices, significances, best_fit = peak_finder.find_peaks(
+            self.__noiseless_spec)
 
         self.assertTrue(indices.size == 2)
         self.assertTrue(np.allclose(indices, self.__peak_indices[:-1], atol=5))
-        self.assertTrue(np.allclose(significances, self.__significances[:-1], atol=1))
+        self.assertTrue(
+            np.allclose(significances, self.__significances[:-1], atol=1))
         self.assertTrue(best_fit.size == 0)
-
 
     def test_smoothing(self):
         """Test that the smoothing works.
@@ -102,13 +105,15 @@ class TestPeakFinder(unittest.TestCase):
                 "min significance": 6,
             }})
         peak_finder = PeakFinder(config["peak finder"])
-        indices, significances, best_fit = peak_finder.find_peaks(self.__noiseless_spec)
+        indices, significances, best_fit = peak_finder.find_peaks(
+            self.__noiseless_spec)
 
         self.assertTrue(indices.size == 2)
-        self.assertTrue(np.allclose(indices, self.__peak_indices_smooth, atol=5))
-        self.assertTrue(np.allclose(significances, self.__significances_smooth, atol=1))
+        self.assertTrue(np.allclose(indices, self.__peak_indices_smooth,
+                                    atol=5))
+        self.assertTrue(
+            np.allclose(significances, self.__significances_smooth, atol=1))
         self.assertTrue(best_fit.size == 0)
-
 
 
 if __name__ == '__main__':

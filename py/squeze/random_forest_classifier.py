@@ -15,13 +15,11 @@
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
 import sys
-import os
 
 import numpy as np
-import numba
-from numba import prange, jit
 
 from squeze.utils import deserialize
+from squeze.numba_utils import jit, prange, numba_types
 
 # extra imports for training model
 sklearn_error = None
@@ -31,39 +29,26 @@ except ImportError as error:
     sklearn_error = error
 # load sklearn modules to train the model
 
-# Handle JIT compilation conditionally for testing/coverage
-# Check if JIT is disabled
-if os.environ.get('NUMBA_DISABLE_JIT', '0') == '1':
-    # Create dummy decorators and use regular range
-    def jit(*args, **kwargs):
-        def decorator(func):
-            return func
-        return decorator
-    
-    prange = range
-    # Create dummy numba types - can't use slice notation when disabled
-    numba_types = None
-else:
-    numba_types = numba.types
 
 # Conditional decorator to handle numba types
 def conditional_jit_with_locals():
+    """ Conditional decorator to handle numba types"""
     if numba_types is None:
         return jit(nopython=True)
-    else:
-        return jit(
-            nopython=True,
-            locals={
-                "X": numba_types.float64[:, :],
-                "children_left": numba_types.int64[:],
-                "children_right": numba_types.int64[:],
-                "thresholds": numba_types.float64[:],
-                "tree_proba": numba_types.float64[:, :, :],
-                "proba": numba_types.float64[:, :],
-                "indexs": numba_types.int32[:],
-                "node_id": numba_types.int64
-            },
-        )
+    return jit(
+        nopython=True,
+        locals={
+            "X": numba_types.float64[:, :],
+            "children_left": numba_types.int64[:],
+            "children_right": numba_types.int64[:],
+            "thresholds": numba_types.float64[:],
+            "tree_proba": numba_types.float64[:, :, :],
+            "proba": numba_types.float64[:, :],
+            "indexs": numba_types.int32[:],
+            "node_id": numba_types.int64
+        },
+    )
+
 
 @conditional_jit_with_locals()
 def predict_proba_tree(X, children_left, children_right, features, thresholds,
