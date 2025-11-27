@@ -28,9 +28,6 @@ if SQUEZE_BIN not in sys.path:
 
 import run_squeze
 
-# disable numba in tests
-os.environ['NUMBA_DISABLE_JIT'] = '1'
-
 
 class AbstractTest(unittest.TestCase):
     """Test the training mode
