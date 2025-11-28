@@ -92,12 +92,12 @@ class PeakFinder:
         ------
         peak_indices: array of int
         An array with the position of the peaks
-        
+
         peak_significances: array of float
         An array with the significance of the peaks
 
         best_fit: empty array
-        Unused. Included for compatiblity with other peak finders.
+        Unused. Included for compatibility with other peak finders.
         """
         # smooth the spectrum
         smoothed_data = spectrum.smooth(self.width)

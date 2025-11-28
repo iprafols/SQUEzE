@@ -15,7 +15,7 @@ from squeze.tests.test_utils import gaussian
 
 
 class TestPeakFinder(unittest.TestCase):
-    """Test the peak finder.
+    """ Test the peak finder.
 
         CLASS: TestPeakFinder
         PURPOSE: Test the peak finder
@@ -48,7 +48,7 @@ class TestPeakFinder(unittest.TestCase):
                                                wave.copy(), {})
 
     def test_peak_finder(self):
-        """Basic test for the peak finder.
+        """ Basic test for the peak finder.
 
         Peak finder is run on a dummy noiseless spectrum with three
         peaks. All three peaks should be recovered.
@@ -62,14 +62,14 @@ class TestPeakFinder(unittest.TestCase):
         indices, significances, best_fit = peak_finder.find_peaks(
             self.__noiseless_spec)
 
-        self.assertTrue(indices.size == 3)
+        self.assertEqual(indices.size, 3)
         self.assertTrue(np.allclose(indices, self.__peak_indices, atol=5))
         self.assertTrue(np.allclose(significances, self.__significances,
                                     atol=1))
-        self.assertTrue(best_fit.size == 0)
+        self.assertEqual(best_fit.size, 0)
 
     def test_significance_cut(self):
-        """Test that the significance cut works.
+        """ Test that the significance cut works.
 
         Peak finder is run on a dummy noiseless spectrum with three
         peaks. Only two of the peaks should be recovered, and one
@@ -85,14 +85,14 @@ class TestPeakFinder(unittest.TestCase):
         indices, significances, best_fit = peak_finder.find_peaks(
             self.__noiseless_spec)
 
-        self.assertTrue(indices.size == 2)
+        self.assertEqual(indices.size, 2)
         self.assertTrue(np.allclose(indices, self.__peak_indices[:-1], atol=5))
         self.assertTrue(
             np.allclose(significances, self.__significances[:-1], atol=1))
-        self.assertTrue(best_fit.size == 0)
+        self.assertEqual(best_fit.size, 0)
 
     def test_smoothing(self):
-        """Test that the smoothing works.
+        """ Test that the smoothing works.
 
         Peak finder is run on a dummy noiseless spectrum with three
         peaks. Only two of the peaks should be recovered, since the
@@ -108,12 +108,12 @@ class TestPeakFinder(unittest.TestCase):
         indices, significances, best_fit = peak_finder.find_peaks(
             self.__noiseless_spec)
 
-        self.assertTrue(indices.size == 2)
+        self.assertEqual(indices.size, 2)
         self.assertTrue(np.allclose(indices, self.__peak_indices_smooth,
                                     atol=5))
         self.assertTrue(
             np.allclose(significances, self.__significances_smooth, atol=1))
-        self.assertTrue(best_fit.size == 0)
+        self.assertEqual(best_fit.size, 0)
 
 
 if __name__ == '__main__':

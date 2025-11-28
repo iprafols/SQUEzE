@@ -54,7 +54,7 @@ class PeakFinderTwoPowerLaw:
         ------
         peak_indices: array of int
         An array with the position of the peaks
-        
+
         peak_significances: array of float
         An array with the significance of the peaks
 

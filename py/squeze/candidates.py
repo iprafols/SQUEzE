@@ -552,7 +552,6 @@ class Candidates:
                     "Error occured in finding candidates in spectrum.")
                 self.userprint(str(error))
                 self.userprint("Ignoring spectrum")
-                raise error
             if len(self.candidates_list) > MAX_CANDIDATES_TO_CONVERT:
                 self.userprint("Converting candidates to dataframe")
                 time0 = time.time()
