@@ -9,7 +9,6 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 import itertools
 
 import numpy as np
-from scipy.stats import linregress
 
 from squeze.numba_utils import njit
 from squeze.utils import quietprint, verboseprint
@@ -187,12 +186,12 @@ def fit_power_law(wavelength, flux, ivar, outliers_mask, min_significance):
     """
     # Perform log-linear fit
     best_fit = fit_power_law_log_linear(wavelength, flux, ivar, outliers_mask)
-    
+
     # Check if fit succeeded
     if np.isnan(best_fit).any() or best_fit[0] <= 0:
         # Return default values if fit failed
         return outliers_mask, np.zeros_like(flux), np.array([flux.mean(), 0.0])
-    
+
     # figure out the outliers
     bestfit_flux = power_law(best_fit, wavelength)
     significances = np.abs(flux - bestfit_flux) * np.sqrt(ivar)
@@ -228,38 +227,42 @@ def fit_power_law_log_linear(wavelength, flux, ivar, outliers_mask):
     The best fit parameters [amplitude, power_index]
     """
     # Apply outliers mask and remove invalid values
-    mask = outliers_mask & (flux > 0) & (ivar > 0) & np.isfinite(flux) & np.isfinite(ivar)
-    
+    mask = outliers_mask & (flux > 0) & (
+        ivar > 0) & np.isfinite(flux) & np.isfinite(ivar)
+
     if np.sum(mask) < 3:  # Need at least 3 points for a good fit
         return np.array([flux.mean() if len(flux) > 0 else 1.0, 0.0])
-    
+
     log_wave = np.log(wavelength[mask])
     log_flux = np.log(flux[mask])
     weights = ivar[mask]
-    
-    try:        
+
+    try:
         # Perform weighted linear regression: log(flux) = log(A) - alpha * log(wave)
         # Use weighted least squares
-        fit_x = np.column_stack([np.ones(len(log_wave)), -log_wave]) * weights[:, np.newaxis]
+        fit_x = np.column_stack([np.ones(len(log_wave)), -log_wave
+                                ]) * weights[:, np.newaxis]
         fit_y = log_flux * weights
-        
+
         # Solve weighted least squares
         coeffs = np.linalg.lstsq(fit_x, fit_y, rcond=None)[0]
         log_amplitude = coeffs[0]
         power_index = coeffs[1]
-        
+
         # Convert back from log space
         amplitude = np.exp(log_amplitude)
-        
+
         # Sanity check the results
-        if not np.isfinite(amplitude) or not np.isfinite(power_index) or amplitude <= 0:
-            return np.array([flux_clean.mean(), 0.0])
-        
+        if not np.isfinite(amplitude) or not np.isfinite(
+                power_index) or amplitude <= 0:
+            return np.array([flux[mask].mean(), 0.0])
+
         return np.array([amplitude, power_index])
-        
-    except Exception as e:
+
+    except Exception:
         # If anything goes wrong, return a reasonable default
-        return np.array([flux[mask].mean() if len(flux[mask]) > 0 else 1.0, 0.0])
+        return np.array(
+            [flux[mask].mean() if len(flux[mask]) > 0 else 1.0, 0.0])
 
 
 def group_contiguous(data):

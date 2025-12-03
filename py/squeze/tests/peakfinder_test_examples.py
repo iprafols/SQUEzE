@@ -17,8 +17,7 @@ for mu, amp, sig in zip(peak_positions, peak_amplitudes, peak_sigmas):
     flux += gaussian(wave, amp, mu, sig)
 
 # keep the spectrum
-NOISELESS_FLAT_SPEC = SimpleSpectrum(
-    flux, ivar, wave, {})
+NOISELESS_FLAT_SPEC = SimpleSpectrum(flux, ivar, wave, {})
 SMOOTHING_WIDTH = 70
 MIN_SIGNIFICANCE = 6
 PEAK_INDICES = [1000, 1500, 3000]
@@ -46,9 +45,8 @@ for mu, amp, sig in zip(peak_positions, peak_amplitudes, peak_sigmas):
     flux += gaussian(wave, amp, mu, sig)
 
 # keep the spectrum
-NOISELESS_POWER_LAW_SPEC = SimpleSpectrum(
-    flux, ivar, wave, {})
+NOISELESS_POWER_LAW_SPEC = SimpleSpectrum(flux, ivar, wave, {})
 MIN_SIGNIFICANCE_POWER_LAW = 2
 PEAK_INDICES_POWER_LAW = [1000, 1500, 3000]
-SIGNIFICANCES_POWER_LAW = [1132.29694149,  754.85128291, 1529.2492195]
+SIGNIFICANCES_POWER_LAW = [1132.29694149, 754.85128291, 1529.2492195]
 BEST_FIT_POWER_LAW = [1.09605851e+08, 2.00703770e+00]

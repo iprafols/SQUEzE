@@ -12,12 +12,23 @@ from squeze.peak_finder import PeakFinder
 from squeze.peak_finder_power_law import PeakFinderPowerLaw
 from squeze.tests.peakfinder_test_examples import (
     BEST_FIT_POWER_LAW,
-    MIN_SIGNIFICANCE_POWER_LAW, PEAK_INDICES_POWER_LAW, SIGNIFICANCES_POWER_LAW,
+    MIN_SIGNIFICANCE_POWER_LAW,
+    PEAK_INDICES_POWER_LAW,
+    SIGNIFICANCES_POWER_LAW,
     NOISELESS_FLAT_SPEC,
-    SMOOTHING_WIDTH, MIN_SIGNIFICANCE, PEAK_INDICES, SIGNIFICANCES,
-    SMOOTHING_WIDTH_CUT, MIN_SIGNIFICANCE_CUT, PEAK_INDICES_CUT, 
-    SIGNIFICANCES_CUT, SMOOTHING_WIDTH_SMOOTH, MIN_SIGNIFICANCE_SMOOTH, 
-    PEAK_INDICES_SMOOTH, SIGNIFICANCES_SMOOTH, NOISELESS_POWER_LAW_SPEC,   
+    SMOOTHING_WIDTH,
+    MIN_SIGNIFICANCE,
+    PEAK_INDICES,
+    SIGNIFICANCES,
+    SMOOTHING_WIDTH_CUT,
+    MIN_SIGNIFICANCE_CUT,
+    PEAK_INDICES_CUT,
+    SIGNIFICANCES_CUT,
+    SMOOTHING_WIDTH_SMOOTH,
+    MIN_SIGNIFICANCE_SMOOTH,
+    PEAK_INDICES_SMOOTH,
+    SIGNIFICANCES_SMOOTH,
+    NOISELESS_POWER_LAW_SPEC,
 )
 
 
@@ -35,10 +46,12 @@ class TestPeakFinder(unittest.TestCase):
         peaks. All three peaks should be recovered.
         """
         config = ConfigParser()
-        config.read_dict({"peak finder": {
-            "width": SMOOTHING_WIDTH,
-            "min significance": MIN_SIGNIFICANCE,
-        }})
+        config.read_dict({
+            "peak finder": {
+                "width": SMOOTHING_WIDTH,
+                "min significance": MIN_SIGNIFICANCE,
+            }
+        })
         peak_finder = PeakFinder(config["peak finder"])
         indices, significances, best_fit = peak_finder.find_peaks(
             NOISELESS_FLAT_SPEC)
@@ -56,19 +69,19 @@ class TestPeakFinder(unittest.TestCase):
         should be lost due to the high significance cut
         """
         config = ConfigParser()
-        config.read_dict(
-            {"peak finder": {
+        config.read_dict({
+            "peak finder": {
                 "width": SMOOTHING_WIDTH_CUT,
                 "min significance": MIN_SIGNIFICANCE_CUT,
-            }})
+            }
+        })
         peak_finder = PeakFinder(config["peak finder"])
         indices, significances, best_fit = peak_finder.find_peaks(
             NOISELESS_FLAT_SPEC)
 
         self.assertEqual(indices.size, 2)
         self.assertTrue(np.allclose(indices, PEAK_INDICES_CUT))
-        self.assertTrue(
-            np.allclose(significances, SIGNIFICANCES_CUT))
+        self.assertTrue(np.allclose(significances, SIGNIFICANCES_CUT))
         self.assertEqual(best_fit.size, 0)
 
     def test_peak_finder_smoothing(self):
@@ -79,19 +92,22 @@ class TestPeakFinder(unittest.TestCase):
         first two should be smoothed into a single peak
         """
         config = ConfigParser()
-        config.read_dict(
-            {"peak finder": {
+        config.read_dict({
+            "peak finder": {
                 "width": SMOOTHING_WIDTH_SMOOTH,
                 "min significance": MIN_SIGNIFICANCE_SMOOTH,
-            }})
+            }
+        })
         peak_finder = PeakFinder(config["peak finder"])
         indices, significances, best_fit = peak_finder.find_peaks(
             NOISELESS_FLAT_SPEC)
 
         self.assertEqual(indices.size, 2)
-        self.assertTrue(np.allclose(indices, PEAK_INDICES_SMOOTH,))
-        self.assertTrue(
-            np.allclose(significances, SIGNIFICANCES_SMOOTH))
+        self.assertTrue(np.allclose(
+            indices,
+            PEAK_INDICES_SMOOTH,
+        ))
+        self.assertTrue(np.allclose(significances, SIGNIFICANCES_SMOOTH))
         self.assertEqual(best_fit.size, 0)
 
     def test_peak_finder_power_law(self):
@@ -101,9 +117,10 @@ class TestPeakFinder(unittest.TestCase):
         peaks on top of a power-law. All three peaks should be recovered.
         """
         config = ConfigParser()
-        config.read_dict({"peak finder": {
-            "min significance": MIN_SIGNIFICANCE_POWER_LAW,
-        }})
+        config.read_dict(
+            {"peak finder": {
+                "min significance": MIN_SIGNIFICANCE_POWER_LAW,
+            }})
         peak_finder = PeakFinderPowerLaw(config["peak finder"])
         indices, significances, best_fit = peak_finder.find_peaks(
             NOISELESS_POWER_LAW_SPEC)
@@ -113,6 +130,7 @@ class TestPeakFinder(unittest.TestCase):
         self.assertTrue(np.allclose(significances, SIGNIFICANCES_POWER_LAW))
         self.assertEqual(best_fit.size, 2)
         self.assertTrue(np.allclose(best_fit, BEST_FIT_POWER_LAW))
+
 
 if __name__ == '__main__':
     unittest.main()
