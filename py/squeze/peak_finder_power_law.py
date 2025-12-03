@@ -9,7 +9,7 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 import itertools
 
 import numpy as np
-from scipy import odr
+from scipy.stats import linregress
 
 from squeze.numba_utils import njit
 from squeze.utils import quietprint, verboseprint
@@ -131,10 +131,10 @@ def compress(peaks, significances):
     of the relevant detections
     """
     #find peak indexs
-    peak_indexs = np.array([index for index, peak in enumerate(peaks) if peak])
+    peak_indices = np.array([index for index, peak in enumerate(peaks) if peak])
 
     # compress
-    groups = list(group_contiguous(peak_indexs))
+    groups = list(group_contiguous(peak_indices))
     compressed_peak_indexs = np.zeros(len(groups), dtype=int)
     compressed_significances = np.zeros_like(compressed_peak_indexs,
                                              dtype=float)
@@ -185,20 +185,81 @@ def fit_power_law(wavelength, flux, ivar, outliers_mask, min_significance):
     best_fit: (float, float)
     The best fit power law amplitude and index
     """
-    # do the actual fit
-    data = odr.Data(wavelength, flux, we=ivar)
-    odr_instance = odr.ODR(data, POWER_LAW_MODEL, beta0=(flux.mean(), 0.0))
-    odr_instance.set_job(fit_type=0)
-    fit_output = odr_instance.run()
-
+    # Perform log-linear fit
+    best_fit = fit_power_law_log_linear(wavelength, flux, ivar, outliers_mask)
+    
+    # Check if fit succeeded
+    if np.isnan(best_fit).any() or best_fit[0] <= 0:
+        # Return default values if fit failed
+        return outliers_mask, np.zeros_like(flux), np.array([flux.mean(), 0.0])
+    
     # figure out the outliers
-    bestfit_flux = power_law(fit_output.beta, wavelength)
+    bestfit_flux = power_law(best_fit, wavelength)
     significances = np.abs(flux - bestfit_flux) * np.sqrt(ivar)
-    new_outliers_mask = np.zeros_like(outliers_mask)
-    new_outliers_mask[np.where(significances > min_significance)] = True
+    new_outliers_mask = np.zeros_like(outliers_mask, dtype=bool)
+    new_outliers_mask[np.where(significances < min_significance)] = True
     new_outliers_mask &= outliers_mask
 
-    return new_outliers_mask, significances, fit_output.beta
+    return new_outliers_mask, significances, best_fit
+
+
+def fit_power_law_log_linear(wavelength, flux, ivar, outliers_mask):
+    """
+    Fit power law using log-linear regression.
+    This is more robust than ODR fitting.
+    
+    Arguments
+    ---------
+    wavelength: array of float
+    The wavelength
+    
+    flux: array of float
+    The flux to fit
+    
+    ivar: array of float
+    The inverse variance of the flux
+    
+    outliers_mask: array of bool
+    Mask indicating which pixels to include in the fit
+    
+    Return
+    ------
+    best_fit: array of float
+    The best fit parameters [amplitude, power_index]
+    """
+    # Apply outliers mask and remove invalid values
+    mask = outliers_mask & (flux > 0) & (ivar > 0) & np.isfinite(flux) & np.isfinite(ivar)
+    
+    if np.sum(mask) < 3:  # Need at least 3 points for a good fit
+        return np.array([flux.mean() if len(flux) > 0 else 1.0, 0.0])
+    
+    log_wave = np.log(wavelength[mask])
+    log_flux = np.log(flux[mask])
+    weights = ivar[mask]
+    
+    try:        
+        # Perform weighted linear regression: log(flux) = log(A) - alpha * log(wave)
+        # Use weighted least squares
+        fit_x = np.column_stack([np.ones(len(log_wave)), -log_wave]) * weights[:, np.newaxis]
+        fit_y = log_flux * weights
+        
+        # Solve weighted least squares
+        coeffs = np.linalg.lstsq(fit_x, fit_y, rcond=None)[0]
+        log_amplitude = coeffs[0]
+        power_index = coeffs[1]
+        
+        # Convert back from log space
+        amplitude = np.exp(log_amplitude)
+        
+        # Sanity check the results
+        if not np.isfinite(amplitude) or not np.isfinite(power_index) or amplitude <= 0:
+            return np.array([flux_clean.mean(), 0.0])
+        
+        return np.array([amplitude, power_index])
+        
+    except Exception as e:
+        # If anything goes wrong, return a reasonable default
+        return np.array([flux[mask].mean() if len(flux[mask]) > 0 else 1.0, 0.0])
 
 
 def group_contiguous(data):
@@ -259,9 +320,6 @@ def select_peaks(wavelength, flux, outliers_mask, power_law_params):
     """
     # figure out the peaks
     bestfit_flux = power_law(power_law_params, wavelength)
-    peaks = outliers_mask & (flux > bestfit_flux)
+    peaks = ~outliers_mask & (flux > bestfit_flux)
 
     return peaks
-
-
-POWER_LAW_MODEL = odr.Model(power_law)
