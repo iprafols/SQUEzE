@@ -10,11 +10,16 @@ import numpy as np
 
 from squeze.peak_finder import PeakFinder
 from squeze.peak_finder_power_law import PeakFinderPowerLaw
+from squeze.peak_finder_two_power_law import PeakFinderTwoPowerLaw
 from squeze.tests.peakfinder_test_examples import (
     BEST_FIT_POWER_LAW,
     MIN_SIGNIFICANCE_POWER_LAW,
     PEAK_INDICES_POWER_LAW,
     SIGNIFICANCES_POWER_LAW,
+    BEST_FIT_TWO_POWER_LAW,
+    MIN_SIGNIFICANCE_TWO_POWER_LAW,
+    PEAK_INDICES_TWO_POWER_LAW,
+    SIGNIFICANCES_TWO_POWER_LAW,
     NOISELESS_FLAT_SPEC,
     SMOOTHING_WIDTH,
     MIN_SIGNIFICANCE,
@@ -29,6 +34,7 @@ from squeze.tests.peakfinder_test_examples import (
     PEAK_INDICES_SMOOTH,
     SIGNIFICANCES_SMOOTH,
     NOISELESS_POWER_LAW_SPEC,
+    NOISELESS_TWO_POWER_LAW_SPEC,
 )
 
 
@@ -130,6 +136,28 @@ class TestPeakFinder(unittest.TestCase):
         self.assertTrue(np.allclose(significances, SIGNIFICANCES_POWER_LAW))
         self.assertEqual(best_fit.size, 2)
         self.assertTrue(np.allclose(best_fit, BEST_FIT_POWER_LAW))
+
+    def test_peak_finder_two_power_law(self):
+        """ Basic test for class PeakFinderTwoPowerLaw.
+
+        Peak finder is run on a dummy noiseless spectrum with three
+        peaks on top of a power-law. All three peaks should be recovered.
+        """
+        config = ConfigParser()
+        config.read_dict({
+            "peak finder": {
+                "min significance": MIN_SIGNIFICANCE_TWO_POWER_LAW,
+            }
+        })
+        peak_finder = PeakFinderTwoPowerLaw(config["peak finder"])
+        indices, significances, best_fit = peak_finder.find_peaks(
+            NOISELESS_TWO_POWER_LAW_SPEC)
+
+        self.assertEqual(indices.size, 3)
+        self.assertTrue(np.allclose(indices, PEAK_INDICES_TWO_POWER_LAW))
+        self.assertTrue(np.allclose(significances, SIGNIFICANCES_TWO_POWER_LAW))
+        self.assertEqual(best_fit.size, 4)
+        self.assertTrue(np.allclose(best_fit, BEST_FIT_TWO_POWER_LAW))
 
 
 if __name__ == '__main__':

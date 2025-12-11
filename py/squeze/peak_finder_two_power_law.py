@@ -131,9 +131,6 @@ class PeakFinderTwoPowerLaw:
             else:
                 do_fit = False
 
-            if np.isclose(new_best_fit_chi2, best_fit_chi2, rtol=0.01):
-                do_fit = False
-
             index += 1
 
         userprint(
@@ -259,13 +256,10 @@ def fit_two_power_law(wavelength,
 
     # figure out the outliers
     model = two_power_law(fit_output.beta, wavelength)
-    differences = flux - model
-    quartiles = np.percentile(differences, [25, 50, 75])
-    mu, sig = quartiles[1], 0.74 * (quartiles[2] - quartiles[0])
-
-    new_outliers_mask = ivar != 0
-    new_outliers_mask &= flux >= 0
-    new_outliers_mask &= differences < mu + min_significance * sig
+    differences = np.abs(flux - model) * np.sqrt(ivar)
+    new_outliers_mask = np.zeros_like(outliers_mask, dtype=bool)
+    new_outliers_mask[np.where(differences < min_significance)] = True
+    new_outliers_mask &= outliers_mask
 
     return new_outliers_mask, differences, fit_output.beta
 
