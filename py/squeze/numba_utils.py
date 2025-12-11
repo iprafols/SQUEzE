@@ -29,7 +29,7 @@ if os.environ.get('NUMBA_DISABLE_JIT', '0') == '1':
 
         return decorator
 
-    NUMBA_TYPES = None
+    numba_types = None
 
     prange = range  # pylint: disable=invalid-name
 
@@ -39,6 +39,6 @@ if os.environ.get('NUMBA_DISABLE_JIT', '0') == '1':
 else:
     jit = numba.jit
     njit = numba.njit
-    NUMBA_TYPES = numba.types
+    numba_types = numba.types
     vectorize = numba.vectorize  # pylint: disable=invalid-name
     prange = numba.prange  # pylint: disable=invalid-name
