@@ -31,7 +31,7 @@ class TestSquezeTest(AbstractTest):
         self.run_squeze(in_file, out_file, test_file)
 
     def test_squeze_test_nostats(self):
-        """ Run run_squeze.py in test mode without computing stastics"""
+        """ Run run_squeze.py in test mode without computing statistics"""
         in_file = f"{THIS_DIR}/data/configs/test_squeze_test_nostats.ini"
         out_file = f"{THIS_DIR}/results/test_boss_test2_nostats.fits.gz"
         test_file = f"{THIS_DIR}/data/candidates_boss_test3_pred.fits.gz"

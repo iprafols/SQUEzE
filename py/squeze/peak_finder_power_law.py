@@ -100,11 +100,10 @@ class PeakFinderPowerLaw:
         peaks = select_peaks(wavelength, flux, outliers_mask, best_fit)
 
         # compress neighbouring pixels into a single pixel
-        peak_indexs, peak_significances = compress(peaks, significances)
+        peak_indices, peak_significances = compress(peaks, significances)
 
         # return
-        return peak_indexs, peak_significances, best_fit
-
+        return peak_indices, peak_significances, best_fit
 
 def compress(peaks, significances):
     """Compress the neighbouring peak indexs into a single peak

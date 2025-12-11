@@ -19,7 +19,7 @@ import sys
 import numpy as np
 
 from squeze.utils import deserialize
-from squeze.numba_utils import jit, prange, numba_types
+from squeze.numba_utils import jit, prange, NUMBA_TYPES
 
 # extra imports for training model
 sklearn_error = None
@@ -33,19 +33,19 @@ except ImportError as error:
 # Conditional decorator to handle numba types
 def conditional_jit_with_locals():
     """ Conditional decorator to handle numba types"""
-    if numba_types is None:
+    if NUMBA_TYPES is None:
         return jit(nopython=True)
     return jit(
         nopython=True,
         locals={
-            "X": numba_types.float64[:, :],
-            "children_left": numba_types.int64[:],
-            "children_right": numba_types.int64[:],
-            "thresholds": numba_types.float64[:],
-            "tree_proba": numba_types.float64[:, :, :],
-            "proba": numba_types.float64[:, :],
-            "indexs": numba_types.int32[:],
-            "node_id": numba_types.int64
+            "X": NUMBA_TYPES.float64[:, :],
+            "children_left": NUMBA_TYPES.int64[:],
+            "children_right": NUMBA_TYPES.int64[:],
+            "thresholds": NUMBA_TYPES.float64[:],
+            "tree_proba": NUMBA_TYPES.float64[:, :, :],
+            "proba": NUMBA_TYPES.float64[:, :],
+            "indexs": NUMBA_TYPES.int32[:],
+            "node_id": NUMBA_TYPES.int64
         },
     )
 
