@@ -6,11 +6,10 @@
     """
 __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
-import itertools
-
 import numpy as np
 from scipy import odr
 
+from squeze.peak_finder_power_law import (PeakFinderPowerLaw, compress)
 from squeze.utils import quietprint, verboseprint
 from squeze.numba_utils import njit
 
@@ -22,10 +21,10 @@ defaults = {
 }
 
 
-class PeakFinderTwoPowerLaw:
+class PeakFinderTwoPowerLaw(PeakFinderPowerLaw):
     """ Create and manage the peak finder used by SQUEzE
 
-    CLASS: PeakFinder
+    CLASS: PeakFinderTwoPowerLaw
     PURPOSE: Create and manage the peak finder used by SQUEzE. This
     peak finder looks for peaks by fitting a power law to the continuum of the
     spectra and locating the outliers. It also computes the significance of
@@ -40,7 +39,8 @@ class PeakFinderTwoPowerLaw:
         config: configparser.SectionProxy
         Parsed options to initialize class
         """
-        self.min_significance = config.getfloat("min significance")
+        self.min_significance = None
+        super().__init__(config)
 
     def find_peaks(self, spectrum):
         """ Find significant peaks in a given spectrum.
@@ -59,7 +59,7 @@ class PeakFinderTwoPowerLaw:
         An array with the significance of the peaks
 
         best_fit: array of float
-        The best fit parameters: the amplitude and power law indices for the 
+        The best fit parameters: the amplitude and power law indices for the
         first and second power laws
         """
         wavelength = spectrum.wave
@@ -146,59 +146,13 @@ class PeakFinderTwoPowerLaw:
         significances = np.abs(differences) * np.sqrt(ivar)
 
         # select only peaks
-        peaks = select_peaks_two_power_law(wavelength, flux, outliers_mask,
-                                           best_fit)
+        peaks = select_peaks(wavelength, flux, outliers_mask, best_fit)
 
         # compress neighbouring pixels into a single pixel
         peak_indices, peak_significances = compress(peaks, significances)
 
         # return
         return peak_indices, peak_significances, best_fit
-
-
-def compress(peaks, significances):
-    """Compress the neighbouring peak indices into a single peak
-    Arguments
-    ---------
-    peaks: array of bool
-    Pixels mask, only pixels with peaks=True are considered to be peaks
-
-    significances: array of float
-    Significance of the outlier detection, computed as
-    abs(flux - bestfit_flux)*np.sqrt(ivar)
-
-    Return
-    ------
-    compressed_peak_indices: array of int
-    Array containing the indices of the compressed peaks. Contiguous pixels
-    are compressed by performing a weighted average according to their
-    significance
-
-    compressed_significances: array of float
-    Significance of the compressed peaks. Computed by adding the significances
-    of the relevant detections
-    """
-    #find peak indices
-    peak_indices = np.array([index for index, peak in enumerate(peaks) if peak])
-
-    # compress
-    groups = list(group_contiguous(peak_indices))
-    compressed_peak_indices = np.zeros(len(groups), dtype=int)
-    compressed_significances = np.zeros_like(compressed_peak_indices,
-                                             dtype=float)
-    for index, group in enumerate(groups):
-        # single pixel
-        if group[1] == group[0]:
-            compressed_peak_indices[index] = group[0]
-            compressed_significances[index] = significances[group[0]]
-        # grouped pixels
-        else:
-            aux = np.arange(group[0], group[1] + 1, dtype=int)
-            compressed_peak_indices[index] = int(
-                round(np.average(aux, weights=significances[aux]**2), 0))
-            compressed_significances[index] = significances[aux].sum()
-
-    return compressed_peak_indices, compressed_significances
 
 
 def fit_two_power_law(wavelength,
@@ -236,7 +190,7 @@ def fit_two_power_law(wavelength,
     abs(flux - bestfit_flux)*np.sqrt(ivar)
 
     best_fit: (float, float, float, float)
-    The best fit parameters: the amplitude and power law indices for the 
+    The best fit parameters: the amplitude and power law indices for the
     first and second power laws, and the breaking point
     """
     # do the actual fit
@@ -262,23 +216,6 @@ def fit_two_power_law(wavelength,
     new_outliers_mask &= outliers_mask
 
     return new_outliers_mask, differences, fit_output.beta
-
-
-def group_contiguous(data):
-    """Group continuous elements together
-
-    For example for data = [0, 1, 2, 3, 7, 8, 9] yield (0, 3) and (7, 9).
-    To generate a list call is as
-    `groups=list(group_contiguous(data))`
-
-    Arguments
-    ---------
-    data: array of int
-    Sorted sequence of integers to group
-    """
-    for _, group in itertools.groupby(enumerate(data), lambda x: x[1] - x[0]):
-        group = list(group)
-        yield group[0][1], group[-1][1]
 
 
 @njit()
@@ -309,8 +246,7 @@ def two_power_law(parameters, x_data):
 
 
 @njit()
-def select_peaks_two_power_law(wavelength, flux, outliers_mask,
-                               power_law_params):
+def select_peaks(wavelength, flux, outliers_mask, power_law_params):
     """ Select which of the outliers are peaks
 
     Arguments

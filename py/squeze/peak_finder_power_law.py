@@ -24,7 +24,7 @@ defaults = {
 class PeakFinderPowerLaw:
     """ Create and manage the peak finder used by SQUEzE
 
-    CLASS: PeakFinder
+    CLASS: PeakFinderPowerLaw
     PURPOSE: Create and manage the peak finder used by SQUEzE. This
     peak finder looks for peaks by fiting a power law to the continum of the
     spectra and locating the outliers. It also computes the significance of
@@ -93,7 +93,7 @@ class PeakFinderPowerLaw:
             f"pixels are considered in the fit. Best fit is {best_fit}")
 
         # if fit did not converge, return
-        if any(best_fit == np.nan):
+        if np.isnan(best_fit).any():
             return np.array([]), np.array([]), best_fit
 
         # select only peaks
@@ -104,6 +104,7 @@ class PeakFinderPowerLaw:
 
         # return
         return peak_indices, peak_significances, best_fit
+
 
 def compress(peaks, significances):
     """Compress the neighbouring peak indexs into a single peak
@@ -119,8 +120,8 @@ def compress(peaks, significances):
 
     Return
     ------
-    compressed_peak_indexs: array of int
-    Array containing the indexs of the compressed peaks. Contiguous pixels
+    compressed_peak_indices: array of int
+    Array containing the indices of the compressed peaks. Contiguous pixels
     are compressed by performing a weighted average according to their
     significance
 
@@ -133,22 +134,22 @@ def compress(peaks, significances):
 
     # compress
     groups = list(group_contiguous(peak_indices))
-    compressed_peak_indexs = np.zeros(len(groups), dtype=int)
-    compressed_significances = np.zeros_like(compressed_peak_indexs,
+    compressed_peak_indices = np.zeros(len(groups), dtype=int)
+    compressed_significances = np.zeros_like(compressed_peak_indices,
                                              dtype=float)
     for index, group in enumerate(groups):
         # single pixel
         if group[1] == group[0]:
-            compressed_peak_indexs[index] = group[0]
+            compressed_peak_indices[index] = group[0]
             compressed_significances[index] = significances[group[0]]
         # grouped pixels
         else:
             aux = np.arange(group[0], group[1] + 1, dtype=int)
-            compressed_peak_indexs[index] = int(
+            compressed_peak_indices[index] = int(
                 round(np.average(aux, weights=significances[aux]), 0))
             compressed_significances[index] = significances[aux].sum()
 
-    return compressed_peak_indexs, compressed_significances
+    return compressed_peak_indices, compressed_significances
 
 
 def fit_power_law(wavelength, flux, ivar, outliers_mask, min_significance):

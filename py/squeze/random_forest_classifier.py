@@ -325,6 +325,10 @@ class RandomForestClassifier:
         ---------
         Refer to sklearn.ensemble.RandomForestClassifier.predic_proba
         """
+        # this is not guaranteed to work but it will help in most cases
+        # if it does not work even with the recursion limit increased,
+        # consider fixing the tree depth during training to prevent
+        # overfitting
         if len(self.trees[0]["children_left"]) > sys.getrecursionlimit():
             sys.setrecursionlimit(int(
                 len(self.trees[0]["children_left"]) * 1.2))

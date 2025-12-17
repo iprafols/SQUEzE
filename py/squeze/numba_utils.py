@@ -13,6 +13,9 @@ if os.environ.get('NUMBA_DISABLE_JIT', '0') == '1':
     # pylint: disable=unused-argument
     def jit(*args, **kwargs):
         """Replacement for numba.jit when JIT is disabled."""
+        if len(args) == 1 and callable(args[0]) and not kwargs:
+            # Used as @jit without parentheses
+            return args[0]
 
         def decorator(func):
             """Decorator that returns the function unchanged."""
@@ -22,6 +25,9 @@ if os.environ.get('NUMBA_DISABLE_JIT', '0') == '1':
 
     def njit(*args, **kwargs):
         """A no-op decorator to disable JIT compilation."""
+        if len(args) == 1 and callable(args[0]) and not kwargs:
+            # Used as @njit without parentheses
+            return args[0]
 
         def decorator(func):
             """Return the original function without JIT compilation."""
