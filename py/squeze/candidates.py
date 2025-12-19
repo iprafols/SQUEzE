@@ -549,7 +549,7 @@ class Candidates:
                 self.__find_candidates(spectrum)
             except Exception as error:
                 self.userprint(
-                    "Error occured in finding candidates in spectrum.")
+                    "Error occurred in finding candidates in spectrum.")
                 self.userprint(str(error))
                 self.userprint("Ignoring spectrum")
             if len(self.candidates_list) > MAX_CANDIDATES_TO_CONVERT:
