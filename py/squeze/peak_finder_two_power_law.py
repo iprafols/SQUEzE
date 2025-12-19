@@ -59,8 +59,8 @@ class PeakFinderTwoPowerLaw(PeakFinderPowerLaw):
         An array with the significance of the peaks
 
         best_fit: array of float
-        The best fit parameters: the amplitude and power law indices for the
-        first and second power laws
+        The best fit parameters as a 4-element array containing:
+        amplitude, power_law_index1, power_law_index2, and break_point.
         """
         wavelength = spectrum.wave
         flux = spectrum.flux

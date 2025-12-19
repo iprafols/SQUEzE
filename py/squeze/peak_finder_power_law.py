@@ -26,7 +26,7 @@ class PeakFinderPowerLaw:
 
     CLASS: PeakFinderPowerLaw
     PURPOSE: Create and manage the peak finder used by SQUEzE. This
-    peak finder looks for peaks by fiting a power law to the continuum of the
+    peak finder looks for peaks by fitting a power law to the continuum of the
     spectra and locating the outliers. It also computes the significance of
     the peaks and filters the results according to their significances.
     """
