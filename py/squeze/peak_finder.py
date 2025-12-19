@@ -103,7 +103,7 @@ class PeakFinder:
         smoothed_data = spectrum.smooth(self.width)
 
         # find peaks
-        peak_indexs = []
+        peak_indices = []
         significances = []
         for index, flux in enumerate(smoothed_data):
             if ((0 < index < smoothed_data.size - 1) and
@@ -114,12 +114,12 @@ class PeakFinder:
 
                 # add the peak to the list if the significance is large enough
                 if significance >= self.min_significance:
-                    peak_indexs.append(index)
+                    peak_indices.append(index)
                     significances.append(significance)
 
         # convert list to array
-        peak_indexs = np.array(peak_indexs, dtype=int)
+        peak_indices = np.array(peak_indices, dtype=int)
         significances = np.array(significances, dtype=float)
 
         # return
-        return peak_indexs, significances, np.array(())
+        return peak_indices, significances, np.array(())
