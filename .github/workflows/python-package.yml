@@ -46,7 +46,7 @@ jobs:
         NUMBA_DISABLE_JIT: 1
       run: |
           pytest --capture=tee-sys --cov --cov-report xml --cov-config=.coveragerc .
-    # DEBNUG STEP: Inspect coverage files before uploading to Coveralls
+    # DEBUG STEP: Inspect coverage files before uploading to Coveralls
     - name: Debug coverage files
       run: |
         echo "=== Coverage files generated ==="
