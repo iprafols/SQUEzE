@@ -38,10 +38,12 @@ jobs:
       run: pip install -e .
     - name: Test with pytest
       timeout-minutes: 30
+      env:
+        NUMBA_DISABLE_JIT: 1
       run: |
           pytest --capture=tee-sys --cov --cov-report xml --cov-config=.coveragerc .
     - name: Coveralls
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-      run: coveralls --service=gihtub
+      run: coveralls --service=github
