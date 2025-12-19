@@ -53,8 +53,14 @@ jobs:
         find . -name "*.xml" -o -name ".coverage*" | head -10
         echo "=== Coveragerc config ==="
         cat .coveragerc || echo "No .coveragerc file"
-    - name: Coveralls
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-      run: coveralls --service=github
+    #- name: Coveralls
+    #  env:
+    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #    COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+    #  run: coveralls --service=github
+    - name: Upload coverage to Coveralls
+      uses: coverallsapp/github-action@v2
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        file: coverage.xml
+        format: cobertura
