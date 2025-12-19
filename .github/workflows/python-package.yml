@@ -15,6 +15,10 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
+        include:
+            # Mark the latest version for coverage upload
+            - python-version: "3.13"
+              upload-coverage: true
 
     steps:
     - uses: actions/checkout@v3
@@ -59,6 +63,8 @@ jobs:
     #    COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
     #  run: coveralls --service=github
     - name: Upload coverage to Coveralls
+      # Only upload coverage from the version marked with upload-coverage: true
+      if: matrix.upload-coverage == true
       uses: coverallsapp/github-action@v2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
