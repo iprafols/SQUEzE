@@ -42,6 +42,17 @@ jobs:
         NUMBA_DISABLE_JIT: 1
       run: |
           pytest --capture=tee-sys --cov --cov-report xml --cov-config=.coveragerc .
+    # DEBNUG STEP: Inspect coverage files before uploading to Coveralls
+    - name: Debug coverage files
+      run: |
+        echo "=== Coverage files generated ==="
+        ls -la coverage.xml .coverage* || echo "No coverage files found"
+        echo "=== Coverage report ==="
+        coverage report --show-missing || echo "Coverage report failed"
+        echo "=== Current directory contents ==="
+        find . -name "*.xml" -o -name ".coverage*" | head -10
+        echo "=== Coveragerc config ==="
+        cat .coveragerc || echo "No .coveragerc file"
     - name: Coveralls
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
