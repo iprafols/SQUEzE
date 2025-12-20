@@ -144,8 +144,8 @@ class BossSpectrum(Spectrum):
             """
         self.skymask = np.zeros_like(self.wave, dtype=bool)
         for wave in masklambda:
-            self.skymask[np.where(
-                np.abs(np.log10(self.wave / wave)) <= margin)] = True
+            self.skymask[np.where(np.abs(np.log10(self.wave /
+                                                  wave)) <= margin)] = True
 
     def filter_wavelengths(self, forbidden_wavelenghts):
         """ Mask the wavelengths in the ranges specified by the tuples in

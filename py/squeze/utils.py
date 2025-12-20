@@ -125,6 +125,8 @@ def serialize(obj):
         encodable_object = int(obj)
     elif isinstance(obj, np.int32):
         encodable_object = int(obj)
+    elif isinstance(obj, np.int16):
+        encodable_object = int(obj)
 
     # deal with numpy floats
     elif isinstance(obj, np.float32):

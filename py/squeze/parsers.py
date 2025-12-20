@@ -37,8 +37,8 @@ def quasar_parser_check(parser, args):
             parser.error("options --qso-cat, --qso-cols, --qso-specid, and --qso-ztrue " \
                          "are incompatible with --qso-dataframe")
     else:
-        if (args.qso_cat is None) or (args.qso_specid is
-                                      None) or (args.qso_ztrue is None):
+        if (args.qso_cat is None) or (args.qso_specid
+                                      is None) or (args.qso_ztrue is None):
             parser.error("--qso-cat, --qso-cols, --qso-specid, and --qso-ztrue are " \
                          "required if --qso-dataframe is not passed")
 

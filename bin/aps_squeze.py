@@ -260,8 +260,8 @@ def write_results(zbest, candidates_df, args):
     filtered_candidates = candidates_df[(~candidates_df["DUPLICATED"])]
 
     # sanity check: apply probability cut
-    filtered_candidates = filtered_candidates[(filtered_candidates["PROB"] >=
-                                               args.prob_cut)]
+    filtered_candidates = filtered_candidates[(filtered_candidates["PROB"]
+                                               >= args.prob_cut)]
 
     # then create the final catalogue
     aps_ids = filtered_candidates["APS_ID"]

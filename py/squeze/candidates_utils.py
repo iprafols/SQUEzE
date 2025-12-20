@@ -10,11 +10,12 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 
 import os
 from math import sqrt
-from numba import prange, jit, vectorize
 import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 import pandas as pd
+
+from squeze.numba_utils import jit, prange, vectorize
 
 
 @jit(nopython=True)
@@ -66,6 +67,8 @@ def compute_line_ratios(wave, flux, ivar, peak_indexs, significances, try_lines,
     new_candidates = []
     # pylint: disable=not-an-iterable
     # prange is the numba equivalent to range
+    # pylint: disable=consider-using-enumerate
+    # usually we would use enumerate, but numba does not support it
     for index1 in prange(peak_indexs.size):
         for index2 in prange(len(try_lines)):
             # compute redshift
@@ -223,6 +226,8 @@ def compute_pixel_metrics(wave, flux, ivar, peak_indexs, num_pixels, try_lines,
 
         # pylint: disable=not-an-iterable
         # prange is the numba equivalent to range
+        # pylint: disable=consider-using-enumerate
+        # usually we would use enumerate, but numba does not support it
         for index2 in prange(len(try_lines)):
             #for try_line in try_lines:
 
@@ -406,7 +411,7 @@ def load_df(filename):
         candidates = data.to_pandas()
     except TypeError:
         with fits.open(os.path.expandvars(filename), memmap=True) as hdul:
-            data = hdul[1].data # pylint: disable=no-member
+            data = hdul[1].data  # pylint: disable=no-member
             candidates = pd.DataFrame(data.byteswap().newbyteorder())
 
     candidates.columns = candidates.columns.str.upper()

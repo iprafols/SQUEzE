@@ -17,37 +17,88 @@ __author__ = "Ignasi Perez-Rafols (iprafols@gmail.com)"
 import sys
 
 import numpy as np
-import numba
-from numba import prange, jit
 
 from squeze.utils import deserialize
+from squeze.numba_utils import jit, prange, NUMBA_TYPES
 
 # extra imports for training model
-SKLEARN_ERROR = None
+sklearn_error = None
 try:
     from sklearn.ensemble import RandomForestClassifier as rf_sklearn
 except ImportError as error:
-    SKLEARN_ERROR = error
+    sklearn_error = error
 # load sklearn modules to train the model
 
 
-@jit(
-    nopython=True,
-    locals={
-        "X": numba.types.float64[:, :],
-        "children_left": numba.types.int64[:],
-        "children_right": numba.types.int64[:],
-        "thresholds": numba.types.float64[:],
-        "tree_proba": numba.types.float64[:, :, :],
-        "proba": numba.types.float64[:, :],
-        "indexs": numba.types.int64[:],
-        "node_id": numba.types.int64
-    },
-)
+# Conditional decorator to handle numba types
+def conditional_jit_with_locals():
+    """ Conditional decorator to handle numba types"""
+    if NUMBA_TYPES is None:
+        return jit(nopython=True)
+    return jit(
+        nopython=True,
+        locals={
+            "X": NUMBA_TYPES.float64[:, :],
+            "children_left": NUMBA_TYPES.int64[:],
+            "children_right": NUMBA_TYPES.int64[:],
+            "thresholds": NUMBA_TYPES.float64[:],
+            "tree_proba": NUMBA_TYPES.float64[:, :, :],
+            "proba": NUMBA_TYPES.float64[:, :],
+            "indexs": NUMBA_TYPES.int32[:],
+            "node_id": NUMBA_TYPES.int64
+        },
+    )
+
+
+@conditional_jit_with_locals()
+def predict_proba_tree(X, children_left, children_right, features, thresholds,
+                       tree_proba, num_categories):
+    """ Compute the probability using a given tree
+
+        Parameters
+        ----------
+        X : array of floats
+        The dataset to classify. Each line contains the information for a given
+        candidate
+
+        children_left : array of int
+        For node i, j=children_left[i] is the position of left tree node. -1
+        indicates a leaf node
+
+        children_right : array of int
+        For node i, j=children_right[i] is the position of right tree node. -1
+        indicates a leaf node
+
+        features : array of int
+        For node i, j=features[i] is the index of the feature used to split the
+        dataset
+
+        thresholds : array of float
+        For node i, y=thresholds[i] is the threshold used to split the
+        dataset. Candidates where its feature j is evaluated to less or equal y
+        are assigned to the left child node, others are assigned to the right
+        child node
+
+        tree_proba : array of float
+        Probabilities for the different leafs of the tree and for the different
+        classes
+
+        num_categories : int
+        Number of categories
+        """
+    proba = np.zeros((X.shape[0], num_categories), dtype=np.float64)
+    indexs = np.arange(0, X.shape[0], 1, dtype=np.int32)
+    search_nodes(X, children_left, children_right, features, thresholds,
+                 tree_proba, proba, indexs, 0)
+
+    return proba
+
+
+@conditional_jit_with_locals()
 def search_nodes(X, children_left, children_right, features, thresholds,
                  tree_proba, proba, indexs, node_id):
     """ Recursively navigates in the tree and calculate the tree response
-        by updating the values stored in self.__proba
+        by updating the values stored in proba
 
         Parameters
         ----------
@@ -154,8 +205,8 @@ class RandomForestClassifier:
         ---------
         Refer to sklearn.ensemble.RandomForestClassifier.fit
         """
-        if SKLEARN_ERROR is not None:
-            raise SKLEARN_ERROR
+        if sklearn_error is not None:
+            raise sklearn_error
 
         # create a RandomForestClassifier
         random_forest = rf_sklearn(**self.args)
@@ -274,22 +325,26 @@ class RandomForestClassifier:
         ---------
         Refer to sklearn.ensemble.RandomForestClassifier.predic_proba
         """
+        # this is not guaranteed to work but it will help in most cases
+        # if it does not work even with the recursion limit increased,
+        # consider fixing the tree depth during training to prevent
+        # overfitting
+        if len(self.trees[0]["children_left"]) > sys.getrecursionlimit():
+            sys.setrecursionlimit(int(
+                len(self.trees[0]["children_left"]) * 1.2))
+
         output = np.zeros((len(X), self.num_categories))
 
         for tree_index in np.arange(self.num_trees):
-            proba = np.zeros((len(X), self.num_categories))
-            children_left = self.trees[tree_index]["children_left"]
-            children_right = self.trees[tree_index]["children_right"]
-            features = self.trees[tree_index]["feature"]
-            thresholds = self.trees[tree_index]["threshold"]
-            tree_proba = self.trees[tree_index]["proba"]
-            indexs = np.arange(X.shape[0], dtype=int)
-            if len(children_left) > sys.getrecursionlimit():
-                sys.setrecursionlimit(int(len(children_left) * 1.2))
-            search_nodes(X, children_left, children_right, features, thresholds,
-                         tree_proba, proba, indexs, 0)
-            output += proba
-
+            output += predict_proba_tree(
+                X,
+                self.trees[tree_index]["children_left"],
+                self.trees[tree_index]["children_right"],
+                self.trees[tree_index]["feature"],
+                self.trees[tree_index]["threshold"],
+                self.trees[tree_index]["proba"],
+                self.num_categories,
+            )
         output /= self.num_trees
 
         return output

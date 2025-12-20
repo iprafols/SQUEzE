@@ -27,11 +27,11 @@ from squeze.spectra import Spectra
 from squeze.utils import deserialize, load_json
 
 # extra imports for plotting function
-PLOTTING_ERROR = None
+plotting_error = None
 try:
     import matplotlib.pyplot as plt
 except ImportError as error:
-    PLOTTING_ERROR = error
+    plotting_error = error
 
 MODES = [
     "training", "test", "operation", "candidates", "merge", "merge_training",
@@ -291,7 +291,7 @@ class Candidates:
         A list with the candidates for the given spectrum.
         """
         # find peaks
-        peak_indexs, significances = self.peak_finder.find_peaks(spectrum)
+        peak_indexs, significances, _ = self.peak_finder.find_peaks(spectrum)
 
         # keep peaks in the spectrum
         # if there are no peaks, include the spectrum with redshift np.nan
@@ -405,8 +405,7 @@ class Candidates:
                         self.try_lines_dict.get(assumed_line)
                         for assumed_line in aux["ASSUMED_LINE"]
                     ]), aux["Z_TRUE"].values, aux["Z_TRY"].values,
-                    self.z_precision,
-                    self.lines.iloc[self.try_lines_indexs].values)
+                    self.z_precision, self.lines.values)
             else:
                 self.userprint("    is_correct_redshift")
                 aux["CORRECT_REDSHIFT"] = pd.Series(dtype=bool)
@@ -548,9 +547,10 @@ class Candidates:
             # candidates are appended to self.candidates_list
             try:
                 self.__find_candidates(spectrum)
-            except Exception:
+            except Exception as error:
                 self.userprint(
-                    "Error occured in finding candidates in spectrum.")
+                    "Error occurred in finding candidates in spectrum.")
+                self.userprint(str(error))
                 self.userprint("Ignoring spectrum")
             if len(self.candidates_list) > MAX_CANDIDATES_TO_CONVERT:
                 self.userprint("Converting candidates to dataframe")
@@ -615,10 +615,10 @@ class Candidates:
         found_quasars_zge1 = 0
         found_quasars_zge2_1 = 0
         num_quasars = quasars_data_frame.shape[0]
-        num_quasars_zge1 = quasars_data_frame[
-            quasars_data_frame["Z_TRUE"] >= 1.0].shape[0]
-        num_quasars_zge2_1 = quasars_data_frame[
-            quasars_data_frame["Z_TRUE"] >= 2.1].shape[0]
+        num_quasars_zge1 = quasars_data_frame[quasars_data_frame["Z_TRUE"] >=
+                                              1.0].shape[0]
+        num_quasars_zge2_1 = quasars_data_frame[quasars_data_frame["Z_TRUE"] >=
+                                                2.1].shape[0]
         for index in np.arange(num_quasars):
             specid = quasars_data_frame.iloc[
                 quasars_data_frame.index[index]]["SPECID"]
@@ -806,8 +806,8 @@ class Candidates:
         ------
         The figure object
         """
-        if PLOTTING_ERROR is not None:
-            raise PLOTTING_ERROR
+        if plotting_error is not None:
+            raise plotting_error
 
         # plot settings
         fontsize = 20
@@ -881,8 +881,8 @@ class Candidates:
         ------
         The figure object
         """
-        if PLOTTING_ERROR is not None:
-            raise PLOTTING_ERROR
+        if plotting_error is not None:
+            raise plotting_error
 
         # get the number of plots and the names of the columns
         plot_cols = np.array(
