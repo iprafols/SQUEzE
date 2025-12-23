@@ -123,7 +123,9 @@ class PeakFinderTwoPowerLaw(PeakFinderPowerLaw):
             userprint(f"New chi2 {new_best_fit_chi2}")
             userprint(f"New outliers mask {new_outliers_mask}")
 
-            if new_best_fit_chi2 < best_fit_chi2:
+            if not np.isclose(
+                    new_best_fit_chi2,
+                    best_fit_chi2) and new_best_fit_chi2 < best_fit_chi2:
                 outliers_mask = new_outliers_mask
                 differences = new_differences
                 best_fit = new_best_fit
